@@ -701,3 +701,18 @@ nav .rebatify-plus-text{
     min-height:0 !important;
   }
 }
+
+
+/* Center App Preview heading */
+.app-preview-heading{
+  text-align:center;
+  margin:0 auto 22px;
+}
+.app-preview-heading .kicker{
+  text-align:center;
+}
+.app-preview-heading h2{
+  text-align:center;
+  margin-left:auto;
+  margin-right:auto;
+}
