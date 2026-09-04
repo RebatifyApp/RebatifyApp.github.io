@@ -1,4 +1,4 @@
-REBCMIFY GITHUB PAGES WEBSITE — v7.01 aligned
+Rebatify GITHUB PAGES WEBSITE — v7.01 aligned
 
 Upload ALL files in this folder directly to the root of:
 RebatifyApp.github.io

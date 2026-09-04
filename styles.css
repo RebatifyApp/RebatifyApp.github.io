@@ -211,3 +211,109 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
   .compare-status:nth-child(3){border-left:0;border-top:1px solid rgba(20,92,242,.06)}
   .plan-card{padding:20px}
 }
+
+
+/* App Preview layout:
+   3 centered cards on the first row, 2 centered cards on the second row. */
+@media (min-width:1001px){
+  .screenshot-grid{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:22px;
+    align-items:start;
+  }
+  .screenshot-grid .screen-card{
+    grid-column:span 2;
+  }
+  .screenshot-grid .screen-card:nth-child(4){
+    grid-column:2 / span 2;
+  }
+  .screenshot-grid .screen-card:nth-child(5){
+    grid-column:4 / span 2;
+  }
+}
+
+/* Preserve the existing responsive 2-column and 1-column layouts. */
+@media (min-width:761px) and (max-width:1000px){
+  .screenshot-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .screenshot-grid .screen-card,
+  .screenshot-grid .screen-card:nth-child(4),
+  .screenshot-grid .screen-card:nth-child(5){
+    grid-column:auto;
+  }
+}
+@media (max-width:760px){
+  .screenshot-grid{
+    grid-template-columns:1fr;
+  }
+  .screenshot-grid .screen-card,
+  .screenshot-grid .screen-card:nth-child(4),
+  .screenshot-grid .screen-card:nth-child(5){
+    grid-column:auto;
+  }
+}
+
+
+/* Rebatify+ brand treatment */
+.rebatify-plus-text{
+  color:#63d62f !important;
+  font-weight:850;
+}
+a .rebatify-plus-text,
+button .rebatify-plus-text{
+  color:#63d62f !important;
+}
+
+
+/* Compact Core Rebatify feature section */
+.compact-features{padding-top:54px;padding-bottom:54px}
+.compact-lead{max-width:760px;margin-bottom:0}
+.compact-feature-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  margin-top:24px;
+}
+.compact-card{
+  min-height:0;
+  padding:18px 19px 17px;
+  border-radius:22px;
+}
+.compact-card .icon-bubble{
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  margin-bottom:12px;
+  font-size:1.05rem;
+}
+.compact-card h3{
+  margin-bottom:7px;
+  font-size:1.03rem;
+}
+.compact-card p{
+  margin:0;
+  font-size:.91rem;
+  line-height:1.48;
+}
+.compact-feature-note{
+  margin-top:16px;
+  padding:11px 15px;
+  border-radius:999px;
+  width:max-content;
+  max-width:100%;
+  color:#65748a;
+  background:rgba(20,92,242,.055);
+  border:1px solid rgba(20,92,242,.09);
+  font-size:.88rem;
+}
+@media(max-width:900px){
+  .compact-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .compact-features{padding-top:42px;padding-bottom:42px}
+  .compact-feature-grid{grid-template-columns:1fr;gap:12px;margin-top:20px}
+  .compact-card{padding:16px 17px}
+  .compact-feature-note{border-radius:18px;line-height:1.45}
+}
