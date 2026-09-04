@@ -317,3 +317,22 @@ button .rebatify-plus-text{
   .compact-card{padding:16px 17px}
   .compact-feature-note{border-radius:18px;line-height:1.45}
 }
+
+
+/* Readability fix for Rebatify+ website overlay badges */
+.screen-card .tier-badge.plus,
+.tier-badge.plus{
+  background:linear-gradient(135deg,#061a4f,#0b3ca7) !important;
+  color:#8cf233 !important;
+  border:1px solid rgba(140,242,51,.45) !important;
+  box-shadow:0 10px 24px rgba(5,36,117,.22) !important;
+  text-shadow:none !important;
+  font-weight:900 !important;
+  letter-spacing:.01em !important;
+}
+
+.screen-card .tier-badge.plus .rebatify-plus-text,
+.tier-badge.plus .rebatify-plus-text{
+  color:#8cf233 !important;
+  font-weight:900 !important;
+}
