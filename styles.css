@@ -117,3 +117,15 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 @media(max-width:1000px){.hero-grid,.grid4,.grid3,.screenshot-grid,.support-grid{grid-template-columns:1fr 1fr}.bubble-stage{min-height:600px}.feature-list{grid-template-columns:1fr}}
 @media(max-width:760px){.hero-grid,.grid2,.grid3,.grid4,.screenshot-grid,.support-grid{grid-template-columns:1fr}.hero{padding-top:58px}.bubble-stage{min-height:720px;max-width:540px;margin:auto}.bubble.one{width:67%}.bubble.two{width:64%;top:145px}.feature-table{font-size:.86rem}.feature-table th,.feature-table td{padding:12px 10px}}
 @media(max-width:560px){.nav{align-items:flex-start;flex-direction:column}nav{gap:11px;font-size:.9rem}h1{font-size:3rem}.wrap{width:min(100% - 24px,1200px)}.bubble-stage{min-height:610px}.float-chip{display:none}.feature-table td:nth-child(2),.feature-table td:nth-child(3){width:auto}}
+
+.phone-frame{width:100%;max-width:290px;margin:0 auto;border-radius:34px;padding:10px;background:linear-gradient(180deg,#ffffff,#f6fbff);box-shadow:0 18px 38px rgba(5,36,118,.16), inset 0 0 0 1px rgba(20,92,242,.08)}
+.phone-frame img,.phone-shot img{display:block;width:100%;height:auto;aspect-ratio:430 / 932;border-radius:26px;image-rendering:auto}
+.bubble.one{width:300px;left:8px;top:0;transform:rotate(-2deg)}
+.bubble.two{width:286px;right:0;top:120px;transform:rotate(2deg)}
+.bubble img{border-radius:26px}
+.phone-shot{width:min(100%,300px);margin:8px auto 0;border-radius:34px;padding:10px;background:linear-gradient(180deg,#ffffff,#f7fbff);border:1px solid rgba(20,92,242,.08);box-shadow:0 16px 36px rgba(5,36,118,.10)}
+.screen-card{padding:18px 18px 20px}
+.screen-card h3,.screen-card p{max-width:300px;margin-left:auto;margin-right:auto}
+@media(max-width:1000px){.bubble.one{width:280px}.bubble.two{width:266px}}
+@media(max-width:760px){.bubble-stage{min-height:760px;max-width:620px}.bubble.one{width:260px;left:0}.bubble.two{width:248px;top:160px;right:4px}.phone-shot{width:min(100%,280px)}}
+@media(max-width:560px){.bubble-stage{min-height:690px}.bubble.one{width:240px}.bubble.two{width:228px;top:145px}}
