@@ -598,3 +598,106 @@ nav .rebatify-plus-text{
 .phone-shot::after{
   top:18px !important;
 }
+
+
+/* -------------------------------------------------------
+   Home page phone consistency pass
+   There are 7 phone displays total on the home page:
+   2 hero phones + 5 App Preview phones.
+   ------------------------------------------------------- */
+
+/* Apply the same frame / Dynamic Island treatment to every phone instance. */
+.phone-frame,
+.phone-shot{
+  position:relative;
+  box-sizing:border-box;
+}
+
+.phone-frame::before,
+.phone-shot::before{
+  top:12px !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  width:30% !important;
+  min-width:78px !important;
+  max-width:104px !important;
+  height:21px !important;
+  border-radius:999px !important;
+  background:#050506 !important;
+}
+
+.phone-frame::after,
+.phone-shot::after{
+  top:18px !important;
+}
+
+/* Keep every screenshot image aligned identically inside its phone. */
+.phone-frame img,
+.phone-shot img{
+  display:block;
+  width:100% !important;
+  height:auto !important;
+  aspect-ratio:430 / 932 !important;
+  object-fit:cover !important;
+}
+
+/* -------------------------------------------------------
+   Make the 5 App Preview cards/bubbles identical in size.
+   ------------------------------------------------------- */
+.screenshot-grid{
+  align-items:stretch !important;
+}
+
+.screenshot-grid .screen-card{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  height:100% !important;
+  min-height:760px !important;
+  padding:18px 18px 20px !important;
+  border-radius:30px !important;
+}
+
+.screenshot-grid .screen-card .phone-shot{
+  width:100% !important;
+  max-width:300px !important;
+  margin:8px auto 0 !important;
+  flex:0 0 auto !important;
+}
+
+.screenshot-grid .screen-card h3{
+  width:100%;
+  max-width:300px;
+  margin:16px auto 0 !important;
+}
+
+.screenshot-grid .screen-card p{
+  width:100%;
+  max-width:300px;
+  margin:8px auto 4px !important;
+  min-height:66px;
+}
+
+/* Keep the 3 + 2 desktop arrangement while giving all five equal card widths. */
+@media(min-width:1001px){
+  .screenshot-grid{
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+    gap:22px !important;
+  }
+  .screenshot-grid .screen-card{
+    grid-column:span 2 !important;
+  }
+  .screenshot-grid .screen-card:nth-child(4){
+    grid-column:2 / span 2 !important;
+  }
+  .screenshot-grid .screen-card:nth-child(5){
+    grid-column:4 / span 2 !important;
+  }
+}
+
+/* Tablet/mobile: equal sizing without forcing oversized height. */
+@media(max-width:1000px){
+  .screenshot-grid .screen-card{
+    min-height:0 !important;
+  }
+}
