@@ -575,70 +575,13 @@ nav .rebatify-plus-text{
 }
 
 
-/* -------------------------------------------------------
-   Dynamic Island clearance fix
-   Keep the island entirely inside the phone frame so it
-   never covers the simulated app UI or status-bar content.
-   ------------------------------------------------------- */
-
-.phone-frame,
-.phone-shot{
-  padding:32px 8px 8px !important;
-}
-
-/* Island sits in the reserved top frame area, above the app image. */
+/* Subtle Dynamic Island clearance:
+   preserve the original iPhone frame and simply keep the island slightly higher. */
 .phone-frame::before,
 .phone-shot::before{
-  top:6px !important;
-  height:21px !important;
-  width:30% !important;
-  min-width:78px !important;
-  max-width:104px !important;
-}
-
-/* Camera glint stays inside the island. */
-.phone-frame::after,
-.phone-shot::after{
   top:12px !important;
 }
-
-/* Keep the app screenshot fully visible below the reserved island area. */
-.phone-frame img,
-.phone-shot img{
-  position:relative;
-  z-index:1;
-  display:block;
-  width:100%;
-  height:auto;
-}
-
-/* Slightly increase shell rounding to preserve the modern iPhone look. */
-.phone-frame,
-.phone-shot{
-  border-radius:50px !important;
-}
-.phone-frame img,
-.phone-shot img{
-  border-radius:38px !important;
-}
-
-@media(max-width:760px){
-  .phone-frame,
-  .phone-shot{
-    padding:29px 7px 7px !important;
-    border-radius:45px !important;
-  }
-  .phone-frame::before,
-  .phone-shot::before{
-    top:5px !important;
-    height:20px !important;
-  }
-  .phone-frame::after,
-  .phone-shot::after{
-    top:11px !important;
-  }
-  .phone-frame img,
-  .phone-shot img{
-    border-radius:34px !important;
-  }
+.phone-frame::after,
+.phone-shot::after{
+  top:18px !important;
 }
