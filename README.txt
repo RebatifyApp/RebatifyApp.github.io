@@ -7,11 +7,16 @@ Files:
 - terms.html
 - styles.css
 
-Upload all files to the root of your GitHub Pages repository.
+Support email:
+support.rebatifyapp@gmail.com
 
-IMPORTANT:
-The site currently uses support@rebatify.app as a placeholder support address.
-Replace it in support.html, privacy.html, and terms.html if your real support email is different.
+Upload all website files directly to the root of your GitHub Pages repository.
 
-GitHub Pages:
-Repository Settings -> Pages -> Deploy from a branch -> main / root.
+GitHub Pages setup:
+Repository Settings -> Pages -> Deploy from a branch -> main -> / (root)
+
+Expected URLs for the RebatifyApp.github.io repository:
+- https://rebatifyapp.github.io/
+- https://rebatifyapp.github.io/support.html
+- https://rebatifyapp.github.io/privacy.html
+- https://rebatifyapp.github.io/terms.html
