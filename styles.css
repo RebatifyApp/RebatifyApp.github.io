@@ -336,3 +336,41 @@ button .rebatify-plus-text{
   color:#8cf233 !important;
   font-weight:900 !important;
 }
+
+
+/* Rebatify+ contrast audit:
+   Default Rebatify+ text stays green on white/light/dark-blue surfaces.
+   On lime/green pills and buttons, use navy text so the label remains readable. */
+.rebatify-plus-text{
+  color:#63d62f !important;
+  font-weight:850;
+}
+
+/* Bright lime/green surfaces: do NOT use green-on-green text. */
+.btn.plus .rebatify-plus-text,
+.plus-plan-pill .rebatify-plus-text,
+.compare-plan-title.plus-title .rebatify-plus-text{
+  color:var(--navy) !important;
+  font-weight:950 !important;
+}
+
+/* The App Preview overlay badges intentionally use dark blue + lime text. */
+.screen-card .tier-badge.plus,
+.tier-badge.plus{
+  background:linear-gradient(135deg,#061a4f,#0b3ca7) !important;
+  color:#8cf233 !important;
+  border:1px solid rgba(140,242,51,.45) !important;
+  box-shadow:0 10px 24px rgba(5,36,117,.22) !important;
+}
+.screen-card .tier-badge.plus .rebatify-plus-text,
+.tier-badge.plus .rebatify-plus-text{
+  color:#8cf233 !important;
+}
+
+/* Ensure green Rebatify+ text remains clearly readable in standard body copy. */
+.card .rebatify-plus-text,
+.prose .rebatify-plus-text,
+.plus-banner .rebatify-plus-text,
+nav .rebatify-plus-text{
+  text-shadow:none !important;
+}
