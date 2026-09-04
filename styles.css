@@ -141,3 +141,73 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 @media(max-width:1000px){.bubble.one{width:280px}.bubble.two{width:266px}}
 @media(max-width:760px){.bubble-stage{min-height:760px;max-width:620px}.bubble.one{width:260px;left:0}.bubble.two{width:248px;top:160px;right:4px}.phone-shot{width:min(100%,280px)}}
 @media(max-width:560px){.bubble-stage{min-height:690px}.bubble.one{width:240px}.bubble.two{width:228px;top:145px}}
+
+
+/* Premium comparison redesign */
+.plans-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px;margin-bottom:22px}
+.plan-card{position:relative;overflow:hidden;border-radius:28px;padding:24px;border:1px solid rgba(20,92,242,.10);background:rgba(255,255,255,.92);box-shadow:0 14px 34px rgba(5,36,118,.08)}
+.plan-card h3{font-size:1.42rem;margin:10px 0 8px;color:var(--navy)}
+.plan-card p{color:var(--muted);margin:0 0 18px;max-width:560px}
+.plan-topline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.plan-kicker{font-size:.75rem;font-weight:950;letter-spacing:.09em;color:var(--blue)}
+.plus-kicker{color:#dfffbf}
+.plan-pill{display:inline-flex;align-items:center;justify-content:center;padding:7px 11px;border-radius:999px;font-size:.75rem;font-weight:950;letter-spacing:.04em}
+.trial-pill{background:#edf4ff;color:var(--deep);border:1px solid rgba(20,92,242,.12)}
+.plus-plan-card{color:#fff;background:linear-gradient(120deg,#071f5f 0%,#145cf2 52%,#18aaa9 100%);border-color:rgba(255,255,255,.13);box-shadow:0 22px 50px rgba(5,36,118,.22)}
+.plus-plan-card h3{color:#fff}
+.plus-plan-card p{color:rgba(255,255,255,.79)}
+.plus-plan-pill{background:var(--lime);color:var(--navy);box-shadow:0 6px 18px rgba(140,242,51,.20)}
+.plus-glow{position:absolute;right:-80px;top:-100px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(140,242,51,.22),rgba(140,242,51,0) 67%);pointer-events:none}
+.plan-highlight{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:#f7faff;border:1px solid rgba(20,92,242,.08)}
+.plus-highlight{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.13)}
+.plan-highlight span:last-child{display:flex;flex-direction:column;gap:2px}
+.plan-highlight strong{font-size:.98rem}.plan-highlight small{color:var(--muted);font-size:.8rem}.plus-highlight small{color:rgba(255,255,255,.70)}
+.plan-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:950;flex:0 0 34px}
+.plan-icon.yes{background:var(--lime);color:var(--navy)}
+.plan-icon.neutral{background:#eaf2ff;color:var(--deep)}
+
+.premium-compare{overflow:hidden;border-radius:30px;border:1px solid rgba(20,92,242,.10);background:rgba(255,255,255,.94);box-shadow:0 18px 42px rgba(5,36,118,.08)}
+.compare-head,.compare-row{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(185px,.72fr) minmax(185px,.72fr);align-items:stretch}
+.compare-head{background:linear-gradient(180deg,#f8fbff,#eff6ff);border-bottom:1px solid rgba(20,92,242,.10)}
+.compare-head>div{padding:18px 20px;font-size:.86rem;font-weight:900;color:var(--deep);display:flex;align-items:center}
+.compare-feature-title{letter-spacing:.02em}
+.compare-plan-title{justify-content:flex-start}
+.compare-plan-title span{display:inline-flex;padding:7px 11px;border-radius:999px;background:#fff;border:1px solid rgba(20,92,242,.10)}
+.compare-plan-title.plus-title span{background:linear-gradient(100deg,var(--lime),#c9ff7b);color:var(--navy);border:0;box-shadow:0 5px 14px rgba(140,242,51,.18)}
+.compare-row{position:relative;border-bottom:1px solid rgba(20,92,242,.075);transition:background .18s ease}
+.compare-row:hover{background:rgba(20,92,242,.025)}
+.compare-row.premium-row{background:linear-gradient(90deg,rgba(20,92,242,.018),rgba(30,184,184,.025))}
+.compare-row.final-row{border-bottom:0}
+.compare-row>div{padding:20px;display:flex;align-items:center}
+.compare-feature{display:flex!important;flex-direction:column;align-items:flex-start!important;gap:5px}
+.compare-feature strong{font-size:1rem;color:var(--ink);line-height:1.3}
+.compare-feature span{color:var(--muted);font-size:.84rem;line-height:1.45;max-width:680px}
+.compare-status{gap:11px;border-left:1px solid rgba(20,92,242,.06)}
+.compare-status>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.compare-status strong{font-size:.95rem;line-height:1.25;color:var(--ink)}
+.compare-status small{font-size:.76rem;line-height:1.3;color:var(--muted)}
+.status-bubble{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:.96rem;font-weight:1000;flex:0 0 34px}
+.status-bubble.yes{background:linear-gradient(145deg,#e8ffe4,#caffac);color:#197b3f;border:1px solid rgba(25,123,63,.12);box-shadow:0 5px 14px rgba(25,123,63,.08)}
+.status-bubble.no{background:linear-gradient(145deg,#fff0f0,#ffd7d7);color:#d72828;border:1px solid rgba(215,40,40,.12);box-shadow:0 5px 14px rgba(215,40,40,.07)}
+.status-bubble.neutral{background:linear-gradient(145deg,#edf4ff,#dbe9ff);color:var(--deep);border:1px solid rgba(20,92,242,.12)}
+
+@media(max-width:900px){
+  .plans-wrap{grid-template-columns:1fr}
+  .compare-head{display:none}
+  .premium-compare{background:transparent;border:0;box-shadow:none;display:grid;gap:14px}
+  .compare-row{grid-template-columns:1fr 1fr;border:1px solid rgba(20,92,242,.10);border-radius:22px;background:rgba(255,255,255,.94);overflow:hidden}
+  .compare-row.premium-row{background:linear-gradient(180deg,#fbfdff,#f7fbff)}
+  .compare-feature{grid-column:1 / -1;border-bottom:1px solid rgba(20,92,242,.07)}
+  .compare-status{border-left:0;padding-top:15px!important;padding-bottom:15px!important}
+  .compare-status:nth-child(3){border-left:1px solid rgba(20,92,242,.07)}
+  .compare-status:before{display:block;font-size:.68rem;font-weight:900;color:#7a8798;text-transform:uppercase;letter-spacing:.07em;margin-right:2px}
+  .compare-status:nth-child(2):before{content:'14-Day Trial'}
+  .compare-status:nth-child(3):before{content:'Rebatify+'}
+  .compare-status{flex-wrap:wrap}
+}
+@media(max-width:560px){
+  .compare-row{grid-template-columns:1fr}
+  .compare-feature{grid-column:1}
+  .compare-status:nth-child(3){border-left:0;border-top:1px solid rgba(20,92,242,.06)}
+  .plan-card{padding:20px}
+}
