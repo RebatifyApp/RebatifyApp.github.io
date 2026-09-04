@@ -374,3 +374,39 @@ button .rebatify-plus-text{
 nav .rebatify-plus-text{
   text-shadow:none !important;
 }
+
+
+/* Unified Rebatify+ bubble style:
+   bright lime premium bubble with dark navy text */
+.plus-badge,
+.plus-plan-pill,
+.compare-plan-title.plus-title > span,
+.screen-card .tier-badge.plus,
+.tier-badge.plus{
+  background:linear-gradient(135deg,#78ef28 0%,#a8ff4f 58%,#c9ff7b 100%) !important;
+  color:#07132e !important;
+  border:1px solid rgba(99,214,47,.35) !important;
+  box-shadow:
+    0 10px 24px rgba(99,214,47,.22),
+    inset 0 1px 0 rgba(255,255,255,.28) !important;
+  text-shadow:none !important;
+  font-weight:950 !important;
+}
+
+/* Rebatify+ text inside lime bubbles must stay dark for readability. */
+.plus-badge .rebatify-plus-text,
+.plus-plan-pill .rebatify-plus-text,
+.compare-plan-title.plus-title .rebatify-plus-text,
+.screen-card .tier-badge.plus .rebatify-plus-text,
+.tier-badge.plus .rebatify-plus-text{
+  color:#07132e !important;
+  font-weight:950 !important;
+}
+
+/* Slightly more pill-like proportions for the prominent premium badges. */
+.plus-badge,
+.plus-plan-pill,
+.screen-card .tier-badge.plus,
+.tier-badge.plus{
+  border-radius:999px !important;
+}
