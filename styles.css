@@ -585,3 +585,16 @@ nav .rebatify-plus-text{
 .phone-shot::after{
   top:18px !important;
 }
+
+
+/* Clean Dynamic Island pass:
+   previews are freshly rendered with a small native top-safe offset.
+   No pixel shifting or duplicated status-bar content. */
+.phone-frame::before,
+.phone-shot::before{
+  top:12px !important;
+}
+.phone-frame::after,
+.phone-shot::after{
+  top:18px !important;
+}
