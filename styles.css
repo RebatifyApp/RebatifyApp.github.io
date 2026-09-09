@@ -382,3 +382,28 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 @media(max-width:760px){
   .plus-cta{white-space:normal;row-gap:4px}
 }
+
+
+/* Build 19 - stronger bottom-chip centering and Rebatify+ wording consistency */
+.float-chip.b{
+  left:50% !important;
+  right:auto !important;
+  bottom:14px !important;
+  transform:translateX(-50%) !important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  width:max-content;
+  max-width:92%;
+  margin:0 auto;
+}
+@media(max-width:760px){
+  .float-chip.b{
+    left:50% !important;
+    right:auto !important;
+    bottom:14px !important;
+    transform:translateX(-50%) !important;
+    max-width:88%;
+  }
+}
