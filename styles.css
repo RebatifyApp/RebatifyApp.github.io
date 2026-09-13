@@ -211,7 +211,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
   .screenshot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .screenshot-grid .screen-card,.screenshot-grid .screen-card:nth-child(4),.screenshot-grid .screen-card:nth-child(5){grid-column:auto}
 }
-@media(max-width:900px){
+@media(max-width:760px){
   .plans-wrap{grid-template-columns:1fr}
   .compare-head{display:none}
   .premium-compare{background:transparent;border:0;box-shadow:none;display:grid;gap:14px}
