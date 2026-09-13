@@ -57,7 +57,7 @@ nav a{color:#314660;font-weight:700;font-size:.94rem}
 .eyebrow,.pill,.tier-badge,.plan-pill,.plus-badge,.brand-tagline-badge,.compare-plan-title span,.pluspill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;font-weight:800}
 .eyebrow{padding:8px 13px;background:rgba(20,92,242,.08);border:1px solid rgba(20,92,242,.15);color:var(--deep);font-size:.86rem}
 .plus-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px rgba(59,158,74,.12)}
-h1{margin:18px 0 18px;font-size:clamp(2.85rem,6vw,5.25rem);line-height:1.01;letter-spacing:-.058em}
+h1{margin:30px 0 18px;font-size:clamp(2.85rem,6vw,5.25rem);line-height:1.01;letter-spacing:-.058em}
 h2{margin:0 0 14px;font-size:clamp(1.8rem,3vw,2.55rem);line-height:1.13;letter-spacing:-.03em}
 h3{margin:0 0 9px;font-size:1.16rem}
 .lead{max-width:790px;color:var(--muted);font-size:1.15rem}
