@@ -1,5 +1,6 @@
 (function(){
   'use strict';
+  window.__REBATIFY_ADMIN_STARTED=true;
   const endpoint=(window.REBATIFY_BETA_ENDPOINT||'').trim();
   const loading=document.getElementById('adminLoading');
   const app=document.getElementById('adminApp');
@@ -9,6 +10,21 @@
   let sessionToken='';
   let state={metrics:{},applications:[],feedback:[],testers:[]};
   let activeView='overview';
+
+  function showFatal(message,detail){
+    window.__REBATIFY_ADMIN_READY=true;
+    const safeMessage=String(message||'The admin portal could not open.');
+    const safeDetail=String(detail||'');
+    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png" alt=""></div>'+
+      '<div style="max-width:560px;text-align:center;padding:0 24px">'+
+      '<h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not open</h2>'+
+      '<p style="margin:0 0 8px;color:#5f6f86;font-weight:700">'+esc(safeMessage)+'</p>'+
+      (safeDetail?'<p style="margin:0 0 18px;color:#7c8798;font-size:.92rem">'+esc(safeDetail)+'</p>':'')+
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'+
+      '<button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button>'+
+      '<a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a>'+
+      '</div></div>';
+  }
 
   function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function parseHash(){
@@ -73,24 +89,24 @@
   }
 
   async function init(){
-    if(!endpoint || endpoint.indexOf('script.google.com')===-1){loading.innerHTML='<div class="admin-alert admin-alert-warning">The Rebatify admin portal has not been connected to its backend.</div>';return;}
+    if(!endpoint || endpoint.indexOf('script.google.com')===-1){showFatal('The Rebatify admin portal has not been connected to its backend.');return;}
     sessionToken=parseHash(); if(!sessionToken){fail();return;}
     try{
-      const auth=await jsonp('adminSession');
+      const auth=await jsonp('adminsession');
       if(!auth||!auth.authenticated){fail();return;}
       document.getElementById('adminIdentityEmail').textContent=auth.email||'Administrator';
       document.getElementById('adminPasswordToken').value=sessionToken;
       document.getElementById('adminPasswordForm').action=endpoint;
       if(auth.mustChangePassword){passwordGate.hidden=false;portalContent.classList.add('admin-content-locked');}
-      loading.hidden=true;app.hidden=false;
+      loading.hidden=true;app.hidden=false;window.__REBATIFY_ADMIN_READY=true;
       await loadData();
-    }catch(err){fail();}
+    }catch(err){showFatal('The browser could not verify your administrator session.', err && err.message ? err.message : 'Backend session check failed.');}
   }
 
   async function loadData(silent){
     try{
       if(!silent)document.getElementById('adminRefresh').classList.add('is-spinning');
-      const data=await jsonp('adminData');
+      const data=await jsonp('admindata');
       if(!data||data.authenticated===false){fail();return;}
       if(data.ok===false){showToast(data.message||'Could not load admin data.','error');return;}
       state=data;
@@ -210,7 +226,7 @@
 
   async function performAction(task,args,successMessage){
     try{
-      const data=await jsonp('adminAction',Object.assign({task},args||{}));
+      const data=await jsonp('adminaction',Object.assign({task},args||{}));
       if(!data||!data.ok){showToast((data&&data.message)||'That action could not be completed.','error');return false;}
       showToast(successMessage||data.message||'Saved.');
       await loadData(true);return true;
@@ -248,7 +264,7 @@
   document.getElementById('adminDrawerBackdrop').addEventListener('click',closeDrawer);
   document.getElementById('adminRefresh').addEventListener('click',()=>loadData());
   document.getElementById('adminMenuToggle').addEventListener('click',()=>document.body.classList.toggle('admin-nav-open'));
-  document.getElementById('adminLogout').addEventListener('click',async()=>{try{await jsonp('adminAction',{task:'logout'});}catch(e){}localStorage.removeItem('rebatifyAdminSession');location.replace('admin-login.html');});
+  document.getElementById('adminLogout').addEventListener('click',async()=>{try{await jsonp('adminaction',{task:'logout'});}catch(e){}localStorage.removeItem('rebatifyAdminSession');location.replace('admin-login.html');});
 
   ['applicationSearch','applicationStatusFilter','applicationPlatformFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderApplications));
   ['testerSearch','testerAccessFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderTesters));
