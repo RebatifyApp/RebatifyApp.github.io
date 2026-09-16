@@ -35,6 +35,10 @@ import {
 
 'use strict';
 
+window.__REBATIFY_ADMIN_BOOT = window.__REBATIFY_ADMIN_BOOT || {};
+window.__REBATIFY_ADMIN_BOOT.moduleLoaded = true;
+
+
 const loading = document.getElementById('adminLoading');
 const app = document.getElementById('adminApp');
 const toast = document.getElementById('adminToast');
@@ -42,6 +46,19 @@ const portalContent = document.getElementById('adminPortalContent');
 const passwordGate = document.getElementById('adminPasswordGate');
 let activeView = 'overview';
 let initialized = false;
+const loadingStatus = document.getElementById('adminLoadingStatus');
+function setLoadingStatus(message){ if(loadingStatus) loadingStatus.textContent = message; }
+function withTimeout(promise, ms, label){
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error((label || 'Request') + ' timed out.');
+      error.code = 'rebatify/timeout';
+      reject(error);
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 let state = {
   metrics: {},
   recentApplications: [],
@@ -290,22 +307,55 @@ async function refreshActiveView(){
 }
 
 async function init(user){
+  document.getElementById('adminIdentityEmail').textContent=user.email||adminEmail;
+  if(passwordGate)passwordGate.remove();
+  if(portalContent)portalContent.classList.remove('admin-content-locked');
+
+  // Never make the whole portal wait for Firestore. Authentication opens the shell;
+  // dashboard data loads on demand in the background.
+  loading.hidden=true;
+  app.hidden=false;
+
   try{
-    document.getElementById('adminIdentityEmail').textContent=user.email||adminEmail;
-    if(passwordGate)passwordGate.remove();
-    if(portalContent)portalContent.classList.remove('admin-content-locked');
-    await loadOverview();
-    loading.hidden=true;app.hidden=false;
-  }catch(error){showFatal('The beta administration data could not be loaded.',friendlyFirebaseError(error));}
+    await withTimeout(loadOverview(), 12000, 'Dashboard data');
+  }catch(error){
+    const detail = error && error.code === 'rebatify/timeout'
+      ? 'Firebase Authentication succeeded, but Firestore did not respond within 12 seconds. Check that the Firestore database exists and the Rebatify security rules are published.'
+      : friendlyFirebaseError(error);
+    showToast('Admin opened, but dashboard data could not load. ' + detail, 'error');
+    console.error('Rebatify admin overview load failed:', error);
+  }
 }
 
-if(!firebaseConfigured){showFatal('The Rebatify Beta data service has not been configured yet.','Missing: '+firebaseMissingFields.join(', '));}
-else{
+if(!firebaseConfigured){
+  window.__REBATIFY_ADMIN_BOOT.authResolved = true;
+  showFatal('The Rebatify Beta data service has not been configured yet.','Missing: '+firebaseMissingFields.join(', '));
+}else{
+  setLoadingStatus('Restoring your secure administrator session…');
+  const authTimer=setTimeout(()=>{
+    if(initialized)return;
+    initialized=true;
+    window.__REBATIFY_ADMIN_BOOT.authResolved = false;
+    showFatal('Administrator sign-in did not finish.','Firebase Authentication did not restore a session within 12 seconds. Return to Sign In, sign in again, and retry.');
+  },12000);
   onAuthStateChanged(auth,async user=>{
     if(initialized)return;
     initialized=true;
-    if(!user||!isAdminUser(user)){await signOut(auth).catch(()=>{});location.replace('admin-login.html?error=access');return;}
+    clearTimeout(authTimer);
+    window.__REBATIFY_ADMIN_BOOT.authResolved = true;
+    if(!user||!isAdminUser(user)){
+      await signOut(auth).catch(()=>{});
+      location.replace('admin-login.html?error=access');
+      return;
+    }
+    setLoadingStatus('Opening your admin workspace…');
     await init(user);
+  }, error=>{
+    if(initialized)return;
+    initialized=true;
+    clearTimeout(authTimer);
+    window.__REBATIFY_ADMIN_BOOT.authResolved = true;
+    showFatal('Firebase Authentication could not initialize.',friendlyFirebaseError(error));
   });
 }
 
