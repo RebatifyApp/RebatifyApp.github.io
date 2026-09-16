@@ -563,3 +563,6 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 
 /* Build 46 - overdue task enforcement visibility */
 .admin-task-attention-row.is-overdue{border-color:rgba(171,39,47,.24);background:rgba(255,242,242,.72)}.admin-task-attention-row.is-overdue .admin-task-attention-due{color:#9d2831}.admin-task-attention-row.is-overdue .admin-task-attention-due strong{font-size:.72rem;letter-spacing:.04em}
+
+/* Build 47 - task removal controls */
+.admin-task-remove-button{color:#9d2f38!important;border-color:rgba(183,48,58,.22)!important;background:rgba(255,246,246,.95)!important}.admin-task-remove-button:hover{background:#fff0f0!important;border-color:rgba(183,48,58,.34)!important}
