@@ -1,15 +1,22 @@
-import { firebaseConfigured, firebaseMissingFields, auth, friendlyFirebaseError } from './firebase-core.js';
+import { firebaseConfigured, firebaseMissingFields, auth } from './firebase-core.js';
 import {
   onAuthStateChanged,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
+  signInWithCustomToken,
   signOut
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 const form = document.getElementById('portalLoginForm');
+const codeForm = document.getElementById('portalCodeForm');
 const errorBox = document.getElementById('portalLoginError');
 const notConnected = document.getElementById('portalNotConnected');
-const resetButton = document.getElementById('portalForgotPassword');
+const emailInput = document.getElementById('portalEmail');
+const codeInput = document.getElementById('portalCode');
+const codeSent = document.getElementById('portalCodeSent');
+const useDifferent = document.getElementById('portalUseDifferentEmail');
+const settings = window.REBATIFY_BETA_SETTINGS || {};
+const workerUrl = String(settings.emailWorkerUrl || '').trim().replace(/\/+$/, '');
+let pendingEmail = '';
+let isCompletingSignIn = false;
 
 function showError(message, tone='error') {
   if (!errorBox) return;
@@ -18,45 +25,72 @@ function showError(message, tone='error') {
   errorBox.hidden = false;
 }
 function clearError() { if (errorBox) errorBox.hidden = true; }
+function validWorkerUrl(){
+  try { const u = new URL(workerUrl); return u.protocol === 'https:'; } catch (_) { return false; }
+}
+async function workerPost(payload){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    let data = {};
+    try { data = await response.json(); } catch (_) {}
+    if (!response.ok || data.ok !== true) {
+      const error = new Error(data.error || 'The Rebatify Beta Program sign-in service could not complete this request.');
+      error.retryAfter = data.retryAfter || 0;
+      throw error;
+    }
+    return data;
+  } finally { clearTimeout(timer); }
+}
 
-if (!firebaseConfigured) {
+if (!firebaseConfigured || !validWorkerUrl()) {
   if (notConnected) {
     notConnected.hidden = false;
-    notConnected.textContent = 'The tester portal is not connected yet. Please check back shortly.';
+    notConnected.textContent = 'The Rebatify Beta Program Portal sign-in service is not connected yet. Please check back shortly.';
   }
   if (form) form.querySelector('button[type="submit"]').disabled = true;
-  if (resetButton) resetButton.disabled = true;
-  console.warn('Missing beta service configuration:', firebaseMissingFields);
+  console.warn('Missing beta portal configuration:', firebaseMissingFields);
 } else {
   onAuthStateChanged(auth, user => {
-    if (user && location.pathname.endsWith('/beta-login.html')) {
+    if (user && !isCompletingSignIn && location.pathname.endsWith('/beta-login.html')) {
       location.replace('beta-portal.html');
     }
   });
 }
 
 const params = new URLSearchParams(location.search);
-if (params.get('error') === 'access') showError('Your beta portal access is currently disabled.');
-if (params.get('error') === 'session') showError('Please sign in to continue.');
+const prefill = String(params.get('email') || '').trim().toLowerCase();
+if (prefill && emailInput) emailInput.value = prefill;
+if (params.get('error') === 'access') showError('Your Rebatify Beta Program Portal access is currently disabled.');
+if (params.get('error') === 'session') showError('Your portal session ended. Enter your approved beta email to sign in again.');
 
 if (form) {
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (!firebaseConfigured) return;
+    if (!firebaseConfigured || !validWorkerUrl()) return;
     if (!form.checkValidity()) { form.reportValidity(); return; }
     clearError();
-    const button = form.querySelector('button[type="submit"]');
+    const button = document.getElementById('portalSendCode');
     const original = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = 'Signing In…';
+    button.innerHTML = 'Sending Code…';
+    pendingEmail = emailInput.value.trim().toLowerCase();
     try {
-      const email = document.getElementById('portalEmail').value.trim().toLowerCase();
-      const password = document.getElementById('portalPassword').value;
-      await signInWithEmailAndPassword(auth, email, password);
-      location.replace('beta-portal.html');
+      const result = await workerPost({ type: 'beta-login-request', email: pendingEmail });
+      form.hidden = true;
+      codeForm.hidden = false;
+      codeSent.textContent = `If ${pendingEmail} has active Rebatify Beta Program access, a 6-digit verification code has been sent. The code expires in 10 minutes.`;
+      codeInput.value = '';
+      codeInput.focus();
+      if (result.retryAfter) showError(`A verification code was sent recently. Wait ${result.retryAfter} seconds before requesting another.`, 'success');
     } catch (error) {
-      try { await signOut(auth); } catch (_) {}
-      showError(friendlyFirebaseError(error));
+      showError(error.message || 'We could not send a verification code. Please try again.');
     } finally {
       button.disabled = false;
       button.innerHTML = original;
@@ -64,26 +98,43 @@ if (form) {
   });
 }
 
-if (resetButton) {
-  resetButton.addEventListener('click', async () => {
-    if (!firebaseConfigured) return;
+if (codeForm) {
+  codeForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!codeForm.checkValidity()) { codeForm.reportValidity(); return; }
     clearError();
-    const email = document.getElementById('portalEmail').value.trim().toLowerCase();
-    if (!email) {
-      showError('Enter your approved beta email address first, then choose Reset Password.');
-      return;
-    }
-    resetButton.disabled = true;
-    const original = resetButton.textContent;
-    resetButton.textContent = 'Sending…';
+    const button = document.getElementById('portalVerifyCode');
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = 'Verifying…';
     try {
-      await sendPasswordResetEmail(auth, email);
-      showError('If that email has beta access, a password-reset message has been sent. Open the email, set your password, then return here to sign in.', 'success');
+      const result = await workerPost({
+        type: 'beta-login-verify',
+        email: pendingEmail,
+        code: String(codeInput.value || '').trim()
+      });
+      if (!result.customToken) throw new Error('The sign-in service did not return a valid session.');
+      isCompletingSignIn = true;
+      try { await signOut(auth); } catch (_) {}
+      await signInWithCustomToken(auth, result.customToken);
+      location.replace('beta-portal.html');
     } catch (error) {
-      showError(friendlyFirebaseError(error));
+      isCompletingSignIn = false;
+      showError(error.message || 'That verification code could not be verified.');
     } finally {
-      resetButton.disabled = false;
-      resetButton.textContent = original;
+      button.disabled = false;
+      button.innerHTML = original;
     }
+  });
+}
+
+if (useDifferent) {
+  useDifferent.addEventListener('click', () => {
+    clearError();
+    pendingEmail = '';
+    codeInput.value = '';
+    codeForm.hidden = true;
+    form.hidden = false;
+    emailInput.focus();
   });
 }

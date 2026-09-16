@@ -27,7 +27,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  Timestamp
+  deleteField
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 'use strict';
@@ -195,7 +195,7 @@ function testerFiltered(){
 }
 function renderTesters(){
   const data=testerFiltered();const body=document.getElementById('testersTableBody');
-  body.innerHTML=data.map(t=>`<tr><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${esc(t.lastLogin?relativeDate(t.lastLogin):'Never')}</td><td>Email / Password</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`).join('');
+  body.innerHTML=data.map(t=>`<tr><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${esc(t.lastLogin?relativeDate(t.lastLogin):'Never')}</td><td>Email verification code</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`).join('');
   document.getElementById('testersEmpty').hidden=data.length>0;
 }
 function feedbackFiltered(){
@@ -238,7 +238,7 @@ function applicationActionButtons(a){
     if(status!=='Waitlist')buttons.push(btn('','waitlist','Waitlist'));
     if(status!=='Declined')buttons.push(btn('danger','decline','Decline'));
   }else if(status==='Approved'){
-    buttons.push(btn('approve','resend','Resend Invitation'));
+    buttons.push(btn('approve','resend','Resend Portal Invitation'));
     buttons.push(btn('danger-soft','inactive','Disable Access'));
   }else if(status==='Active'){
     buttons.push(btn('danger-soft','inactive','Disable Access'));
@@ -258,7 +258,7 @@ function openTesterRecord(t){
       ? `<button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button>`
       : `<button class="admin-action-button approve" data-app-action="active" data-row="${esc(a.id)}" type="button">Enable Access</button>`)
     : '';
-  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email / Password</strong></div></div>${action?`<div class="admin-drawer-actions">${action}</div>`:''}</div>`);
+  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div></div>${action?`<div class="admin-drawer-actions">${action}</div>`:''}</div>`);
 }
 function openFeedbackRecord(f){
   const statuses=['New','Reviewing','Planned','Fixed','Closed','Declined'];
@@ -297,14 +297,14 @@ async function saveEmailServiceSettings(){
   emailWorkerEndpoint=value;
   renderEmailServiceSettings();
 }
-async function sendWorkerEmail(type,a,inviteId=''){
+async function sendWorkerEmail(type,a){
   if(!emailWorkerEndpoint){const err=new Error('Connect the Cloudflare email Worker in Admin Overview before sending invitations.');err.code='rebatify/email-not-configured';throw err;}
   if(!auth.currentUser){const err=new Error('Administrator session expired.');err.code='auth/invalid-credential';throw err;}
   const token=await auth.currentUser.getIdToken();
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),20000);
   try{
-    const response=await fetch(emailWorkerEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,name:a.fullName||'',email:a.email||'',platform:a.platform||'',inviteId}),signal:controller.signal});
+    const response=await fetch(emailWorkerEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,name:a.fullName||'',email:a.email||'',platform:a.platform||''}),signal:controller.signal});
     let payload={};try{payload=await response.json();}catch(_){}
     if(!response.ok||payload.ok!==true){const err=new Error(payload.error||'The Rebatify email service could not send this message.');err.code='rebatify/email-send-failed';throw err;}
     return payload;
@@ -323,37 +323,47 @@ async function callWorkerAdminAction(type,payload={}){
     return result;
   }finally{clearTimeout(timer);}
 }
-function newInviteId(){
-  const bytes=crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
-}
-async function createPendingInvite(a){
-  if(a.inviteId)await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
-  const inviteId=newInviteId();
-  const expiresAt=Timestamp.fromDate(new Date(Date.now()+7*24*60*60*1000));
-  await setDoc(doc(db,'betaInvites',inviteId),{
-    applicationId:a.id,
-    fullName:a.fullName||'',
-    email:String(a.email||'').toLowerCase(),
-    platform:a.platform||'',
-    status:'Pending',
-    createdAt:serverTimestamp(),
-    expiresAt
+async function provisionTesterAccess(a){
+  const result = await callWorkerAdminAction('admin-provision-beta-user', {
+    email: String(a.email || '').toLowerCase(),
+    name: a.fullName || '',
+    platform: a.platform || ''
   });
+  const uid = String(result.uid || '').trim();
+  if (!uid) throw new Error('The Rebatify admin service did not return a tester account ID.');
+
+  const userRef = doc(db, 'betaUsers', uid);
+  const existing = await getDoc(userRef);
+  const existingData = existing.exists() ? existing.data() : {};
+  await setDoc(userRef, {
+    name: a.fullName || '',
+    email: String(a.email || '').toLowerCase(),
+    platform: a.platform || '',
+    status: 'Approved',
+    accessStatus: 'Enabled',
+    applicationId: a.id,
+    authMethod: 'Email verification code',
+    createdAt: existingData.createdAt || serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastLogin: existingData.lastLogin || null
+  }, { merge: true });
+
+  if (a.inviteId) await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
   await updateDoc(doc(db,'betaApplications',a.id),{
     status:'Approved',
-    portalAccess:'Pending Activation',
-    testerUid:'',
-    inviteId,
+    portalAccess:'Enabled',
+    testerUid:uid,
+    inviteId:deleteField(),
     inviteEmailStatus:'Sending',
     lastUpdated:serverTimestamp()
   });
-  a.inviteId=inviteId;
-  a.portalAccess='Pending Activation';
-  a.testerUid='';
+  a.status='Approved';
+  a.portalAccess='Enabled';
+  a.testerUid=uid;
+  a.inviteId='';
   a.inviteEmailStatus='Sending';
   a.lastUpdated=new Date();
-  return inviteId;
+  return uid;
 }
 async function queueDecisionEmail(a,status){
   if(!emailAutomationEnabled||!emailWorkerEndpoint)return false;
@@ -364,11 +374,10 @@ async function queueDecisionEmail(a,status){
 
 async function approveApplicant(a){
   const old=a.status;
-  const inviteId=await createPendingInvite(a);
-  a.status='Approved';
+  await provisionTesterAccess(a);
   if(old!=='Approved')updateMetricTransition(old,'Approved',a.platform);
   try{
-    await sendWorkerEmail('invite',a,inviteId);
+    await sendWorkerEmail('invite',a);
     await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Sent',inviteEmailSentAt:serverTimestamp(),lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
     a.inviteEmailStatus='Sent';a.inviteEmailSentAt=new Date();a.lastDecisionEmail=new Date();
   }catch(error){
@@ -392,9 +401,9 @@ async function statusAction(a,newStatus,portalAccess){
   a.status=newStatus;a.portalAccess=portalAccess;a.lastUpdated=new Date();updateMetricTransition(old,newStatus,a.platform);
 }
 async function resendInvite(a){
-  const inviteId=await createPendingInvite(a);
+  if(!a.testerUid || a.portalAccess!=='Enabled') await provisionTesterAccess(a);
   try{
-    await sendWorkerEmail('invite',a,inviteId);
+    await sendWorkerEmail('invite',a);
     await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Sent',inviteEmailSentAt:serverTimestamp(),lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
     a.inviteEmailStatus='Sent';a.inviteEmailSentAt=new Date();a.lastDecisionEmail=new Date();
   }catch(error){
@@ -508,10 +517,10 @@ document.addEventListener('click',async e=>{
     const notification=(emailAutomationEnabled&&emailWorkerEndpoint)?' and notify them':'';
     const deleteNote=' This also deletes the tester portal profile and Firebase Authentication login for this email so the address can be used again later.';
     const confirmation={
-      approve:'Approve this tester and send the branded Rebatify beta invitation?',
+      approve:'Approve this tester, enable passwordless Beta Program Portal access, and send the branded invitation?',
       waitlist:'Move this applicant to the waitlist'+notification+'?',
       decline:'Decline this application'+notification+'?',
-      resend:'Send a fresh branded Rebatify beta invitation? The previous invitation link will stop working.',
+      resend:'Send the branded Rebatify Beta Program Portal invitation again?',
       inactive:'Disable this tester’s portal access'+notification+'?',
       active:'Enable access and mark this tester active?',
       delete:'Permanently delete this Rebatify Beta Program application?'+deleteNote
@@ -527,7 +536,7 @@ document.addEventListener('click',async e=>{
       if(task==='resend')await resendInvite(a);
       if(task==='delete')await deleteApplication(a);
       if(task!=='delete'){if(state.loaded.applications)renderApplications();renderOverview();}
-      const messages={approve:'Tester approved and the branded Rebatify invitation was sent.',resend:'Branded Rebatify invitation sent. The previous link was replaced.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application, tester profile, and login deleted.'};
+      const messages={approve:'Tester approved, passwordless portal access enabled, and the branded invitation was sent.',resend:'Branded Rebatify Beta Program Portal invitation sent.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application, tester profile, and login deleted.'};
       showToast(messages[task]||'Tester record updated.');closeDrawer();
     }catch(err){
       if(task==='approve'&&err&&err.rebatifyApprovalCompleted){

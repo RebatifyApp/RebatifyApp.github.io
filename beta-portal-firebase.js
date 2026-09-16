@@ -38,16 +38,16 @@ function renderProgramTimeline(profile){
   if(!timeline)return;
   const ios=profile.platform==='iOS';
   const items=ios ? [
-    ['complete','Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal account is active.'],
+    ['complete','Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.'],
     ['now','Prepare your iPhone','Install Apple’s <strong>TestFlight</strong> app from the App Store now so you are ready when the Rebatify build becomes available.'],
     ['waiting','Watch for your TestFlight invitation','When the iOS beta build is ready for you, Apple/TestFlight will send an invitation to your approved beta email. Open that invitation on your iPhone and accept it in TestFlight.'],
-    ['next','Install the Rebatify beta','After accepting the invitation, open TestFlight and install Rebatify. New beta builds will also appear in TestFlight when they are released.'],
+    ['next','Install Rebatify and create your app account','After accepting the invitation, open TestFlight and install Rebatify. Create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Future beta builds will appear in TestFlight.'],
     ['ongoing','Test real workflows and send feedback','Use Rebatify with real rebate activity when possible. Check Orders, Order Details, Reports, notifications, and other workflows, then use this portal whenever you find a bug, confusing experience, or useful suggestion.']
   ] : [
-    ['complete','Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal account is active.'],
+    ['complete','Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.'],
     ['now','Prepare your Android phone','Make sure the Google Play Store is signed into the <strong>Google Account that matches your approved beta email</strong>. This is the account that will be eligible for the closed test.'],
     ['waiting','Watch for your Google Play testing link','Google Play closed testing uses an opt-in link. When the Android beta build is ready, <strong>Rebatify will email you the Google Play testing link</strong>. Open it on your Android phone and opt in as a tester.'],
-    ['next','Install Rebatify from Google Play','After opting in, use the Google Play page to install Rebatify. Future test updates will be delivered through Google Play.'],
+    ['next','Install Rebatify and create your app account','After opting in, install Rebatify from Google Play. Create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Future test updates will be delivered through Google Play.'],
     ['ongoing','Test real workflows and send feedback','Use Rebatify with real rebate activity when possible. Check Orders, Order Details, Reports, notifications, and other workflows, then use this portal whenever you find a bug, confusing experience, or useful suggestion.']
   ];
   timeline.innerHTML=items.map((item,index)=>timelineStep(index+1,item[0],item[1],item[2])).join('');
@@ -64,6 +64,20 @@ async function loadProfile(user) {
   if (!snap.exists()) throw new Error('access');
   const data = snap.data();
   if (data.accessStatus !== 'Enabled' || !['Approved','Active'].includes(data.status)) throw new Error('access');
+
+  if (data.status === 'Approved') {
+    const profileUpdate = { status: 'Active', updatedAt: serverTimestamp(), lastLogin: serverTimestamp() };
+    await updateDoc(ref, profileUpdate);
+    if (data.applicationId) {
+      await updateDoc(doc(db, 'betaApplications', data.applicationId), {
+        status: 'Active',
+        portalAccess: 'Enabled',
+        testerUid: user.uid,
+        lastUpdated: serverTimestamp()
+      }).catch(() => {});
+    }
+    return { id: snap.id, ...data, status: 'Active', lastLogin: new Date() };
+  }
 
   const lastLogin = timestampToDate(data.lastLogin);
   const stale = !lastLogin || (Date.now() - lastLogin.getTime()) > 12 * 60 * 60 * 1000;

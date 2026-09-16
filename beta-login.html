@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -7,38 +6,41 @@
 <meta content="#145cf2" name="theme-color"/>
 <meta content="noindex,nofollow,noarchive,nosnippet" name="robots"/>
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
-<title>Rebatify Beta Program Portal — Sign In</title>
+<title>Sign in to the Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=40" rel="stylesheet"/>
+<link href="styles.css?v=41" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <main class="portal-auth-shell">
 <section class="portal-auth-card">
 <a aria-label="Back to Rebatify Beta Program" class="portal-logo" href="beta.html"><img alt="Rebatify app icon" src="app-icon.png"/></a>
-<div class="portal-kicker">Beta Beta Program Portal</div>
-<h1>Welcome back.</h1>
-<p class="portal-auth-lead">Approved Rebatify beta testers can sign in with the email address from their application after setting a password from the approval email.</p>
-<div class="portal-alert error" hidden="" id="portalLoginError"></div>
-<div class="portal-alert warning" hidden="" id="portalNotConnected">The tester portal has not been connected to the beta backend yet.</div>
+<div class="portal-kicker">Rebatify Beta Program Portal</div>
+<h1>Sign in to the Rebatify Beta Program Portal</h1>
+<p class="portal-auth-lead">Use the same email address that was approved for the Rebatify Beta Program. We will email you a 6-digit verification code. There is no separate Beta Program password to remember.</p>
+<div class="portal-alert error" hidden id="portalLoginError"></div>
+<div class="portal-alert warning" hidden id="portalNotConnected">The tester portal has not been connected to the beta backend yet.</div>
 <form class="portal-login-form" id="portalLoginForm" method="post">
-
 <div class="beta-field">
-<label for="portalEmail">Email address</label>
-<input autocomplete="username" id="portalEmail" name="email" placeholder="you@example.com" required="" type="email"/>
+<label for="portalEmail">Approved beta email</label>
+<input autocomplete="email" id="portalEmail" name="email" placeholder="you@example.com" required type="email"/>
 </div>
+<button class="beta-submit" id="portalSendCode" type="submit">Send Verification Code <span aria-hidden="true">→</span></button>
+</form>
+<form class="portal-login-form portal-code-form" hidden id="portalCodeForm" method="post">
+<div class="portal-code-sent" id="portalCodeSent"></div>
 <div class="beta-field">
-<label for="portalPassword">Password</label>
-<input autocomplete="current-password" id="portalPassword" name="password" placeholder="Your password" required="" type="password"/>
+<label for="portalCode">6-digit verification code</label>
+<input autocomplete="one-time-code" id="portalCode" inputmode="numeric" maxlength="6" minlength="6" pattern="[0-9]{6}" placeholder="123456" required type="text"/>
 </div>
-<button class="beta-submit" type="submit">Sign In <span aria-hidden="true">→</span></button><button class="admin-text-button" id="portalForgotPassword" type="button">Reset Password</button>
+<button class="beta-submit" id="portalVerifyCode" type="submit">Verify &amp; Sign In <span aria-hidden="true">→</span></button>
+<button class="admin-text-button" id="portalUseDifferentEmail" type="button">Use a different email</button>
 </form>
 <div class="portal-auth-footer">
-<p>Need access or password help? <a href="mailto:support.rebatifyapp@gmail.com">Contact Rebatify Support</a>.</p>
+<p>Need access help? <a href="mailto:support.rebatifyapp@gmail.com">Contact Rebatify Support</a>.</p>
 <a href="beta.html">← Back to beta information</a>
 </div>
 </section>
 </main>
-
-
-<script src="firebase-config.js?v=40"></script><script src="beta-login-firebase.js?v=40" type="module"></script></body>
+<script src="firebase-config.js?v=41"></script><script src="beta-login-firebase.js?v=41" type="module"></script>
+</body>
 </html>
