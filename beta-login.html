@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -8,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Sign in to the Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=50" rel="stylesheet"/>
+<link href="styles.css?v=51" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <main class="portal-auth-shell">
@@ -17,20 +18,20 @@
 <div class="portal-kicker">Rebatify Beta Program Portal</div>
 <h1>Sign in to the Rebatify Beta Program Portal</h1>
 <p class="portal-auth-lead">Use the same email address that was approved for the Rebatify Beta Program. We will email you a 6-digit verification code. There is no separate Beta Program password to remember.</p><p class="portal-auth-security-note">For security, Beta Program Portal sessions automatically end after 15 minutes of inactivity.</p>
-<div class="portal-alert error" hidden id="portalLoginError"></div>
-<div class="portal-alert warning" hidden id="portalNotConnected">The tester portal has not been connected to the beta backend yet.</div>
+<div class="portal-alert error" hidden="" id="portalLoginError"></div>
+<div class="portal-alert warning" hidden="" id="portalNotConnected">The tester portal has not been connected to the beta backend yet.</div>
 <form class="portal-login-form" id="portalLoginForm" method="post">
 <div class="beta-field">
 <label for="portalEmail">Approved beta email</label>
-<input autocomplete="email" id="portalEmail" name="email" placeholder="you@example.com" required type="email"/>
+<input autocomplete="email" id="portalEmail" name="email" placeholder="you@example.com" required="" type="email"/>
 </div>
 <button class="beta-submit" id="portalSendCode" type="submit">Send Verification Code <span aria-hidden="true">→</span></button>
 </form>
-<form class="portal-login-form portal-code-form" hidden id="portalCodeForm" method="post">
+<form class="portal-login-form portal-code-form" hidden="" id="portalCodeForm" method="post">
 <div class="portal-code-sent" id="portalCodeSent"></div>
 <div class="beta-field">
 <label for="portalCode">6-digit verification code</label>
-<input autocomplete="one-time-code" id="portalCode" inputmode="numeric" maxlength="6" minlength="6" pattern="[0-9]{6}" placeholder="123456" required type="text"/>
+<input autocomplete="one-time-code" id="portalCode" inputmode="numeric" maxlength="6" minlength="6" pattern="[0-9]{6}" placeholder="123456" required="" type="text"/>
 </div>
 <button class="beta-submit" id="portalVerifyCode" type="submit">Verify &amp; Sign In <span aria-hidden="true">→</span></button>
 <button class="admin-text-button" id="portalUseDifferentEmail" type="button">Use a different email</button>
@@ -41,6 +42,6 @@
 </div>
 </section>
 </main>
-<script src="firebase-config.js?v=50"></script><script src="beta-login-firebase.js?v=50" type="module"></script>
+<script src="firebase-config.js?v=51"></script><script src="beta-login-firebase.js?v=51" type="module"></script>
 </body>
 </html>
