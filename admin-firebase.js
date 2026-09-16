@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 58
+// Rebatify Beta Admin — Website Build 59
 import {
   firebaseConfigured,
   firebaseMissingFields,

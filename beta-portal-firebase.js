@@ -26,7 +26,7 @@ let activeTask = null;
 const taskBackdrop = document.getElementById('portalTaskBackdrop');
 const taskSubmit = document.getElementById('portalTaskSubmit');
 
-const PORTAL_INACTIVITY_MS = 15 * 60 * 1000;
+const PORTAL_INACTIVITY_MS = 6 * 60 * 60 * 1000;
 const PORTAL_ACTIVITY_KEY = 'rebatifyBetaPortalLastActivity';
 let inactivityTimer = null;
 let inactivityStarted = false;

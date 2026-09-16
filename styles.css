@@ -911,7 +911,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
 }
 
 
-/* Build 58 — clarify that Beta Program progression is controlled by Rebatify, not by shortcut buttons */
+/* Build 59 — Beta Program portal timeout updated to 6 hours; prior progression styling preserved */
 .portal-progress-notice{display:grid;grid-template-columns:42px minmax(0,1fr);gap:13px;align-items:start;margin:-2px 0 18px;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,rgba(20,92,242,.055),rgba(59,158,74,.045));border:1px solid rgba(20,92,242,.12);box-shadow:0 10px 28px rgba(8,34,92,.045)}
 .portal-progress-notice-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#145cf2,#19a5a8);color:#fff;font-size:.9rem;font-weight:950;box-shadow:0 8px 18px rgba(20,92,242,.16)}
 .portal-progress-notice strong{display:block;color:#19324f;font-size:.88rem;font-weight:900;line-height:1.35;margin-top:1px}
