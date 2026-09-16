@@ -422,6 +422,11 @@ async function deleteApplication(a){
 
 
 async function refreshActiveView(){
+  if(!isAdminUser(auth.currentUser)){
+    showToast('Your administrator session changed. Sign in to the Rebatify Beta Program Admin again.','error');
+    setTimeout(()=>location.replace('admin-login.html?error=access'),700);
+    return;
+  }
   document.getElementById('adminRefresh').classList.add('is-spinning');
   try{
     await loadOverview();
