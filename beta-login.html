@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#145cf2">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Rebatify Beta Tester Portal — Sign In</title>
+  <link rel="icon" href="app-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="portal-body">
+  <main class="portal-auth-shell">
+    <section class="portal-auth-card">
+      <a class="portal-logo" href="beta.html" aria-label="Back to Rebatify Beta"><img src="app-icon.png" alt="Rebatify app icon"></a>
+      <div class="portal-kicker">Beta Tester Portal</div>
+      <h1>Welcome back.</h1>
+      <p class="portal-auth-lead">Approved Rebatify beta testers can sign in using the email address from their application and the password provided in their approval email.</p>
+
+      <div id="portalLoginError" class="portal-alert error" hidden></div>
+      <div id="portalNotConnected" class="portal-alert warning" hidden>The tester portal has not been connected to the beta backend yet.</div>
+
+      <form id="portalLoginForm" method="post" class="portal-login-form">
+        <input type="hidden" name="action" value="login">
+        <div class="beta-field">
+          <label for="portalEmail">Email address</label>
+          <input id="portalEmail" name="email" type="email" autocomplete="username" required placeholder="you@example.com">
+        </div>
+        <div class="beta-field">
+          <label for="portalPassword">Password</label>
+          <input id="portalPassword" name="password" type="password" autocomplete="current-password" required placeholder="Your password">
+        </div>
+        <button class="beta-submit" type="submit">Sign In <span aria-hidden="true">→</span></button>
+      </form>
+
+      <div class="portal-auth-footer">
+        <p>Need access or password help? <a href="mailto:support.rebatifyapp@gmail.com">Contact Rebatify Support</a>.</p>
+        <a href="beta.html">← Back to beta information</a>
+      </div>
+    </section>
+  </main>
+  <script src="beta-config.js"></script>
+  <script>
+  (function(){
+    const form=document.getElementById('portalLoginForm');
+    const endpoint=(window.REBATIFY_BETA_ENDPOINT||'').trim();
+    const notConnected=document.getElementById('portalNotConnected');
+    const error=document.getElementById('portalLoginError');
+    if(!endpoint || endpoint.indexOf('script.google.com')===-1){
+      notConnected.hidden=false;
+      form.querySelector('button').disabled=true;
+    } else {
+      form.action=endpoint;
+    }
+    const p=new URLSearchParams(location.search);
+    const code=p.get('error');
+    const messages={
+      invalid:'That email or password was not recognized, or portal access is not enabled.',
+      session:'Your session has expired. Please sign in again.',
+      access:'Your beta portal access is currently disabled.',
+      server:'The portal could not sign you in right now. Please try again.'
+    };
+    if(code && messages[code]){error.textContent=messages[code];error.hidden=false;}
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#145cf2">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Rebatify Beta Tester Portal</title>
+  <link rel="icon" href="app-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="portal-body">
+<header class="portal-header">
+  <div class="wrap portal-nav">
+    <div class="portal-brand"><img src="app-icon.png" alt="Rebatify app icon"><div><strong>Rebatify</strong><span>Beta Tester Portal</span></div></div>
+    <button id="portalLogout" class="portal-logout" type="button">Sign Out</button>
+  </div>
+</header>
+
+<main id="portalLoading" class="portal-loading"><div class="portal-spinner"></div><p>Verifying beta access…</p></main>
+
+<main id="portalApp" hidden>
+  <section class="portal-hero">
+    <div class="wrap portal-hero-grid">
+      <div>
+        <div class="portal-kicker">Approved Beta Tester</div>
+        <h1>Welcome, <span id="portalFirstName">Tester</span>.</h1>
+        <p class="lead">Use this portal for beta information, FAQs, and to send bugs, feature requests, and other feedback directly to the Rebatify beta team.</p>
+        <div class="portal-identity"><span id="portalEmail"></span><span class="portal-platform" id="portalPlatform"></span></div>
+      </div>
+      <div class="portal-quick-card">
+        <div class="portal-quick-icon">✓</div>
+        <div><strong>Your beta access is active</strong><p>Keep the latest beta build installed and use the feedback form whenever something feels wrong, confusing, or could be better.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="passwordRequired" class="portal-password-gate" hidden>
+    <div class="wrap">
+      <div class="portal-password-card">
+        <div class="portal-lock-icon">🔐</div>
+        <div class="portal-password-copy"><div class="portal-kicker">First Sign-In</div><h2>Create your password</h2><p>Your approval email contained a temporary password. Choose a new password before continuing into the tester portal.</p></div>
+        <form id="changePasswordForm" method="post" class="portal-password-form">
+          <input type="hidden" name="action" value="changePassword">
+          <input id="changePasswordToken" type="hidden" name="token" value="">
+          <div class="beta-field"><label for="newPassword">New password</label><input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="At least 10 characters"></div>
+          <div class="beta-field"><label for="confirmPassword">Confirm new password</label><input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Re-enter your password"></div>
+          <p class="portal-password-rule">Use at least 10 characters and include at least one letter and one number.</p>
+          <button class="beta-submit" type="submit">Save Password & Continue</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div id="portalContent">
+    <section class="section portal-overview-section"><div class="wrap">
+      <div class="portal-section-heading"><div><div class="kicker">Testing Center</div><h2>Everything you need during the beta.</h2></div></div>
+      <div class="portal-bento">
+        <article class="portal-tile portal-tile-accent"><div class="portal-tile-icon">📱</div><h3>Your Beta Build</h3><p id="platformInstallCopy">Use the latest available beta build for your testing platform.</p><div class="portal-tile-meta" id="platformInstallMeta">Installation details will be provided with your beta invite.</div></article>
+        <article class="portal-tile"><div class="portal-tile-icon blue">⚡</div><h3>What should I report?</h3><p>Anything that crashes, looks wrong, takes too many steps, behaves unexpectedly, or is simply confusing.</p></article>
+        <article class="portal-tile"><div class="portal-tile-icon green">💬</div><h3>Honest feedback matters</h3><p>Positive feedback is welcome, but constructive criticism is especially useful. You will not lose access for negative feedback.</p></article>
+        <article class="portal-tile"><div class="portal-tile-icon teal">↻</div><h3>Keep Rebatify current</h3><p>Please update to the latest beta build when a new version becomes available so your testing reflects the current app.</p></article>
+      </div>
+    </div></section>
+
+    <section class="section alt" id="submit-feedback"><div class="wrap portal-feedback-layout">
+      <div class="portal-feedback-copy">
+        <div class="kicker">Feedback</div>
+        <h2>Tell us what happened.</h2>
+        <p class="lead">You do not have to know whether something is technically a bug. If it feels wrong, confusing, inconvenient, or incomplete, send it.</p>
+        <div class="portal-report-list">
+          <div><span>🐞</span><strong>Bug / Issue</strong><small>Something is broken or behaves unexpectedly.</small></div>
+          <div><span>✨</span><strong>Feature Request</strong><small>An idea that could make Rebatify more useful.</small></div>
+          <div><span>🧭</span><strong>Confusing Experience</strong><small>A workflow, label, or screen that is difficult to understand.</small></div>
+          <div><span>💡</span><strong>General Feedback</strong><small>Anything else you want us to know.</small></div>
+        </div>
+      </div>
+      <form id="portalFeedbackForm" class="portal-feedback-form">
+        <div class="beta-field"><label for="feedbackType">Feedback type</label><select id="feedbackType" name="feedbackType" required><option value="">Choose one</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select></div>
+        <div class="beta-field"><label for="feedbackSubject">Short summary</label><input id="feedbackSubject" name="subject" type="text" maxlength="180" required placeholder="What happened or what would you like to see?"></div>
+        <div class="beta-field"><label for="pageFeature">Page or feature</label><input id="pageFeature" name="pageFeature" type="text" maxlength="180" placeholder="Example: Orders, Reports, Shared Profiles"></div>
+        <div class="portal-two-fields"><div class="beta-field"><label for="appVersion">App version / build</label><input id="appVersion" name="appVersion" type="text" maxlength="100" placeholder="Example: 1.0.0 (Build 219)"></div><div class="beta-field"><label for="deviceDetails">Device / OS</label><input id="deviceDetails" name="deviceDetails" type="text" maxlength="220" placeholder="Example: iPhone 16, iOS 26"></div></div>
+        <div class="beta-field"><label for="feedbackDetails">Details</label><textarea id="feedbackDetails" name="details" maxlength="5000" required placeholder="Tell us what you were doing, what you expected, and what actually happened. Include any steps that help reproduce it."></textarea></div>
+        <div id="feedbackMessage" class="portal-feedback-message" role="status" aria-live="polite"></div>
+        <button class="beta-submit" type="submit">Submit Feedback <span aria-hidden="true">→</span></button>
+      </form>
+    </div></section>
+
+    <section class="section"><div class="wrap">
+      <div class="portal-section-heading"><div><div class="kicker">FAQ</div><h2>Beta tester questions.</h2></div></div>
+      <div class="faq portal-faq">
+        <details><summary>How often do I need to submit feedback?</summary><p>There is no daily quota. We simply ask that you genuinely use Rebatify during the beta and submit meaningful feedback when you encounter an issue or have a useful suggestion.</p></details>
+        <details><summary>Can I report something even if I am not sure it is a bug?</summary><p>Yes. If something feels confusing, inconvenient, inconsistent, or difficult to use, submit it. That kind of feedback is valuable even when the software is technically working as designed.</p></details>
+        <details><summary>Will negative feedback affect my beta access?</summary><p>No. Honest feedback is encouraged. Constructive criticism is one of the main reasons the beta exists.</p></details>
+        <details><summary>What happens if I stop testing?</summary><p>Because beta availability is limited, inactive spots may eventually be reassigned to another person on the waitlist.</p></details>
+        <details><summary>How do I get help with my portal login?</summary><p>Email <a href="mailto:support.rebatifyapp@gmail.com">support.rebatifyapp@gmail.com</a> if you cannot sign in or need your portal access reset.</p></details>
+      </div>
+    </div></section>
+  </div>
+</main>
+
+<script src="beta-config.js"></script>
+<script src="beta-portal.js"></script>
+</body>
+</html>

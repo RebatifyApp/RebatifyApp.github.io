@@ -31,6 +31,7 @@
     button.innerHTML = 'Submitting…';
 
     const data = new FormData(form);
+    data.append('action', 'apply');
     data.append('source', 'rebatifyapp.github.io/beta.html');
     data.append('submittedAtClient', new Date().toISOString());
 
