@@ -8,7 +8,7 @@
   <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
   <title>Rebatify Beta Admin</title>
   <link rel="icon" href="app-icon.png">
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body class="admin-body">
   <div id="adminLoading" class="admin-loading-screen">
@@ -263,7 +263,6 @@
       if(!auth||!auth.authenticated){fail();return;}
       document.getElementById('adminIdentityEmail').textContent=auth.email||'Administrator';
       document.getElementById('adminPasswordToken').value=sessionToken;
-      document.getElementById('adminPasswordForm').action=endpoint;
       if(auth.mustChangePassword){passwordGate.hidden=false;portalContent.classList.add('admin-content-locked');}
       loading.hidden=true;app.hidden=false;window.__REBATIFY_ADMIN_READY=true;
       await loadData();
@@ -437,8 +436,33 @@
   ['testerSearch','testerAccessFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderTesters));
   ['feedbackSearch','feedbackStatusFilter','feedbackTypeFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderFeedback));
 
+  function randomRequestId(){const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');}
+  async function postAndPollResult(postAction,resultAction,fields){
+    const requestId=randomRequestId();
+    const params=new URLSearchParams(Object.assign({action:postAction,requestId},fields||{}));
+    await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()});
+    for(let i=0;i<24;i++){
+      await new Promise(r=>setTimeout(r,i<3?250:500));
+      const result=await jsonp(resultAction,{requestId});
+      if(result&&result.ready)return result;
+    }
+    throw new Error('timeout');
+  }
+
   const passwordForm=document.getElementById('adminPasswordForm');
-  passwordForm.addEventListener('submit',e=>{const p=document.getElementById('adminNewPassword').value;const c=document.getElementById('adminConfirmPassword').value;if(p.length<12||!/[A-Za-z]/.test(p)||!/[0-9]/.test(p)||p!==c){e.preventDefault();showToast('Use at least 12 characters with a letter and a number, and make sure both entries match.','error');}});
+  passwordForm.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const p=document.getElementById('adminNewPassword').value;
+    const c=document.getElementById('adminConfirmPassword').value;
+    if(p.length<12||!/[A-Za-z]/.test(p)||!/[0-9]/.test(p)||p!==c){showToast('Use at least 12 characters with a letter and a number, and make sure both entries match.','error');return;}
+    const button=passwordForm.querySelector('button[type="submit"]');const original=button.textContent;button.disabled=true;button.textContent='Saving…';
+    try{
+      const result=await postAndPollResult('adminChangePassword','adminchangepasswordresult',{token:sessionToken,newPassword:p,confirmPassword:c});
+      if(!result.ok){if(result.error==='session'){fail();return;}showToast('Your administrator password could not be changed. Please try again.','error');return;}
+      passwordGate.hidden=true;portalContent.classList.remove('admin-content-locked');passwordForm.reset();showToast('Administrator password updated.');
+    }catch(err){showToast('The password update did not finish. Please try again.','error');}
+    finally{button.disabled=false;button.textContent=original;}
+  });
 
   init();
 })();

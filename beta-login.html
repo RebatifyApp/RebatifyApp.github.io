@@ -40,18 +40,45 @@
       </div>
     </section>
   </main>
-  <script src="beta-config.js"></script>
+  <script src="beta-config.js?v=30"></script>
   <script>
+
   (function(){
     const form=document.getElementById('portalLoginForm');
     const endpoint=(window.REBATIFY_BETA_ENDPOINT||'').trim();
     const notConnected=document.getElementById('portalNotConnected');
     const error=document.getElementById('portalLoginError');
+    const button=form.querySelector('button[type="submit"]');
+
+    function randomId(){
+      const bytes=new Uint8Array(24); crypto.getRandomValues(bytes);
+      return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+    }
+    function jsonp(action,args){
+      return new Promise((resolve,reject)=>{
+        const cb='rebatifyPortalLogin_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+        const script=document.createElement('script');
+        const timer=setTimeout(()=>{cleanup();reject(new Error('timeout'));},10000);
+        function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
+        window[cb]=data=>{cleanup();resolve(data);};
+        script.onerror=()=>{cleanup();reject(new Error('network'));};
+        const params=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},args||{}));
+        script.src=endpoint+'?'+params.toString();
+        document.head.appendChild(script);
+      });
+    }
+    async function poll(requestId){
+      for(let i=0;i<24;i++){
+        await new Promise(r=>setTimeout(r,i<3?250:500));
+        const result=await jsonp('loginresult',{requestId});
+        if(result&&result.ready)return result;
+      }
+      throw new Error('timeout');
+    }
+    function showError(message){error.textContent=message;error.hidden=false;}
+
     if(!endpoint || endpoint.indexOf('script.google.com')===-1){
-      notConnected.hidden=false;
-      form.querySelector('button').disabled=true;
-    } else {
-      form.action=endpoint;
+      notConnected.hidden=false; button.disabled=true;
     }
     const p=new URLSearchParams(location.search);
     const code=p.get('error');
@@ -59,9 +86,37 @@
       invalid:'That email or password was not recognized, or portal access is not enabled.',
       session:'Your session has expired. Please sign in again.',
       access:'Your beta portal access is currently disabled.',
-      server:'The portal could not sign you in right now. Please try again.'
+      server:'The tester portal could not sign you in right now. Please try again.'
     };
-    if(code && messages[code]){error.textContent=messages[code];error.hidden=false;}
+    if(code&&messages[code])showError(messages[code]);
+
+    form.addEventListener('submit',async e=>{
+      e.preventDefault();
+      if(!form.checkValidity()){form.reportValidity();return;}
+      error.hidden=true;
+      const original=button.innerHTML;
+      button.disabled=true;button.innerHTML='Signing In…';
+      const requestId=randomId();
+      const params=new URLSearchParams();
+      params.set('action','login');
+      params.set('email',document.getElementById('portalEmail').value.trim());
+      params.set('password',document.getElementById('portalPassword').value);
+      params.set('requestId',requestId);
+      try{
+        await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()});
+        const result=await poll(requestId);
+        if(!result.ok){
+          showError(result.error==='invalid'?'That email or password was not recognized, or portal access is not enabled.':'The tester portal could not sign you in right now. Please try again.');
+          return;
+        }
+        localStorage.setItem('rebatifyBetaSession',result.token);
+        location.replace('beta-portal.html#session='+encodeURIComponent(result.token));
+      }catch(err){
+        showError('The tester portal could not complete sign-in. Please try again.');
+      }finally{
+        button.disabled=false;button.innerHTML=original;
+      }
+    });
   })();
   </script>
 </body>
