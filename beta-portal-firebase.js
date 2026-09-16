@@ -26,6 +26,61 @@ let activeTask = null;
 const taskBackdrop = document.getElementById('portalTaskBackdrop');
 const taskSubmit = document.getElementById('portalTaskSubmit');
 
+const PORTAL_INACTIVITY_MS = 15 * 60 * 1000;
+const PORTAL_ACTIVITY_KEY = 'rebatifyBetaPortalLastActivity';
+let inactivityTimer = null;
+let inactivityStarted = false;
+let sessionEnding = false;
+let lastActivityWrite = 0;
+
+function scheduleInactivityLogout() {
+  clearTimeout(inactivityTimer);
+  const last = Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY) || Date.now());
+  const remaining = PORTAL_INACTIVITY_MS - (Date.now() - last);
+  if (remaining <= 0) {
+    endInactiveSession();
+    return;
+  }
+  inactivityTimer = setTimeout(endInactiveSession, remaining + 250);
+}
+function recordPortalActivity() {
+  if (sessionEnding) return;
+  const now = Date.now();
+  if (now - lastActivityWrite < 750) return;
+  lastActivityWrite = now;
+  sessionStorage.setItem(PORTAL_ACTIVITY_KEY, String(now));
+  scheduleInactivityLogout();
+}
+async function endInactiveSession() {
+  if (sessionEnding) return;
+  sessionEnding = true;
+  clearTimeout(inactivityTimer);
+  sessionStorage.removeItem(PORTAL_ACTIVITY_KEY);
+  try { await signOut(auth); } catch (_) {}
+  location.replace('beta-login.html?error=inactive');
+}
+function startInactivityWatcher() {
+  if (inactivityStarted) return;
+  inactivityStarted = true;
+  sessionStorage.setItem(PORTAL_ACTIVITY_KEY, String(Date.now()));
+  ['pointerdown','keydown','touchstart','scroll'].forEach(eventName => {
+    window.addEventListener(eventName, recordPortalActivity, { passive: true });
+  });
+  window.addEventListener('focus', () => {
+    const last = Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY) || 0);
+    if (last && Date.now() - last >= PORTAL_INACTIVITY_MS) endInactiveSession();
+    else recordPortalActivity();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const last = Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY) || 0);
+      if (last && Date.now() - last >= PORTAL_INACTIVITY_MS) endInactiveSession();
+      else scheduleInactivityLogout();
+    }
+  });
+  scheduleInactivityLogout();
+}
+
 function fail(reason='session') {
   signOut(auth).catch(() => {}).finally(() => location.replace('beta-login.html?error=' + encodeURIComponent(reason)));
 }
@@ -143,7 +198,7 @@ async function loadProfile(user) {
   if (data.accessStatus !== 'Enabled' || !['Approved','Active'].includes(data.status)) throw new Error('access');
 
   if (data.status === 'Approved') {
-    const profileUpdate = { status: 'Active', updatedAt: serverTimestamp(), lastLogin: serverTimestamp() };
+    const profileUpdate = { status: 'Active', updatedAt: serverTimestamp() };
     await updateDoc(ref, profileUpdate);
     if (data.applicationId) {
       await updateDoc(doc(db, 'betaApplications', data.applicationId), {
@@ -153,12 +208,9 @@ async function loadProfile(user) {
         lastUpdated: serverTimestamp()
       }).catch(() => {});
     }
-    return { id: snap.id, ...data, status: 'Active', lastLogin: new Date() };
+    return { id: snap.id, ...data, status: 'Active' };
   }
 
-  const lastLogin = timestampToDate(data.lastLogin);
-  const stale = !lastLogin || (Date.now() - lastLogin.getTime()) > 12 * 60 * 60 * 1000;
-  if (stale) updateDoc(ref, { lastLogin: serverTimestamp() }).catch(() => {});
   return { id: snap.id, ...data };
 }
 
@@ -193,6 +245,7 @@ if (!firebaseConfigured) {
       currentProfile = await loadProfile(user);
       renderProfile(currentProfile);
       await loadRequiredTasks(user.uid);
+      startInactivityWatcher();
     } catch (error) {
       fail(error && error.message === 'access' ? 'access' : 'session');
     }
@@ -201,6 +254,9 @@ if (!firebaseConfigured) {
 
 if (logout) {
   logout.addEventListener('click', async () => {
+    sessionEnding = true;
+    clearTimeout(inactivityTimer);
+    sessionStorage.removeItem(PORTAL_ACTIVITY_KEY);
     try { await signOut(auth); } catch (_) {}
     location.replace('beta-login.html');
   });
