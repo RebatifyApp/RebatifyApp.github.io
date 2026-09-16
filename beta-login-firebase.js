@@ -2,7 +2,9 @@ import { firebaseConfigured, firebaseMissingFields, auth } from './firebase-core
 import {
   onAuthStateChanged,
   signInWithCustomToken,
-  signOut
+  signOut,
+  setPersistence,
+  browserSessionPersistence
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 const form = document.getElementById('portalLoginForm');
@@ -117,7 +119,13 @@ if (codeForm) {
       if (!result.customToken) throw new Error('The sign-in service did not return a valid session.');
       isCompletingSignIn = true;
       try { await signOut(auth); } catch (_) {}
-      await signInWithCustomToken(auth, result.customToken);
+      // Explicitly establish tab-scoped persistence before signing in so the
+      // authenticated tester survives the navigation to beta-portal.html.
+      await setPersistence(auth, browserSessionPersistence);
+      const credential = await signInWithCustomToken(auth, result.customToken);
+      // Force the authenticated session/token to be fully available before redirecting.
+      await credential.user.getIdToken(true);
+      sessionStorage.setItem('rebatifyBetaPortalLoginAt', String(Date.now()));
       location.replace('beta-portal.html');
     } catch (error) {
       isCompletingSignIn = false;

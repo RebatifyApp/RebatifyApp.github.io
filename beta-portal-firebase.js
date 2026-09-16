@@ -198,7 +198,11 @@ async function loadProfile(user) {
   if (data.accessStatus !== 'Enabled' || !['Approved','Active'].includes(data.status)) throw new Error('access');
 
   if (data.status === 'Approved') {
-    const profileUpdate = { status: 'Active', updatedAt: serverTimestamp() };
+    // A successful passwordless sign-in is the point at which an approved tester
+    // becomes Active. Include lastLogin so this transition remains compatible
+    // with the current betaUsers security rule. The Worker also records the login
+    // at code verification time, so this timestamp still represents a real sign-in.
+    const profileUpdate = { status: 'Active', updatedAt: serverTimestamp(), lastLogin: serverTimestamp() };
     await updateDoc(ref, profileUpdate);
     if (data.applicationId) {
       await updateDoc(doc(db, 'betaApplications', data.applicationId), {
@@ -244,10 +248,20 @@ if (!firebaseConfigured) {
     try {
       currentProfile = await loadProfile(user);
       renderProfile(currentProfile);
-      await loadRequiredTasks(user.uid);
       startInactivityWatcher();
     } catch (error) {
       fail(error && error.message === 'access' ? 'access' : 'session');
+      return;
+    }
+    // Required tasks should never be able to invalidate an otherwise valid portal
+    // session. If task loading fails, keep the tester signed in and surface a
+    // non-blocking message instead of bouncing them back to login.
+    try {
+      await loadRequiredTasks(user.uid);
+    } catch (error) {
+      console.error('Could not load required beta tasks:', error);
+      const summaryText = document.getElementById('portalTaskSummaryText');
+      if (summaryText) summaryText.textContent = 'Required tasks could not be loaded right now. Refresh the portal in a moment or contact Rebatify Support if this continues.';
     }
   });
 }

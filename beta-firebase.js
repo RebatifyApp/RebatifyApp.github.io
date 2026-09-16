@@ -68,6 +68,24 @@ if (form) {
         lastUpdated: serverTimestamp(),
         lastDecisionEmail: null
       });
+
+      // Best-effort private notification to the Rebatify owner. The application
+      // is already safely stored before this runs, so an email-delivery issue
+      // never causes the applicant to see a failed submission.
+      try {
+        const endpoint = String(window.REBATIFY_BETA_SETTINGS?.emailWorkerUrl || '').trim();
+        if (endpoint) {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'beta-application-submitted', applicationId: id })
+          });
+          if (!response.ok) console.warn('Beta application owner notification could not be sent.', await response.text().catch(() => ''));
+        }
+      } catch (notifyError) {
+        console.warn('Beta application owner notification failed.', notifyError);
+      }
+
       form.hidden = true;
       if (success) {
         success.hidden = false;

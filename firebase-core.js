@@ -20,15 +20,16 @@ export const testerPortalUrl = String(settings.testerPortalUrl || 'https://rebat
 let app = null;
 let auth = null;
 let db = null;
+let authPersistenceReady = Promise.resolve();
 
 if (firebaseConfigured) {
   app = getApps().find(a => a.name === '[DEFAULT]') || initializeApp(config);
   auth = getAuth(app);
-  setPersistence(auth, browserSessionPersistence).catch(() => {});
+  authPersistenceReady = setPersistence(auth, browserSessionPersistence).catch(() => {});
   db = getFirestore(app);
 }
 
-export { app, auth, db };
+export { app, auth, db, authPersistenceReady };
 
 export function isAdminUser(user) {
   return !!user && String(user.email || '').trim().toLowerCase() === adminEmail;
