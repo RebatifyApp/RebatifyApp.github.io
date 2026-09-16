@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=54" rel="stylesheet"/>
+<link href="styles.css?v=56" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -104,9 +104,18 @@
 <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Applicant</th><th>Platform</th><th>Applied</th><th>Status</th><th>Portal</th><th>Invite Email</th><th></th></tr></thead><tbody id="applicationsTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="applicationsEmpty">No applications match these filters.</div></div>
 </section>
 <section class="admin-view" data-admin-panel="testers">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>See who can access the tester portal and when they last signed in.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>Manage tester access, required tasks, sign-ins, and each tester’s Beta Program timeline.</p></div></div>
+<article class="admin-panel admin-timeline-bulk-panel">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Program Timeline</span><h3>Progress tester timelines</h3><p>Move one tester or a selected group to the milestone they have reached. The tester portal will show all earlier milestones as complete and the next action as current.</p></div><span class="admin-subtle-chip" id="timelineSelectionCount">0 selected</span></div>
+<div class="admin-timeline-bulk-controls">
+<div class="admin-timeline-select-tools"><span class="admin-detail-label">Select testers</span><div><button class="admin-text-button" id="timelineSelectAll" type="button">Select all</button><button class="admin-text-button" id="timelineSelectIOS" type="button">Select iOS</button><button class="admin-text-button" id="timelineSelectAndroid" type="button">Select Android</button><button class="admin-text-button" id="timelineClearSelection" type="button">Clear</button></div></div>
+<div class="beta-field admin-timeline-stage-field"><label for="bulkTimelineStage">Move selected testers to</label><select id="bulkTimelineStage"><option value="approved">Approved / Portal Ready</option><option value="inviteSent">Testing Access Sent</option><option value="activeTesting">Active Beta Testing</option></select></div>
+<button class="admin-primary-button admin-timeline-apply" id="bulkTimelineApply" type="button">Update Selected Timelines</button>
+</div>
+<div class="admin-timeline-stage-guide"><strong>Timeline stages:</strong><span><b>Approved</b> → prepare device and wait for access</span><span><b>Testing Access Sent</b> → accept invitation/link, install Rebatify, create app account</span><span><b>Active Testing</b> → ongoing workflows, required tasks, and feedback</span></div>
+</article>
 <div class="admin-toolbar"><div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
-<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Tester</th><th>Platform</th><th>Access</th><th>Required Tasks</th><th>Last Login</th><th>Authentication</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
+<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table admin-testers-table"><thead><tr><th class="admin-select-col"><span class="sr-only">Select</span></th><th>Tester</th><th>Platform</th><th>Access</th><th>Timeline</th><th>Required Tasks</th><th>Last Login</th><th>Authentication</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
 </section>
 
 <section class="admin-view" data-admin-panel="tasks">
@@ -205,5 +214,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=54"></script><script src="admin-firebase.js?v=54" type="module"></script></body>
+<script src="firebase-config.js?v=56"></script><script src="admin-firebase.js?v=56" type="module"></script></body>
 </html>

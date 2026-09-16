@@ -1,3 +1,4 @@
+// Rebatify Beta Admin — Website Build 56
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -71,6 +72,32 @@ let state = {
   taskAssignments: [],
   loaded: { applications:false, testers:false, feedback:false, tasks:false }
 };
+
+
+const TIMELINE_STAGES = ['approved','inviteSent','activeTesting'];
+const selectedTimelineTesters = new Set();
+function normalizeTimelineStage(value){
+  // Backward compatibility with the short-lived five-stage Build 55 model.
+  if(value==='deviceReady')return 'approved';
+  if(value==='installed')return 'activeTesting';
+  return TIMELINE_STAGES.includes(value)?value:'approved';
+}
+function timelineStageRank(value){return TIMELINE_STAGES.indexOf(normalizeTimelineStage(value));}
+function timelineStageLabel(value,platform=''){
+  const stage=normalizeTimelineStage(value);
+  if(stage==='approved')return 'Approved / Portal Ready';
+  if(stage==='inviteSent')return platform==='iOS'?'TestFlight Invite Sent':platform==='Android'?'Testing Link Sent':'Testing Access Sent';
+  return 'Active Beta Testing';
+}
+function timelineStageOptions(platform,current){
+  const labels=platform==='iOS'
+    ? {approved:'Approved / Portal Ready',inviteSent:'TestFlight Invitation Sent',activeTesting:'Active Beta Testing'}
+    : platform==='Android'
+      ? {approved:'Approved / Portal Ready',inviteSent:'Google Play Testing Link Sent',activeTesting:'Active Beta Testing'}
+      : {approved:'Approved / Portal Ready',inviteSent:'Testing Access Sent',activeTesting:'Active Beta Testing'};
+  const normalized=normalizeTimelineStage(current);
+  return TIMELINE_STAGES.map(stage=>`<option value="${stage}"${stage===normalized?' selected':''}>${esc(labels[stage])}</option>`).join('');
+}
 
 
 const TASK_TEMPLATES = {
@@ -284,8 +311,22 @@ async function loadTasks(force=false){
   state.tasks=taskSnap.docs.map(normalizeDoc);
   state.taskAssignments=assignmentSnap.docs.map(normalizeDoc);
   state.loaded.tasks=true;
+  await reconcileEmptyTaskCampaigns();
   renderTasks();
   renderTaskRecipientPicker();
+}
+
+async function reconcileEmptyTaskCampaigns(){
+  const stale=state.tasks.filter(t=>{
+    if(['Cancelled','Closed'].includes(t.status))return false;
+    return taskAssignmentStats(t.id).total===0;
+  });
+  if(!stale.length)return 0;
+  const batch=writeBatch(db);
+  stale.forEach(t=>batch.update(doc(db,'betaTasks',t.id),{status:'Closed',recipientCount:0,updatedAt:serverTimestamp()}));
+  await batch.commit();
+  stale.forEach(t=>{t.status='Closed';t.recipientCount=0;t.updatedAt=new Date();});
+  return stale.length;
 }
 
 async function reconcilePendingTasksForInactiveTesters(){
@@ -359,10 +400,49 @@ function testerTaskStateHtml(t){
   const next=pending[0];
   return `<div class="admin-tester-task-state"><span class="admin-status-pill status-pending">${pending.length} pending</span><small>Next: ${esc(formatDate(next.dueAt))}</small></div>`;
 }
+function updateTimelineSelectionUI(){
+  [...selectedTimelineTesters].forEach(uid=>{const t=findTester(uid);if(!t||t.accessStatus!=='Enabled'||!['Approved','Active'].includes(t.status))selectedTimelineTesters.delete(uid);});
+  document.querySelectorAll('[data-timeline-tester]').forEach(box=>{box.checked=selectedTimelineTesters.has(box.dataset.timelineTester);});
+  const count=document.getElementById('timelineSelectionCount');if(count)count.textContent=selectedTimelineTesters.size+' selected';
+  const apply=document.getElementById('bulkTimelineApply');if(apply)apply.disabled=selectedTimelineTesters.size===0;
+}
+function selectTimelineTesters(platform='All'){
+  selectedTimelineTesters.clear();
+  const visible=testerFiltered().filter(t=>t.accessStatus==='Enabled'&&['Approved','Active'].includes(t.status));
+  visible.forEach(t=>{if(platform==='All'||t.platform===platform)selectedTimelineTesters.add(t.uid);});
+  updateTimelineSelectionUI();
+}
+function timelineChipHtml(t){
+  const stage=normalizeTimelineStage(t.timelineStage);
+  return `<div class="admin-timeline-cell"><span class="admin-timeline-chip timeline-${esc(stage)}">${esc(timelineStageLabel(stage,t.platform))}</span>${t.timelineUpdatedAt?`<small>Updated ${esc(relativeDate(t.timelineUpdatedAt))}</small>`:''}</div>`;
+}
 function renderTesters(){
   const data=testerFiltered();const body=document.getElementById('testersTableBody');
-  body.innerHTML=data.map(t=>`<tr><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${testerTaskStateHtml(t)}</td><td>${esc(t.lastLogin?relativeDate(t.lastLogin):'Never')}</td><td>Email verification code</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`).join('');
+  body.innerHTML=data.map(t=>{const eligible=t.accessStatus==='Enabled'&&['Approved','Active'].includes(t.status);return `<tr><td class="admin-select-col"><label class="admin-timeline-row-check"><input type="checkbox" data-timeline-tester="${esc(t.uid)}" data-platform="${esc(t.platform||'')}"${selectedTimelineTesters.has(t.uid)?' checked':''}${eligible?'':' disabled'}><span></span></label></td><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${timelineChipHtml(t)}</td><td>${testerTaskStateHtml(t)}</td><td>${esc(t.lastLogin?relativeDate(t.lastLogin):'Never')}</td><td>Email verification code</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`;}).join('');
   document.getElementById('testersEmpty').hidden=data.length>0;
+  updateTimelineSelectionUI();
+}
+async function setTesterTimelineStage(t,stage){
+  const normalized=normalizeTimelineStage(stage);
+  await updateDoc(doc(db,'betaUsers',t.uid),{timelineStage:normalized,timelineUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  t.timelineStage=normalized;t.timelineUpdatedAt=new Date();t.updatedAt=new Date();
+  renderTesters();
+}
+async function bulkSetTimelineStage(stage){
+  const selected=[...selectedTimelineTesters].map(uid=>findTester(uid)).filter(Boolean).filter(t=>t.accessStatus==='Enabled'&&['Approved','Active'].includes(t.status));
+  if(!selected.length)throw new Error('Select at least one active tester.');
+  const normalized=normalizeTimelineStage(stage);
+  const backwards=selected.filter(t=>timelineStageRank(t.timelineStage)>timelineStageRank(normalized));
+  const prompt=backwards.length
+    ? `Update ${selected.length} selected tester${selected.length===1?'':'s'} to "${timelineStageLabel(normalized)}"? ${backwards.length} timeline${backwards.length===1?'':'s'} will move backward.`
+    : `Update ${selected.length} selected tester${selected.length===1?'':'s'} to "${timelineStageLabel(normalized)}"?`;
+  if(!(await confirmAction(prompt,backwards.length?'danger':'')))return {cancelled:true,count:0};
+  const batch=writeBatch(db);
+  selected.forEach(t=>batch.update(doc(db,'betaUsers',t.uid),{timelineStage:normalized,timelineUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+  await batch.commit();
+  const now=new Date();selected.forEach(t=>{t.timelineStage=normalized;t.timelineUpdatedAt=now;t.updatedAt=now;});
+  selectedTimelineTesters.clear();renderTesters();
+  return {cancelled:false,count:selected.length};
 }
 function feedbackFiltered(){
   const q=document.getElementById('feedbackSearch').value.trim().toLowerCase();const status=document.getElementById('feedbackStatusFilter').value;const type=document.getElementById('feedbackTypeFilter').value;
@@ -428,8 +508,11 @@ function taskAssignmentStats(taskId){
 }
 function taskDisplayStatus(t,stats){
   if(t.status==='Cancelled')return 'Cancelled';
-  if(stats.total>0&&stats.completed===stats.total)return 'Completed';
-  if(stats.pending===0&&stats.total>0)return 'Closed';
+  // A task campaign with no remaining assignments is not active.
+  // This also corrects older 0/0 task records whose task document still says Active.
+  if(stats.total===0)return 'Closed';
+  if(stats.completed===stats.total)return 'Completed';
+  if(stats.pending===0)return 'Closed';
   return t.status||'Active';
 }
 function renderTaskDashboard(){
@@ -543,7 +626,12 @@ async function removeTaskAssignment(a){
   const t=findTask(a.taskId);
   if(t){
     t.recipientCount=remaining;
-    await updateDoc(doc(db,'betaTasks',t.id),{recipientCount:remaining,updatedAt:serverTimestamp()}).catch(()=>{});
+    const taskUpdate={recipientCount:remaining,updatedAt:serverTimestamp()};
+    if(remaining===0&&t.status!=='Cancelled'){
+      t.status='Closed';
+      taskUpdate.status='Closed';
+    }
+    await updateDoc(doc(db,'betaTasks',t.id),taskUpdate).catch(()=>{});
   }
   renderTasks();
   if(state.loaded.testers)renderTesters();
@@ -608,6 +696,7 @@ function openApplicationRecord(a){
 }
 function openTesterRecord(t){
   const normalizedEmail=String(t.email||'').trim().toLowerCase();
+  const timelineStage=normalizeTimelineStage(t.timelineStage);
   const a=state.applications.find(x=>x.testerUid===t.uid||String(x.email||'').trim().toLowerCase()===normalizedEmail);
   const pending=pendingAssignmentsForTester(t);
   const pendingHtml=pending.length?pending.map(x=>`<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(x.taskTitle||'Required task')}</strong><small>Due ${esc(formatDate(x.dueAt))}</small></div><span class="admin-status-pill status-pending">Pending</span></div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(x.id)}" type="button">${x.lastReminderSentAt?'Remind Again':'Send Reminder'}</button><button class="admin-task-remind-button admin-task-remove-button" data-remove-task-assignment="${esc(x.id)}" type="button">Remove Task</button></div></div>`).join(''):'<div class="admin-empty-inline">No required tasks are pending for this tester.</div>';
@@ -620,7 +709,9 @@ function openTesterRecord(t){
     ? `<button class="admin-action-button danger-soft" data-app-action="delete" data-row="${esc(a.id)}" type="button">Delete Application & Tester</button>`
     : `<button class="admin-action-button danger-soft" data-tester-action="delete" data-tester-uid="${esc(t.uid)}" type="button">Delete Tester</button>`;
   const actions=[accessAction,deleteAction].filter(Boolean).join('');
-  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div><div><span>Required Tasks Pending</span><strong>${pending.length}</strong></div></div><div><label class="admin-detail-label">Outstanding required tasks</label><div class="admin-task-response-list">${pendingHtml}</div></div><div class="admin-drawer-actions">${actions}</div></div>`);
+  const nextIndex=Math.min(TIMELINE_STAGES.length-1,timelineStageRank(timelineStage)+1);
+  const canAdvance=timelineStage!=='activeTesting'&&t.accessStatus==='Enabled';
+  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span><span class="admin-timeline-chip timeline-${esc(timelineStage)}">${esc(timelineStageLabel(timelineStage,t.platform))}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div><div><span>Required Tasks Pending</span><strong>${pending.length}</strong></div><div><span>Timeline Updated</span><strong>${esc(t.timelineUpdatedAt?formatDate(t.timelineUpdatedAt):'Not progressed yet')}</strong></div></div><div class="admin-timeline-drawer-card"><div><span class="admin-detail-label">Program timeline stage</span><p>Choose the milestone this tester has reached. Their portal will mark earlier steps complete and highlight what they should do next.</p></div><div class="beta-field"><label for="drawerTimelineStage">Current milestone</label><select id="drawerTimelineStage">${timelineStageOptions(t.platform,timelineStage)}</select></div><div class="admin-timeline-drawer-actions"><button class="admin-secondary-button" data-save-timeline="${esc(t.uid)}" type="button">Set Exact Stage</button><button class="admin-primary-button" data-advance-timeline="${esc(t.uid)}" data-next-stage="${esc(TIMELINE_STAGES[nextIndex])}" type="button"${canAdvance?'':' disabled'}>${canAdvance?'Advance to Next Stage':'Active Testing'}</button></div></div><div><label class="admin-detail-label">Outstanding required tasks</label><div class="admin-task-response-list">${pendingHtml}</div></div><div class="admin-drawer-actions">${actions}</div></div>`);
 }
 function openFeedbackRecord(f){
   const statuses=['New','Reviewing','Planned','Fixed','Closed','Declined'];
@@ -705,6 +796,8 @@ async function provisionTesterAccess(a){
     accessStatus: 'Enabled',
     applicationId: a.id,
     authMethod: 'Email verification code',
+    timelineStage: existingData.timelineStage || 'approved',
+    timelineUpdatedAt: existingData.timelineUpdatedAt || serverTimestamp(),
     createdAt: existingData.createdAt || serverTimestamp(),
     updatedAt: serverTimestamp(),
     lastLogin: existingData.lastLogin || null
@@ -945,6 +1038,22 @@ document.addEventListener('click',async e=>{
     }
     return;
   }
+  const saveTimelineBtn=e.target.closest('[data-save-timeline]');if(saveTimelineBtn){
+    const t=findTester(saveTimelineBtn.dataset.saveTimeline);if(!t)return;
+    const select=document.getElementById('drawerTimelineStage');const stage=normalizeTimelineStage(select&&select.value);
+    const movingBack=timelineStageRank(t.timelineStage)>timelineStageRank(stage);
+    if(movingBack&&!(await confirmAction(`Move ${t.name||'this tester'} backward to "${timelineStageLabel(stage,t.platform)}"?`,'danger')))return;
+    saveTimelineBtn.disabled=true;const original=saveTimelineBtn.textContent;saveTimelineBtn.textContent='Saving…';
+    try{await setTesterTimelineStage(t,stage);showToast('Tester timeline updated.');openTesterRecord(t);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{saveTimelineBtn.disabled=false;saveTimelineBtn.textContent=original;}
+    return;
+  }
+  const advanceTimelineBtn=e.target.closest('[data-advance-timeline]');if(advanceTimelineBtn){
+    const t=findTester(advanceTimelineBtn.dataset.advanceTimeline);if(!t)return;
+    const stage=normalizeTimelineStage(advanceTimelineBtn.dataset.nextStage);
+    advanceTimelineBtn.disabled=true;const original=advanceTimelineBtn.textContent;advanceTimelineBtn.textContent='Advancing…';
+    try{await setTesterTimelineStage(t,stage);showToast('Timeline advanced to '+timelineStageLabel(stage,t.platform)+'.');openTesterRecord(t);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{advanceTimelineBtn.disabled=false;advanceTimelineBtn.textContent=original;}
+    return;
+  }
   const testerActionBtn=e.target.closest('[data-tester-action]');if(testerActionBtn){
     const task=testerActionBtn.dataset.testerAction;
     const uid=testerActionBtn.dataset.testerUid;
@@ -1011,6 +1120,12 @@ document.getElementById('adminMenuToggle').addEventListener('click',()=>document
 document.getElementById('adminLogout').addEventListener('click',async()=>{await signOut(auth).catch(()=>{});location.replace('admin-login.html');});
 const deadlineCheckBtn=document.getElementById('taskRunDeadlineCheck');
 if(deadlineCheckBtn)deadlineCheckBtn.addEventListener('click',async()=>{const original=deadlineCheckBtn.textContent;deadlineCheckBtn.disabled=true;deadlineCheckBtn.textContent='Checking…';try{const result=await runDeadlineCheckNow();const errors=Array.isArray(result.errors)?result.errors:[];showToast(errors.length?`Deadline check completed with ${errors.length} error${errors.length===1?'':'s'}. ${errors[0]}`:`Deadline check complete. ${Number(result.removed||0)} tester${Number(result.removed||0)===1?'':'s'} removed; ${Number(result.remindersSent||0)} reminder${Number(result.remindersSent||0)===1?'':'s'} sent.`,errors.length?'error':'success');}catch(err){showToast('Deadline check failed. '+friendlyFirebaseError(err),'error');}finally{deadlineCheckBtn.disabled=false;deadlineCheckBtn.textContent=original;}});
+const timelineSelectAll=document.getElementById('timelineSelectAll');if(timelineSelectAll)timelineSelectAll.addEventListener('click',()=>selectTimelineTesters('All'));
+const timelineSelectIOS=document.getElementById('timelineSelectIOS');if(timelineSelectIOS)timelineSelectIOS.addEventListener('click',()=>selectTimelineTesters('iOS'));
+const timelineSelectAndroid=document.getElementById('timelineSelectAndroid');if(timelineSelectAndroid)timelineSelectAndroid.addEventListener('click',()=>selectTimelineTesters('Android'));
+const timelineClearSelection=document.getElementById('timelineClearSelection');if(timelineClearSelection)timelineClearSelection.addEventListener('click',()=>{selectedTimelineTesters.clear();updateTimelineSelectionUI();});
+const testersTableBody=document.getElementById('testersTableBody');if(testersTableBody)testersTableBody.addEventListener('change',e=>{if(!e.target.matches('[data-timeline-tester]'))return;const uid=e.target.dataset.timelineTester;if(e.target.checked)selectedTimelineTesters.add(uid);else selectedTimelineTesters.delete(uid);updateTimelineSelectionUI();});
+const bulkTimelineApply=document.getElementById('bulkTimelineApply');if(bulkTimelineApply)bulkTimelineApply.addEventListener('click',async()=>{const original=bulkTimelineApply.textContent;bulkTimelineApply.disabled=true;bulkTimelineApply.textContent='Updating…';try{const stage=document.getElementById('bulkTimelineStage').value;const result=await bulkSetTimelineStage(stage);if(!result.cancelled)showToast(`${result.count} tester timeline${result.count===1?'':'s'} updated.`);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{bulkTimelineApply.textContent=original;updateTimelineSelectionUI();}});
 document.getElementById('taskTemplateSelect').addEventListener('change',e=>applyTaskTemplate(e.target.value));
 document.getElementById('taskSelectAll').addEventListener('click',()=>selectTaskRecipients('All'));
 document.getElementById('taskSelectIOS').addEventListener('click',()=>selectTaskRecipients('iOS'));

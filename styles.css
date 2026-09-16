@@ -835,3 +835,77 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
 }
 .admin-menu-toggle:hover{transform:translateY(-1px);border-color:rgba(20,92,242,.24);box-shadow:0 10px 20px rgba(8,34,92,.09)}
+
+
+/* Build 55 — Beta Program timeline progression controls */
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.admin-timeline-bulk-panel{margin-bottom:16px;background:linear-gradient(135deg,rgba(20,92,242,.045),rgba(59,158,74,.035),#fff)}
+.admin-timeline-bulk-panel .admin-panel-heading{align-items:flex-start}
+.admin-timeline-bulk-panel .admin-panel-heading p{margin:.35rem 0 0;color:var(--admin-muted);font-size:.8rem;line-height:1.55;max-width:780px}
+.admin-timeline-bulk-controls{display:grid;grid-template-columns:minmax(310px,1.1fr) minmax(260px,.9fr) auto;gap:14px;align-items:end}
+.admin-timeline-select-tools{display:flex;flex-direction:column;gap:8px}.admin-timeline-select-tools>div{display:flex;gap:8px;flex-wrap:wrap}
+.admin-timeline-stage-field{margin:0}.admin-timeline-stage-field label{font-size:.78rem;font-weight:900;color:#263c59}
+.admin-timeline-apply{min-height:52px;white-space:nowrap}
+.admin-timeline-stage-guide{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid var(--admin-line);color:#6d7f94;font-size:.7rem}
+.admin-timeline-stage-guide>strong{color:#263c59}.admin-timeline-stage-guide span{padding:6px 9px;border-radius:999px;background:#f5f8fc;border:1px solid #e5ebf4}.admin-timeline-stage-guide b{color:#30465f}
+.admin-select-col{width:42px!important;padding-right:4px!important}.admin-timeline-row-check{display:grid;place-items:center;cursor:pointer}.admin-timeline-row-check input{position:absolute;opacity:0;pointer-events:none}.admin-timeline-row-check span{width:19px;height:19px;border-radius:6px;border:1.5px solid #cbd8e8;background:#fff;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}.admin-timeline-row-check input:checked+span{background:linear-gradient(135deg,#145cf2,#18aaa9);border-color:transparent;box-shadow:0 5px 12px rgba(20,92,242,.18)}.admin-timeline-row-check input:checked+span:after{content:'';width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px)}.admin-timeline-row-check input:disabled+span{background:#f1f4f8;border-color:#e0e6ee;opacity:.58;cursor:not-allowed}
+.admin-testers-table{min-width:1120px}.admin-timeline-cell{display:flex;flex-direction:column;gap:4px;align-items:flex-start}.admin-timeline-cell small{font-size:.64rem;color:var(--admin-muted)}
+.admin-timeline-chip{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#eef3fb;color:#53677e;border:1px solid #dfe8f5;font-size:.65rem;font-weight:900;white-space:nowrap}.admin-timeline-chip.timeline-approved{background:#edf3ff;color:#1552c6;border-color:#d6e3ff}.admin-timeline-chip.timeline-deviceReady{background:#eef8ff;color:#13769d;border-color:#d3edf8}.admin-timeline-chip.timeline-inviteSent{background:#fff7e3;color:#8b6200;border-color:#f2e2ad}.admin-timeline-chip.timeline-installed{background:#eef8f0;color:#2d7e3b;border-color:#d5ead9}.admin-timeline-chip.timeline-activeTesting{background:linear-gradient(135deg,#e9f7ed,#effcff);color:#267b39;border-color:#cee7d5}
+.admin-timeline-drawer-card{padding:16px;border-radius:18px;background:linear-gradient(135deg,rgba(20,92,242,.055),rgba(59,158,74,.04));border:1px solid rgba(20,92,242,.11);display:grid;gap:13px}.admin-timeline-drawer-card p{margin:5px 0 0;color:var(--admin-muted);font-size:.77rem;line-height:1.5}.admin-timeline-drawer-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.admin-timeline-drawer-actions button{min-height:44px}
+.portal-timeline-current{display:inline-block;margin-top:5px;color:#4f647b}
+@media(max-width:980px){.admin-timeline-bulk-controls{grid-template-columns:1fr 1fr}.admin-timeline-apply{grid-column:1/-1;width:100%}}
+@media(max-width:620px){.admin-timeline-bulk-controls{grid-template-columns:1fr}.admin-timeline-apply{grid-column:auto}.admin-timeline-drawer-actions{grid-template-columns:1fr}.admin-timeline-stage-guide{align-items:flex-start;flex-direction:column}.admin-timeline-stage-guide span{border-radius:10px}}
+
+/* Build 56 — feedback layout, task cleanup, and simplified timeline */
+.portal-feedback-layout{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:44px;
+  align-items:start;
+}
+.portal-feedback-copy,.portal-feedback-form-column{min-width:0}
+.portal-feedback-form-column{display:flex;flex-direction:column;align-self:start}
+.portal-feedback-form-title{
+  margin:0 0 22px;
+  color:var(--green);
+}
+.portal-feedback-form{
+  width:100%;
+  margin:0;
+  padding:28px;
+  border-radius:28px;
+  background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(249,252,255,.98));
+  border:1px solid rgba(20,92,242,.12);
+  box-shadow:0 18px 46px rgba(8,34,92,.075),inset 0 1px 0 rgba(255,255,255,.95);
+}
+.portal-feedback-form .beta-field{margin-bottom:18px}
+.portal-feedback-form .beta-field label{font-size:.82rem;font-weight:900;color:#314963}
+.portal-feedback-form .beta-submit{width:100%;min-height:54px;margin-top:2px;justify-content:center;border-radius:16px;box-shadow:0 12px 28px rgba(20,92,242,.15)}
+.portal-report-list>div{min-height:72px;align-content:center}
+
+.portal-timeline-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:15px}
+.portal-timeline-actions small{color:#72849a;font-size:.72rem;line-height:1.4;max-width:430px}
+.portal-testflight-button,.portal-tile-testflight-button{
+  appearance:none;border:1px solid rgba(20,92,242,.14);cursor:pointer;font:inherit;font-weight:900;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:14px;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease;
+}
+.portal-testflight-button{padding:11px 15px;background:linear-gradient(135deg,#1254e6,#1464f6 62%,#1aa8ad);color:#fff;box-shadow:0 10px 24px rgba(20,92,242,.18)}
+.portal-testflight-button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(20,92,242,.23)}
+.portal-testflight-icon{font-size:1rem;line-height:1}
+.portal-tile-action{margin-top:14px}
+.portal-tile-testflight-button{width:100%;padding:11px 13px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.24);box-shadow:0 8px 20px rgba(0,0,0,.10)}
+.portal-tile-testflight-button:hover{transform:translateY(-1px);background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.34)}
+
+/* Build 56 uses three administrator-controlled milestones. Older Build 55 values are normalized in JavaScript. */
+.admin-timeline-chip.timeline-inviteSent{background:#fff7e3;color:#8b6200;border-color:#f2e2ad}
+.admin-timeline-chip.timeline-activeTesting{background:linear-gradient(135deg,#e9f7ed,#effcff);color:#267b39;border-color:#cee7d5}
+
+@media(max-width:980px){
+  .portal-feedback-layout{grid-template-columns:1fr;gap:30px}
+  .portal-feedback-form-column{width:100%}
+}
+@media(max-width:620px){
+  .portal-feedback-form{padding:20px;border-radius:22px}
+  .portal-timeline-actions{align-items:stretch;flex-direction:column}
+  .portal-testflight-button{width:100%}
+}

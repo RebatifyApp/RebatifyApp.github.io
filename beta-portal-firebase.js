@@ -160,33 +160,92 @@ async function completeRequiredTask(){
   finally{taskSubmit.disabled=false;taskSubmit.innerHTML=original;}
 }
 
-function timelineStep(number,status,title,body){
+function timelineStep(number,status,title,body,actionHtml=''){
   const statusLabel={complete:'Complete',now:'Do now',waiting:'Waiting',next:'Next',ongoing:'Ongoing'}[status]||status;
-  return `<article class="portal-timeline-step ${status}"><div class="portal-timeline-marker"><span>${number}</span></div><div class="portal-timeline-copy"><div class="portal-timeline-step-top"><h3>${title}</h3><span class="portal-timeline-status">${statusLabel}</span></div><p>${body}</p></div></article>`;
+  return `<article class="portal-timeline-step ${status}"><div class="portal-timeline-marker"><span>${number}</span></div><div class="portal-timeline-copy"><div class="portal-timeline-step-top"><h3>${title}</h3><span class="portal-timeline-status">${statusLabel}</span></div><p>${body}</p>${actionHtml}</div></article>`;
 }
+
+const PROGRAM_TIMELINE_STAGES=['approved','inviteSent','activeTesting'];
+function normalizeProgramTimelineStage(value){
+  // Build 55 briefly used two extra intermediate values. Map them into the
+  // simplified three-stage workflow so existing tester records keep working.
+  if(value==='deviceReady')return 'approved';
+  if(value==='installed')return 'activeTesting';
+  return PROGRAM_TIMELINE_STAGES.includes(value)?value:'approved';
+}
+
+function testFlightActionHtml(){
+  return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Open / Install TestFlight</span></button><small>Opens TestFlight if it is installed; otherwise opens TestFlight in the App Store.</small></div>`;
+}
+
+function openTestFlightOrStore(){
+  const appStoreUrl='https://apps.apple.com/app/testflight/id899247664';
+  const deepLink='itms-beta://';
+  let fallbackTimer=null;
+  let leftPage=false;
+  const cancelFallback=()=>{leftPage=true;if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}};
+  const visibilityHandler=()=>{if(document.hidden)cancelFallback();};
+  document.addEventListener('visibilitychange',visibilityHandler,{once:true});
+  window.addEventListener('pagehide',cancelFallback,{once:true});
+  fallbackTimer=setTimeout(()=>{
+    if(!leftPage)window.location.href=appStoreUrl;
+  },850);
+  window.location.href=deepLink;
+}
+
+function bindTestFlightButtons(scope=document){
+  scope.querySelectorAll('[data-open-testflight]').forEach(btn=>{
+    if(btn.dataset.bound==='1')return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click',openTestFlightOrStore);
+  });
+}
+
 function renderProgramTimeline(profile){
   const timeline=document.getElementById('portalProgramTimeline');
   const footnote=document.getElementById('portalTimelineFootnote');
   if(!timeline)return;
   const ios=profile.platform==='iOS';
-  const items=ios ? [
-    ['complete','Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.'],
-    ['now','Prepare your iPhone','Install Apple’s <strong>TestFlight</strong> app from the App Store now so you are ready when the Rebatify build becomes available.'],
-    ['waiting','Watch for your TestFlight invitation','When the iOS beta build is ready for you, Apple/TestFlight will send an invitation to your approved beta email. Open that invitation on your iPhone and accept it in TestFlight.'],
-    ['next','Install Rebatify and create your app account','After accepting the invitation, open TestFlight and install Rebatify. Create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Future beta builds will appear in TestFlight.'],
-    ['ongoing','Test real workflows and send feedback','Use Rebatify with real rebate activity when possible. Check Orders, Order Details, Reports, notifications, and other workflows, then use this portal whenever you find a bug, confusing experience, or useful suggestion.']
-  ] : [
-    ['complete','Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.'],
-    ['now','Prepare your Android phone','Make sure the Google Play Store is signed into the <strong>Google Account that matches your approved beta email</strong>. This is the account that will be eligible for the closed test.'],
-    ['waiting','Watch for your Google Play testing link','Google Play closed testing uses an opt-in link. When the Android beta build is ready, <strong>Rebatify will email you the Google Play testing link</strong>. Open it on your Android phone and opt in as a tester.'],
-    ['next','Install Rebatify and create your app account','After opting in, install Rebatify from Google Play. Create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Future test updates will be delivered through Google Play.'],
-    ['ongoing','Test real workflows and send feedback','Use Rebatify with real rebate activity when possible. Check Orders, Order Details, Reports, notifications, and other workflows, then use this portal whenever you find a bug, confusing experience, or useful suggestion.']
-  ];
-  timeline.innerHTML=items.map((item,index)=>timelineStep(index+1,item[0],item[1],item[2])).join('');
+  const stage=normalizeProgramTimelineStage(profile.timelineStage);
+
+  let content;
+  if(ios){
+    const accessCopy=stage==='inviteSent'
+      ? 'Your <strong>TestFlight invitation has been sent</strong> to your approved beta email. Open that invitation on your iPhone and accept it in TestFlight. If you do not already have TestFlight, use the button below to install it first.'
+      : 'Install or open Apple’s <strong>TestFlight</strong> app on your iPhone now. Then watch your approved beta email for the Rebatify TestFlight invitation. When it arrives, open the invitation on your iPhone and accept it in TestFlight.';
+    content=[
+      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.',''],
+      ['Prepare your iPhone & watch for your TestFlight invitation',accessCopy,testFlightActionHtml()],
+      ['Install Rebatify, create your account & begin testing','After accepting the TestFlight invitation, install Rebatify and create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Then use Rebatify with real rebate activity when possible, complete required Beta Program tasks, test core workflows, and send meaningful feedback through this portal.','']
+    ];
+  }else{
+    const accessCopy=stage==='inviteSent'
+      ? 'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone while Google Play is signed into the Google Account that matches your approved beta email, then opt in as a tester.'
+      : 'Make sure Google Play is signed into the <strong>Google Account that matches your approved beta email</strong>. Then watch that email for the Rebatify Google Play closed-testing link. When it arrives, open it on your Android phone and opt in as a tester.';
+    content=[
+      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.',''],
+      ['Prepare your Android phone & watch for your testing link',accessCopy,''],
+      ['Install Rebatify, create your account & begin testing','After opting in, install Rebatify from Google Play and create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Then use Rebatify with real rebate activity when possible, complete required Beta Program tasks, test core workflows, and send meaningful feedback through this portal.','']
+    ];
+  }
+
+  const visuals=stage==='activeTesting'
+    ? ['complete','complete','ongoing']
+    : stage==='inviteSent'
+      ? ['complete','now','next']
+      : ['complete','now','waiting'];
+  timeline.innerHTML=content.map((item,index)=>timelineStep(index+1,visuals[index],item[0],item[1],item[2])).join('');
+  bindTestFlightButtons(timeline);
+
   if(footnote){
-    footnote.innerHTML=ios
-      ? '<strong>iOS:</strong> Your app invitation comes through Apple/TestFlight after Rebatify adds your approved email to the external testing group.'
-      : '<strong>Android:</strong> Google Play closed testing is joined through an opt-in link. Rebatify will send that link to your approved beta email when your Android build is ready.';
+    const currentLabel={
+      approved:'Approved / Portal Ready',
+      inviteSent:ios?'TestFlight Invitation Sent':'Google Play Testing Link Sent',
+      activeTesting:'Active Beta Testing'
+    }[stage];
+    footnote.innerHTML=(ios
+      ? '<strong>iOS:</strong> Rebatify will progress your timeline when your TestFlight access is released and again when you move into active testing.'
+      : '<strong>Android:</strong> Rebatify will progress your timeline when your Google Play testing link is released and again when you move into active testing.')+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
   }
 }
 
@@ -223,12 +282,38 @@ function renderProfile(profile) {
   document.getElementById('portalEmail').textContent = profile.email || '';
   document.getElementById('portalPlatform').textContent = profile.platform || '';
 
+  const stage=normalizeProgramTimelineStage(profile.timelineStage);
+  const installCopy=document.getElementById('platformInstallCopy');
+  const installMeta=document.getElementById('platformInstallMeta');
+  const installAction=document.getElementById('platformInstallAction');
   if (profile.platform === 'iOS') {
-    document.getElementById('platformInstallCopy').textContent = 'Install TestFlight now, then wait for your Rebatify invitation.';
-    document.getElementById('platformInstallMeta').textContent = 'Apple/TestFlight will email your approved beta address when the iOS build is ready for you.';
+    const copy={
+      approved:'Install or open TestFlight now, then watch your approved beta email for your Rebatify invitation.',
+      inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',
+      activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'
+    }[stage];
+    const meta={
+      approved:'The button below opens TestFlight if installed, or takes you to TestFlight in the App Store.',
+      inviteSent:'After accepting the invitation, install Rebatify, create your app account, and begin testing.',
+      activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'
+    }[stage];
+    if(installCopy)installCopy.textContent=copy;
+    if(installMeta)installMeta.textContent=meta;
+    if(installAction){installAction.innerHTML='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open / Install TestFlight <span aria-hidden="true">↗</span></button>';bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
-    document.getElementById('platformInstallCopy').textContent = 'Confirm the correct Google Play account, then wait for the testing link.';
-    document.getElementById('platformInstallMeta').textContent = 'Rebatify will email your Google Play closed-testing opt-in link when the Android build is ready.';
+    const copy={
+      approved:'Confirm the correct Google Play account now, then watch your approved beta email for the closed-testing link.',
+      inviteSent:'Your Google Play testing link has been sent. Open it on your Android phone, opt in, and install Rebatify.',
+      activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'
+    }[stage];
+    const meta={
+      approved:'Google Play must be signed into the Google Account that matches your approved beta email.',
+      inviteSent:'After opting in, install Rebatify, create your app account, and begin testing.',
+      activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'
+    }[stage];
+    if(installCopy)installCopy.textContent=copy;
+    if(installMeta)installMeta.textContent=meta;
+    if(installAction)installAction.innerHTML='';
   }
 
   renderProgramTimeline(profile);
