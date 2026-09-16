@@ -89,7 +89,7 @@ form.addEventListener('submit',async event=>{
           existingAccountMode=true;
           button.disabled=false;button.innerHTML='Sign In & Activate <span aria-hidden="true">→</span>';
           modeNote.textContent='An account already exists for this approved email. Enter that account’s existing password, then choose Sign In & Activate.';
-          showMessage('This email already has a login. Enter the existing account password to activate this invitation.');
+          showMessage('This approved email already has a Rebatify Beta Program login. Enter that account’s existing password to continue, or contact Rebatify Support if this account should have been removed.');
           return;
         }
         throw error;

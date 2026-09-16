@@ -52,7 +52,7 @@ if (form) {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       if (!isAdminUser(credential.user)) {
         await signOut(auth);
-        showError('This account is not authorized for Rebatify Beta administration.');
+        showError('This account is not authorized for Rebatify Beta Program administration.');
         return;
       }
       location.replace('admin.html');

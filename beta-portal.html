@@ -7,14 +7,14 @@
 <meta content="#145cf2" name="theme-color"/>
 <meta content="noindex,nofollow,noarchive,nosnippet" name="robots"/>
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
-<title>Rebatify Beta Tester Portal</title>
+<title>Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=38" rel="stylesheet"/>
+<link href="styles.css?v=39" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <header class="portal-header">
 <div class="wrap portal-nav">
-<div class="portal-brand"><img alt="Rebatify app icon" src="app-icon.png"/><div><strong>Rebatify</strong><span>Beta Tester Portal</span></div></div>
+<div class="portal-brand"><img alt="Rebatify app icon" src="app-icon.png"/><div><strong>Rebatify</strong><span>Beta Program Portal</span></div></div>
 <button class="portal-logout" id="portalLogout" type="button">Sign Out</button>
 </div>
 </header>
@@ -23,19 +23,24 @@
 <section class="portal-hero">
 <div class="wrap portal-hero-grid">
 <div>
-<div class="portal-kicker">Approved Beta Tester</div>
+<div class="portal-kicker">Rebatify Beta Program</div>
 <h1>Welcome, <span id="portalFirstName">Tester</span>.</h1>
-<p class="lead">Use this portal for beta information, FAQs, and to send bugs, feature requests, and other feedback directly to the Rebatify beta team.</p>
+<p class="lead">Use this portal to follow your Rebatify Beta Program timeline, prepare for app access, find How To guides and FAQs, and send feedback directly to the Rebatify team.</p>
 <div class="portal-identity"><span id="portalEmail"></span><span class="portal-platform" id="portalPlatform"></span></div>
 </div>
 <div class="portal-quick-card">
 <div class="portal-quick-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 12.5 3.4 3.4 7.6-8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-<div><strong>Your beta access is active</strong><p>Keep the latest beta build installed and use the feedback form whenever something feels wrong, confusing, or could be better.</p></div>
+<div><strong>Your Rebatify Beta Program access is active</strong><p>Your portal account is ready. Follow the timeline below for the next step on your testing platform.</p></div>
 </div>
 </div>
 </section>
 
 <div id="portalContent">
+<section class="section portal-timeline-section" id="program-timeline"><div class="wrap">
+<div class="portal-section-heading portal-timeline-heading"><div><div class="kicker">Your Program Timeline</div><h2>Know exactly what happens next.</h2><p class="lead">Your next steps are tailored to the testing platform you selected when you applied.</p></div></div>
+<div class="portal-program-timeline" id="portalProgramTimeline" aria-live="polite"></div>
+<div class="portal-timeline-footnote" id="portalTimelineFootnote"></div>
+</div></section>
 <section class="section portal-overview-section"><div class="wrap">
 <div class="portal-section-heading"><div><div class="kicker">Testing Center</div><h2>Everything you need during the beta.</h2></div></div>
 <div class="portal-bento">
@@ -96,5 +101,5 @@
 </main>
 
 
-<script src="firebase-config.js?v=38"></script><script src="beta-portal-firebase.js?v=38" type="module"></script></body>
+<script src="firebase-config.js?v=39"></script><script src="beta-portal-firebase.js?v=39" type="module"></script></body>
 </html>

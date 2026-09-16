@@ -310,6 +310,19 @@ async function sendWorkerEmail(type,a,inviteId=''){
     return payload;
   }finally{clearTimeout(timer);}
 }
+async function callWorkerAdminAction(type,payload={}){
+  if(!emailWorkerEndpoint){const err=new Error('Connect the Cloudflare service in Admin Overview before deleting tester accounts.');err.code='rebatify/service-not-configured';throw err;}
+  if(!auth.currentUser){const err=new Error('Administrator session expired.');err.code='auth/invalid-credential';throw err;}
+  const token=await auth.currentUser.getIdToken();
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),20000);
+  try{
+    const response=await fetch(emailWorkerEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,...payload}),signal:controller.signal});
+    let result={};try{result=await response.json();}catch(_){ }
+    if(!response.ok||result.ok!==true){const err=new Error(result.error||'The Rebatify admin service could not complete this action.');err.code='rebatify/admin-action-failed';throw err;}
+    return result;
+  }finally{clearTimeout(timer);}
+}
 function newInviteId(){
   const bytes=crypto.getRandomValues(new Uint8Array(32));
   return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
@@ -391,6 +404,13 @@ async function resendInvite(a){
   }
 }
 async function deleteApplication(a){
+  // Remove the Firebase Authentication login first so a deleted test applicant
+  // can apply and activate again cleanly with the same email address.
+  await callWorkerAdminAction('admin-delete-auth-user',{email:String(a.email||'').toLowerCase()});
+  if(a.testerUid){
+    await deleteDoc(doc(db,'betaUsers',a.testerUid)).catch(()=>{});
+    if(state.loaded.testers){state.testers=state.testers.filter(x=>x.uid!==a.testerUid);renderTesters();}
+  }
   if(a.inviteId)await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
   await deleteDoc(doc(db,'betaApplications',a.id));
   state.applications=state.applications.filter(x=>x.id!==a.id);
@@ -438,7 +458,7 @@ async function init(user){
 
 if(!firebaseConfigured){
   window.__REBATIFY_ADMIN_BOOT.authResolved = true;
-  showFatal('The Rebatify Beta data service has not been configured yet.','Missing: '+firebaseMissingFields.join(', '));
+  showFatal('The Rebatify Beta Program data service has not been configured yet.','Missing: '+firebaseMissingFields.join(', '));
 }else{
   setLoadingStatus('Restoring your secure administrator session…');
   const authTimer=setTimeout(()=>{
@@ -481,7 +501,7 @@ document.addEventListener('click',async e=>{
     const task=actionBtn.dataset.appAction;const id=actionBtn.dataset.row;if(!id){showToast('Could not find the tester application record.','error');return;}
     const a=await ensureApplicationLoaded(id);if(!a)return;
     const notification=(emailAutomationEnabled&&emailWorkerEndpoint)?' and notify them':'';
-    const deleteNote=a.testerUid?' This deletes the application record and invitation only; the tester account will remain.':'';
+    const deleteNote=' This also deletes the tester portal profile and Firebase Authentication login for this email so the address can be used again later.';
     const confirmation={
       approve:'Approve this tester and send the branded Rebatify beta invitation?',
       waitlist:'Move this applicant to the waitlist'+notification+'?',
@@ -489,7 +509,7 @@ document.addEventListener('click',async e=>{
       resend:'Send a fresh branded Rebatify beta invitation? The previous invitation link will stop working.',
       inactive:'Disable this tester’s portal access'+notification+'?',
       active:'Enable access and mark this tester active?',
-      delete:'Permanently delete this beta application?'+deleteNote
+      delete:'Permanently delete this Rebatify Beta Program application?'+deleteNote
     }[task];
     if(confirmation&&!(await confirmAction(confirmation,['decline','inactive','delete'].includes(task)?'danger':'')))return;
     actionBtn.disabled=true;
@@ -502,7 +522,7 @@ document.addEventListener('click',async e=>{
       if(task==='resend')await resendInvite(a);
       if(task==='delete')await deleteApplication(a);
       if(task!=='delete'){if(state.loaded.applications)renderApplications();renderOverview();}
-      const messages={approve:'Tester approved and the branded Rebatify invitation was sent.',resend:'Branded Rebatify invitation sent. The previous link was replaced.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application deleted.'};
+      const messages={approve:'Tester approved and the branded Rebatify invitation was sent.',resend:'Branded Rebatify invitation sent. The previous link was replaced.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application, tester profile, and login deleted.'};
       showToast(messages[task]||'Tester record updated.');closeDrawer();
     }catch(err){
       if(task==='approve'&&err&&err.rebatifyApprovalCompleted){
