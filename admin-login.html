@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#145cf2">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Rebatify Beta Admin — Sign In</title>
+  <link rel="icon" href="app-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-auth-body">
+  <main class="admin-auth-shell">
+    <section class="admin-auth-card">
+      <div class="admin-auth-brand">
+        <img src="app-icon.png" alt="Rebatify app icon">
+        <div><strong>Rebatify</strong><span>Beta Administration</span></div>
+      </div>
+      <div class="admin-eyebrow">Private Admin Portal</div>
+      <h1>Welcome back.</h1>
+      <p class="admin-auth-lead">Review beta applications, manage tester access, and organize feedback from one private workspace.</p>
+
+      <div id="adminLoginError" class="admin-alert admin-alert-error" hidden></div>
+      <div id="adminNotConnected" class="admin-alert admin-alert-warning" hidden>The admin portal has not been connected to the Rebatify beta backend yet.</div>
+
+      <form id="adminLoginForm" method="post" class="admin-login-form">
+        <input type="hidden" name="action" value="adminLogin">
+        <div class="beta-field">
+          <label for="adminEmail">Administrator email</label>
+          <input id="adminEmail" name="email" type="email" autocomplete="username" required value="support.rebatifyapp@gmail.com">
+        </div>
+        <div class="beta-field">
+          <label for="adminPassword">Password</label>
+          <input id="adminPassword" name="password" type="password" autocomplete="current-password" required placeholder="Admin password">
+        </div>
+        <button class="admin-primary-button" type="submit">Sign In <span aria-hidden="true">→</span></button>
+      </form>
+
+      <div class="admin-auth-note">
+        <div class="admin-lock-dot" aria-hidden="true"></div>
+        <p>This portal is restricted to authorized Rebatify administrators. Applicant and tester information is never embedded in the public website.</p>
+      </div>
+    </section>
+  </main>
+  <script src="beta-config.js"></script>
+  <script>
+  (function(){
+    const form=document.getElementById('adminLoginForm');
+    const endpoint=(window.REBATIFY_BETA_ENDPOINT||'').trim();
+    const notConnected=document.getElementById('adminNotConnected');
+    const error=document.getElementById('adminLoginError');
+    if(!endpoint || endpoint.indexOf('script.google.com')===-1){
+      notConnected.hidden=false;
+      form.querySelector('button').disabled=true;
+    }else{
+      form.action=endpoint;
+    }
+    const p=new URLSearchParams(location.search);
+    const code=p.get('error');
+    const messages={
+      invalid:'That administrator email or password was not recognized.',
+      session:'Your administrator session has expired. Please sign in again.',
+      access:'Administrator access is not enabled for this account.',
+      server:'The admin portal could not sign you in right now. Please try again.'
+    };
+    if(code && messages[code]){error.textContent=messages[code];error.hidden=false;}
+  })();
+  </script>
+</body>
+</html>

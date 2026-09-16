@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1831">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Rebatify Beta Admin</title>
+  <link rel="icon" href="app-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-body">
+  <div id="adminLoading" class="admin-loading-screen">
+    <div class="admin-loading-mark"><img src="app-icon.png" alt=""></div>
+    <div class="portal-spinner"></div>
+    <p>Opening Rebatify Beta Admin…</p>
+  </div>
+
+  <div id="adminApp" class="admin-shell" hidden>
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-brand">
+        <img src="app-icon.png" alt="Rebatify app icon">
+        <div><strong>Rebatify</strong><span>Beta Admin</span></div>
+      </div>
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <button class="admin-nav-item is-active" data-admin-view="overview" type="button"><span class="admin-nav-icon">⌂</span><span>Overview</span></button>
+        <button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon">◎</span><span>Applications</span><span id="navPendingCount" class="admin-nav-badge">0</span></button>
+        <button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon">◇</span><span>Testers</span></button>
+        <button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon">✦</span><span>Feedback</span><span id="navFeedbackCount" class="admin-nav-badge">0</span></button>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <div class="admin-admin-card">
+          <div class="admin-avatar">R+</div>
+          <div><strong>Administrator</strong><span id="adminIdentityEmail">support.rebatifyapp@gmail.com</span></div>
+        </div>
+        <button id="adminLogout" class="admin-secondary-button admin-signout" type="button">Sign Out</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button id="adminMenuToggle" class="admin-menu-toggle" type="button" aria-label="Open navigation">☰</button>
+        <div>
+          <div class="admin-topbar-eyebrow">Rebatify Beta Program</div>
+          <h1 id="adminViewTitle">Overview</h1>
+        </div>
+        <div class="admin-topbar-actions">
+          <button id="adminRefresh" class="admin-icon-button" type="button" title="Refresh data" aria-label="Refresh data">↻</button>
+          <div class="admin-live-chip"><span></span> Live</div>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <section id="adminPasswordGate" class="admin-password-banner" hidden>
+          <div class="admin-password-icon">🔐</div>
+          <div class="admin-password-copy"><div class="admin-section-kicker">First Sign-In</div><h2>Create your administrator password</h2><p>Replace the temporary password with a private password before managing beta testers.</p></div>
+          <form id="adminPasswordForm" method="post" class="admin-password-form">
+            <input type="hidden" name="action" value="adminChangePassword">
+            <input id="adminPasswordToken" type="hidden" name="token" value="">
+            <input id="adminNewPassword" name="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="New password">
+            <input id="adminConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Confirm password">
+            <button class="admin-primary-button" type="submit">Save Password</button>
+          </form>
+        </section>
+
+        <div id="adminPortalContent">
+          <section class="admin-view is-active" data-admin-panel="overview">
+            <div class="admin-welcome-row">
+              <div><div class="admin-section-kicker">Beta Operations</div><h2>Everything in one place.</h2><p>Review applications, manage access, and turn tester feedback into action.</p></div>
+              <button class="admin-primary-button" type="button" data-jump-view="applications">Review Applications <span>→</span></button>
+            </div>
+
+            <div class="admin-metrics-grid">
+              <article class="admin-metric admin-metric-primary"><span>Awaiting Review</span><strong id="metricApplied">0</strong><small>Applications needing a decision</small></article>
+              <article class="admin-metric"><span>Approved</span><strong id="metricApproved">0</strong><small>Tester invitations approved</small></article>
+              <article class="admin-metric"><span>Active Testers</span><strong id="metricActive">0</strong><small>Currently participating</small></article>
+              <article class="admin-metric admin-metric-green"><span>New Feedback</span><strong id="metricFeedback">0</strong><small>Reports waiting for review</small></article>
+            </div>
+
+            <div class="admin-overview-grid">
+              <article class="admin-panel admin-platform-panel">
+                <div class="admin-panel-heading"><div><span class="admin-section-kicker">Tester Mix</span><h3>Platforms</h3></div><span id="platformTotal" class="admin-subtle-chip">0 applicants</span></div>
+                <div class="admin-platform-bars">
+                  <div><div class="admin-platform-label"><span>iOS</span><strong id="iosCount">0</strong></div><div class="admin-bar-track"><span id="iosBar"></span></div></div>
+                  <div><div class="admin-platform-label"><span>Android</span><strong id="androidCount">0</strong></div><div class="admin-bar-track"><span id="androidBar" class="green"></span></div></div>
+                </div>
+                <div class="admin-status-mini-grid">
+                  <div><span>Waitlist</span><strong id="metricWaitlist">0</strong></div>
+                  <div><span>Declined</span><strong id="metricDeclined">0</strong></div>
+                  <div><span>Inactive</span><strong id="metricInactive">0</strong></div>
+                </div>
+              </article>
+
+              <article class="admin-panel admin-recent-panel">
+                <div class="admin-panel-heading"><div><span class="admin-section-kicker">Recent</span><h3>Latest applications</h3></div><button class="admin-text-button" data-jump-view="applications" type="button">View all</button></div>
+                <div id="overviewApplications" class="admin-recent-list"></div>
+              </article>
+            </div>
+
+            <article class="admin-panel admin-feedback-preview-panel">
+              <div class="admin-panel-heading"><div><span class="admin-section-kicker">Feedback Inbox</span><h3>Latest tester feedback</h3></div><button class="admin-text-button" data-jump-view="feedback" type="button">Open feedback</button></div>
+              <div id="overviewFeedback" class="admin-feedback-preview-list"></div>
+            </article>
+          </section>
+
+          <section class="admin-view" data-admin-panel="applications">
+            <div class="admin-page-heading"><div><div class="admin-section-kicker">Applicant Review</div><h2>Beta applications</h2><p>Approve testers, manage the waitlist, and keep private notes.</p></div></div>
+            <div class="admin-toolbar">
+              <div class="admin-search"><span>⌕</span><input id="applicationSearch" type="search" placeholder="Search name or email"></div>
+              <select id="applicationStatusFilter" class="admin-filter"><option value="">All statuses</option><option>Applied</option><option>Approved</option><option>Active</option><option>Waitlist</option><option>Declined</option><option>Inactive</option><option>Removed</option></select>
+              <select id="applicationPlatformFilter" class="admin-filter"><option value="">All platforms</option><option>iOS</option><option>Android</option></select>
+            </div>
+            <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Applicant</th><th>Platform</th><th>Applied</th><th>Status</th><th>Portal</th><th></th></tr></thead><tbody id="applicationsTableBody"></tbody></table></div><div id="applicationsEmpty" class="admin-empty" hidden>No applications match these filters.</div></div>
+          </section>
+
+          <section class="admin-view" data-admin-panel="testers">
+            <div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>See who can access the tester portal and when they last signed in.</p></div></div>
+            <div class="admin-toolbar"><div class="admin-search"><span>⌕</span><input id="testerSearch" type="search" placeholder="Search tester"></div><select id="testerAccessFilter" class="admin-filter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
+            <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Tester</th><th>Platform</th><th>Access</th><th>Last Login</th><th>Password</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div id="testersEmpty" class="admin-empty" hidden>No testers match these filters.</div></div>
+          </section>
+
+          <section class="admin-view" data-admin-panel="feedback">
+            <div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Review bugs, feature requests, confusing experiences, and general feedback.</p></div></div>
+            <div class="admin-toolbar">
+              <div class="admin-search"><span>⌕</span><input id="feedbackSearch" type="search" placeholder="Search feedback"></div>
+              <select id="feedbackStatusFilter" class="admin-filter"><option value="">All statuses</option><option>New</option><option>Reviewing</option><option>Planned</option><option>Fixed</option><option>Closed</option><option>Declined</option></select>
+              <select id="feedbackTypeFilter" class="admin-filter"><option value="">All types</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select>
+            </div>
+            <div id="feedbackList" class="admin-feedback-list"></div><div id="feedbackEmpty" class="admin-empty admin-empty-card" hidden>No feedback matches these filters.</div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="adminDrawerBackdrop" class="admin-drawer-backdrop" hidden></div>
+  <aside id="adminDrawer" class="admin-drawer" aria-hidden="true">
+    <div class="admin-drawer-header"><div><span id="drawerKicker" class="admin-section-kicker">Details</span><h2 id="drawerTitle">Record</h2></div><button id="adminDrawerClose" class="admin-icon-button" type="button" aria-label="Close details">×</button></div>
+    <div id="adminDrawerContent" class="admin-drawer-content"></div>
+  </aside>
+
+  <div id="adminConfirmBackdrop" class="admin-confirm-backdrop" hidden>
+    <div class="admin-confirm-card" role="dialog" aria-modal="true" aria-labelledby="adminConfirmTitle">
+      <div class="admin-confirm-icon" id="adminConfirmIcon">?</div>
+      <h3 id="adminConfirmTitle">Confirm action</h3>
+      <p id="adminConfirmMessage"></p>
+      <div class="admin-confirm-actions"><button id="adminConfirmCancel" class="admin-secondary-button" type="button">Cancel</button><button id="adminConfirmOk" class="admin-primary-button" type="button">Continue</button></div>
+    </div>
+  </div>
+
+  <div id="adminToast" class="admin-toast" hidden></div>
+
+  <script src="beta-config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
