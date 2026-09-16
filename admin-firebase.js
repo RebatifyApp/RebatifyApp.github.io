@@ -27,7 +27,9 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  deleteField
+  deleteField,
+  writeBatch,
+  Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 'use strict';
@@ -65,7 +67,114 @@ let state = {
   applications: [],
   testers: [],
   feedback: [],
-  loaded: { applications:false, testers:false, feedback:false }
+  tasks: [],
+  taskAssignments: [],
+  loaded: { applications:false, testers:false, feedback:false, tasks:false }
+};
+
+
+const TASK_TEMPLATES = {
+  walkthrough: {
+    label:'Walkthrough & first-time setup', platform:'All', responseType:'Long Answer', suggestedHours:48,
+    objective:'Confirm the guided walkthrough is clear, complete, and gives a brand-new Rebatify user enough confidence to start using the app without outside help.',
+    instructions:`1. Open the latest Rebatify beta build and complete the guided walkthrough from beginning to end. If you have already completed it, use the in-app walkthrough/replay option when available.
+2. Follow each step in order and avoid skipping ahead.
+3. Pay attention to wording, button labels, icons, screen transitions, layout, and anything that feels unclear or out of order.
+4. When you finish, decide whether you would know how to add and track your first rebate order without asking for help.
+5. In your response, list anything that confused you. If everything was clear, say “No issues” and briefly tell us what worked well.`
+  },
+  'add-order': {
+    label:'Add and track a rebate order', platform:'All', responseType:'Long Answer', suggestedHours:48,
+    objective:'Validate the complete order-entry experience, saved values, calculations, and the Order Details screen.',
+    instructions:`1. Create a temporary test order in the latest Rebatify beta build using an available Source of Rebate Deals.
+2. Suggested test data: Item/description “Beta Task Test Order”; order number “BETA-1001”; purchase amount $79.99; expected refund $50.00. Use reasonable test values for any other required fields.
+3. Save the order, reopen it from Orders, and verify the values, refund timing, status/timeline, and next-action information look correct.
+4. Edit one field, save again, and confirm the change persists.
+5. Report any field that was confusing, any calculation that looked wrong, or anything that took more steps than expected. If no issue occurred, say “No issues.”`
+  },
+  'refund-workflow': {
+    label:'Partial + final refund workflow', platform:'All', responseType:'Long Answer', suggestedHours:48,
+    objective:'Confirm Rebatify correctly handles a partial refund, preserves the remaining shortfall, and then completes the order after the final refund.',
+    instructions:`1. Create or use a test order that has not yet received its full expected refund.
+2. Record a partial refund that is less than the expected refund.
+3. Reopen the order and verify Rebatify still shows the remaining amount correctly instead of treating the order as fully refunded.
+4. Record the remaining refund amount.
+5. Verify the order moves to the correct completed/refunded state and the totals are correct in Order Details and Reports.
+6. Tell us anything that was unclear or incorrect, or respond “No issues.”`
+  },
+  'multi-order-refund': {
+    label:'Multi-order refund workflow', platform:'All', responseType:'Long Answer', suggestedHours:48,
+    objective:'Validate the multi-order refund workflow, including the single-order guardrail, selecting multiple eligible orders, and allocation/results after saving.',
+    instructions:`1. Make sure at least two eligible test orders are available for a refund.
+2. Open Record a Multi-Order Refund.
+3. First try to continue with only one order selected. Confirm Rebatify blocks the action and clearly explains that multiple orders are required.
+4. Select at least two eligible orders and complete a test multi-order refund.
+5. Reopen each affected order and verify the refund amounts and remaining balances are correct.
+6. Report any confusing message, incorrect allocation, duplicate record, or unexpected result. If everything worked, say “No issues.”`
+  },
+  reports: {
+    label:'Reports & spending insights', platform:'All', responseType:'Long Answer', suggestedHours:48,
+    objective:'Confirm Reports accurately explains spending, refunds, Out Of Pocket Expense, and time-period totals using the tester’s recorded data.',
+    instructions:`1. Open Reports after you have at least a few test orders and at least one refund recorded.
+2. Review multiple available time periods/filters.
+3. Compare the totals to the underlying orders you entered.
+4. Check spending, refunds, and Out Of Pocket Expense for anything that appears inconsistent or difficult to understand.
+5. Tell us whether the report helped you understand your rebate activity at a glance and note any number, label, or layout that seemed wrong. If no issue occurred, say “No issues.”`
+  },
+  'shared-profiles': {
+    label:'Shared Profiles collaboration', platform:'All', responseType:'Long Answer', suggestedHours:72,
+    objective:'Validate creating or joining a Shared Profile and confirm shared data behaves consistently between participating accounts.',
+    instructions:`1. Use two test Rebatify accounts when possible.
+2. Create a Shared Profile or join one using the normal invitation flow.
+3. Confirm the second account can access the shared profile.
+4. Add or edit a temporary test record from one participant and confirm the other participant sees the expected update.
+5. Check that profile names, access, and shared information are clear and do not appear duplicated.
+6. Report any invitation, access, sync, or wording issue. If everything worked, say “No issues.”`
+  },
+  'cloud-sync': {
+    label:'Cloud sync across two clients', platform:'All', responseType:'Long Answer', suggestedHours:72,
+    objective:'Confirm the same Rebatify account stays consistent across two authorized clients without duplicates, missing edits, or confusing cloud status.',
+    instructions:`1. Sign in to the same Rebatify test account on two authorized clients, such as your phone plus the Rebatify Web App or another trusted device.
+2. Create or edit a temporary test order on the first client.
+3. Wait for cloud sync to finish and confirm the record appears exactly once on the second client with the same values.
+4. Edit that record from the second client and confirm the first client receives the updated values.
+5. Watch the cloud status/saving indicators during the test.
+6. Report duplicates, missing edits, stale values, unexpected device-limit behavior, or unclear sync status. If no issue occurred, say “No issues.”`
+  },
+  'plus-ios': {
+    label:'Rebatify+ test purchase — iOS / TestFlight', platform:'iOS', responseType:'Long Answer', suggestedHours:48,
+    objective:'Validate the complete Rebatify+ purchase and entitlement experience from the TestFlight build without using a real-money production purchase.',
+    adminNote:'iOS only. TestFlight In-App Purchases run in Apple’s sandbox and do not charge real money. Do not send this objective to someone using the production App Store build.',
+    instructions:`1. Make sure you are using the latest Rebatify build installed through TestFlight — not a production App Store build.
+2. Open the Rebatify+ paywall/upgrade screen and review the plan wording, pricing display, trial wording (if shown), and purchase buttons.
+3. Start a Rebatify+ subscription purchase and complete the Apple purchase sheet. TestFlight purchases use Apple’s sandbox and should not create a real charge.
+4. Confirm Rebatify+ unlocks immediately after the test transaction.
+5. Close and reopen Rebatify and confirm Plus access is still recognized.
+6. If Restore Purchases is available, test it and confirm entitlement remains correct.
+7. Report any incorrect price/plan text, purchase error, entitlement delay, locked Plus feature, restore problem, or confusing messaging. If everything worked, say “No issues.”`
+  },
+  'plus-android': {
+    label:'Rebatify+ test purchase — Android / Google Play', platform:'Android', responseType:'Long Answer', suggestedHours:48,
+    objective:'Validate the complete Rebatify+ Google Play purchase and entitlement experience using a Google Play license-testing account.',
+    adminNote:'Android only. Before sending this task, make sure the tester’s Google account is configured under Play Console → Settings → License testing and is eligible for the test release. If Google presents a normal real-money purchase instead of a test purchase, the tester should stop.',
+    instructions:`1. Make sure the Google Play Store is signed into the Google account approved for the Rebatify beta and configured for Google Play license testing.
+2. Install/open Rebatify from the designated Google Play testing track.
+3. Open the Rebatify+ paywall and review the plan wording, pricing display, trial wording (if shown), and purchase buttons.
+4. Start a Rebatify+ purchase. Confirm Google Play identifies it as a test purchase. If it appears to be a normal real-money purchase, stop and report that instead of completing it.
+5. Complete the test purchase and verify Rebatify+ unlocks immediately.
+6. Close and reopen Rebatify and confirm Plus access remains correct. Test Restore Purchases if that option is available.
+7. Report any billing, entitlement, restore, wording, or paywall issue. If everything worked, say “No issues.”`
+  },
+  'web-app': {
+    label:'Rebatify Web App smoke test', platform:'All', responseType:'Long Answer', suggestedHours:72,
+    objective:'Validate that the Rebatify Web App is understandable, synchronized, and usable for the core workflows a Rebatify+ member expects.',
+    instructions:`1. Open the Rebatify Web App using the beta web link you were provided and sign in with your Rebatify test account.
+2. Review Home, Orders, Order Details, Reports, and Settings/Account areas that are available to you.
+3. Create or edit a temporary test record on the web and verify it synchronizes to the mobile app.
+4. Make a change on mobile and verify the web version updates without creating a duplicate.
+5. Check layout, navigation, wording, loading/saving states, and device/client access behavior.
+6. Report anything that is missing, confusing, visually broken, out of sync, or inconsistent with the mobile app. If everything worked, say “No issues.”`
+  }
 };
 
 function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -126,7 +235,7 @@ async function countQuery(ref){const snap=await getCountFromServer(ref);return s
 async function loadMetrics(){
   const apps=collection(db,'betaApplications');
   const feedback=collection(db,'betaFeedback');
-  const [total,applied,approved,active,waitlist,declined,inactive,ios,android,newFeedback]=await Promise.all([
+  const [total,applied,approved,active,waitlist,declined,inactive,ios,android,newFeedback,activeTasks]=await Promise.all([
     countQuery(apps),
     countQuery(query(apps,where('status','==','Applied'))),
     countQuery(query(apps,where('status','==','Approved'))),
@@ -136,9 +245,10 @@ async function loadMetrics(){
     countQuery(query(apps,where('status','==','Inactive'))),
     countQuery(query(apps,where('platform','==','iOS'))),
     countQuery(query(apps,where('platform','==','Android'))),
-    countQuery(query(feedback,where('status','==','New')))
+    countQuery(query(feedback,where('status','==','New'))),
+    countQuery(query(collection(db,'betaTaskAssignments'),where('status','==','Pending')))
   ]);
-  state.metrics={total,applied,approved,active,waitlist,declined,inactive,ios,android,newFeedback};
+  state.metrics={total,applied,approved,active,waitlist,declined,inactive,ios,android,newFeedback,activeTasks};
 }
 async function loadRecent(){
   const [appsSnap,fbSnap]=await Promise.all([
@@ -165,11 +275,26 @@ async function loadFeedback(force=false){
   state.feedback=snap.docs.map(normalizeDoc);state.loaded.feedback=true;renderFeedback();
 }
 
+async function loadTasks(force=false){
+  if(state.loaded.tasks&&!force){renderTasks();renderTaskRecipientPicker();return;}
+  const [taskSnap,assignmentSnap]=await Promise.all([
+    getDocs(query(collection(db,'betaTasks'),orderBy('createdAt','desc'),limit(100))),
+    getDocs(query(collection(db,'betaTaskAssignments'),limit(500)))
+  ]);
+  state.tasks=taskSnap.docs.map(normalizeDoc);
+  state.taskAssignments=assignmentSnap.docs.map(normalizeDoc);
+  state.loaded.tasks=true;
+  renderTasks();
+  renderTaskRecipientPicker();
+}
+
 function renderMetrics(){
-  const m=state.metrics||{};const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v==null?0:v;};
+  const m=state.metrics||{};
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v==null?0:v;};
+  const setNavBadge=(id,v)=>{const el=document.getElementById(id);if(!el)return;const count=Number(v||0);el.textContent=count;el.hidden=count<1;};
   set('metricApplied',m.applied);set('metricApproved',m.approved);set('metricActive',m.active);set('metricFeedback',m.newFeedback);
   set('metricWaitlist',m.waitlist);set('metricDeclined',m.declined);set('metricInactive',m.inactive);set('iosCount',m.ios);set('androidCount',m.android);
-  set('navPendingCount',m.applied);set('navFeedbackCount',m.newFeedback);
+  setNavBadge('navPendingCount',m.applied);setNavBadge('navTaskCount',m.activeTasks);setNavBadge('navFeedbackCount',m.newFeedback);
   const total=Number(m.total||0);set('platformTotal',total+' applicant'+(total===1?'':'s'));
   document.getElementById('iosBar').style.width=(total?Math.round(Number(m.ios||0)/total*100):0)+'%';
   document.getElementById('androidBar').style.width=(total?Math.round(Number(m.android||0)/total*100):0)+'%';
@@ -193,9 +318,19 @@ function testerFiltered(){
   const q=document.getElementById('testerSearch').value.trim().toLowerCase();const access=document.getElementById('testerAccessFilter').value;
   return state.testers.filter(t=>(!q||((t.name||'')+' '+(t.email||'')).toLowerCase().includes(q))&&(!access||t.accessStatus===access));
 }
+function pendingAssignmentsForTester(t){
+  const email=String(t.email||'').trim().toLowerCase();
+  return state.taskAssignments.filter(a=>a.status==='Pending'&&(a.testerUid===t.uid||String(a.email||'').trim().toLowerCase()===email)).sort((a,b)=>(timestampToDate(a.dueAt)?.getTime()||0)-(timestampToDate(b.dueAt)?.getTime()||0));
+}
+function testerTaskStateHtml(t){
+  const pending=pendingAssignmentsForTester(t);
+  if(!pending.length)return '<div class="admin-tester-task-state"><span class="admin-status-pill status-completed">All clear</span><small>No required tasks pending</small></div>';
+  const next=pending[0];
+  return `<div class="admin-tester-task-state"><span class="admin-status-pill status-pending">${pending.length} pending</span><small>Next: ${esc(formatDate(next.dueAt))}</small></div>`;
+}
 function renderTesters(){
   const data=testerFiltered();const body=document.getElementById('testersTableBody');
-  body.innerHTML=data.map(t=>`<tr><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${esc(t.lastLogin?relativeDate(t.lastLogin):'Never')}</td><td>Email verification code</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`).join('');
+  body.innerHTML=data.map(t=>`<tr><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${testerTaskStateHtml(t)}</td><td>${esc(t.lastLogin?relativeDate(t.lastLogin):'Never')}</td><td>Email verification code</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`).join('');
   document.getElementById('testersEmpty').hidden=data.length>0;
 }
 function feedbackFiltered(){
@@ -208,14 +343,159 @@ function renderFeedback(){
   document.getElementById('feedbackEmpty').hidden=data.length>0;
 }
 
+function localDatetimeValue(date){
+  const d=new Date(date.getTime()-date.getTimezoneOffset()*60000);return d.toISOString().slice(0,16);
+}
+function selectTaskRecipients(platform='All'){
+  document.querySelectorAll('[data-task-recipient]').forEach(el=>{const p=el.dataset.platform||'';el.checked=platform==='All'||p===platform;});
+  updateTaskRecipientSummary();
+}
+function applyTaskTemplate(key){
+  const tpl=TASK_TEMPLATES[key];
+  const meta=document.getElementById('taskTemplateMeta');
+  if(!tpl){if(meta)meta.textContent='Custom task selected. Write any testing objective and instructions you want.';return;}
+  document.getElementById('taskTitle').value=tpl.label;
+  document.getElementById('taskObjective').value=tpl.objective;
+  document.getElementById('taskInstructions').value=tpl.instructions;
+  document.getElementById('taskResponseType').value=tpl.responseType;
+  const due=document.getElementById('taskDueAt');if(due&&!due.value)due.value=localDatetimeValue(new Date(Date.now()+tpl.suggestedHours*60*60*1000));
+  if(tpl.platform&&tpl.platform!=='All')selectTaskRecipients(tpl.platform);
+  if(meta)meta.textContent=`Recommended recipients: ${tpl.platform==='All'?'all active testers':tpl.platform+' testers'} · Suggested deadline: ${tpl.suggestedHours} hours.${tpl.adminNote?' '+tpl.adminNote:''}`;
+}
+function activeTaskTesters(){
+  const byEmail=new Map();
+  for(const t of state.testers){
+    if(t.accessStatus!=='Enabled'||!['Approved','Active'].includes(t.status))continue;
+    const key=String(t.email||'').trim().toLowerCase();
+    if(!key)continue;
+    const existing=byEmail.get(key);
+    if(!existing||t.status==='Active')byEmail.set(key,t);
+  }
+  return [...byEmail.values()].sort((a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email)));
+}
+function updateTaskRecipientSummary(){
+  const boxes=[...document.querySelectorAll('[data-task-recipient]:checked')];
+  const el=document.getElementById('taskRecipientSummary');
+  if(el)el.textContent=boxes.length+' selected';
+}
+function renderTaskRecipientPicker(){
+  const list=document.getElementById('taskRecipientList'); if(!list)return;
+  const testers=activeTaskTesters();
+  if(!testers.length){list.innerHTML='<div class="admin-empty-inline" style="padding:14px">No active testers are available for a task yet.</div>';updateTaskRecipientSummary();return;}
+  list.innerHTML=testers.map(t=>`<label class="admin-task-recipient"><input type="checkbox" data-task-recipient="${esc(t.uid)}" data-platform="${esc(t.platform||'')}"><span class="admin-task-recipient-copy"><strong>${esc(t.name||'Tester')}</strong><span>${esc(t.email||'')}</span></span><span class="admin-platform-pill">${esc(t.platform||'')}</span></label>`).join('');
+  updateTaskRecipientSummary();
+}
+function taskAssignmentStats(taskId){
+  const rows=state.taskAssignments.filter(a=>a.taskId===taskId);
+  return {rows,total:rows.length,completed:rows.filter(a=>a.status==='Completed').length,removed:rows.filter(a=>a.status==='Overdue - Removed').length,pending:rows.filter(a=>a.status==='Pending').length,reminded:rows.filter(a=>a.status==='Pending'&&a.lastReminderSentAt).length};
+}
+function taskDisplayStatus(t,stats){
+  if(t.status==='Cancelled')return 'Cancelled';
+  if(stats.removed>0&&stats.pending===0)return 'Closed';
+  if(stats.total>0&&stats.completed===stats.total)return 'Completed';
+  return t.status||'Active';
+}
+function renderTaskDashboard(){
+  const pending=state.taskAssignments.filter(a=>a.status==='Pending').sort((a,b)=>(timestampToDate(a.dueAt)?.getTime()||0)-(timestampToDate(b.dueAt)?.getTime()||0));
+  const now=Date.now(), day=24*60*60*1000;
+  const open=state.tasks.filter(t=>t.status!=='Cancelled'&&taskAssignmentStats(t.id).pending>0).length;
+  const dueSoon=pending.filter(a=>{const d=timestampToDate(a.dueAt);return d&&d.getTime()>now&&d.getTime()-now<=day;}).length;
+  const reminded=pending.filter(a=>a.lastReminderSentAt).length;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('taskMetricOpen',open);set('taskMetricPending',pending.length);set('taskMetricDueSoon',dueSoon);set('taskMetricReminded',reminded);
+  const list=document.getElementById('taskNeedsAttention');if(!list)return;
+  list.innerHTML=pending.length?pending.map(a=>`<div class="admin-task-attention-row"><div class="admin-task-attention-copy"><strong>${esc(a.name||'Tester')} · ${esc(a.taskTitle||'Required task')}</strong><span>${esc(a.email||'')} · ${esc(a.platform||'')}</span></div><div class="admin-task-attention-due">Due ${esc(formatDate(a.dueAt))}</div><button class="admin-task-remind-button" data-remind-assignment="${esc(a.id)}" type="button">${a.lastReminderSentAt?'Remind Again':'Send Reminder'}</button></div>`).join(''):'<div class="admin-empty-inline">No outstanding required tasks.</div>';
+}
+function renderTasks(){
+  const body=document.getElementById('tasksTableBody'); if(!body)return;
+  body.innerHTML=state.tasks.map(t=>{const stats=taskAssignmentStats(t.id);const pct=stats.total?Math.round(stats.completed/stats.total*100):0;const displayStatus=taskDisplayStatus(t,stats);return `<tr><td><strong>${esc(t.title||'Required task')}</strong><small style="display:block;color:#718095;margin-top:3px">${esc(t.templateLabel||t.responseType||'Custom task')}</small></td><td>${esc(formatDate(t.dueAt))}</td><td>${stats.total}</td><td><div class="admin-task-progress"><strong>${stats.completed}/${stats.total}</strong><span class="admin-task-progress-bar"><span style="width:${pct}%"></span></span></div></td><td><strong>${stats.pending}</strong></td><td><span class="admin-status-pill ${statusClass(displayStatus)}">${esc(displayStatus)}</span></td><td><button class="admin-table-open" data-open-task="${esc(t.id)}" type="button">Manage</button></td></tr>`;}).join('');
+  document.getElementById('tasksEmpty').hidden=state.tasks.length>0;
+  renderTaskDashboard();
+}
+function findTask(id){return state.tasks.find(t=>t.id===id);}
+function assignmentReminderText(a){return a.lastReminderSentAt?`Last reminder ${relativeDate(a.lastReminderSentAt)}`:'No reminder sent yet';}
+function openTaskRecord(t){
+  const stats=taskAssignmentStats(t.id);
+  const assignments=stats.rows.sort((a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email)));
+  const rows=assignments.length?assignments.map(a=>`<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(a.name||'Tester')}</strong><small>${esc(a.email||'')}</small></div><span class="admin-status-pill ${statusClass(a.status)}">${esc(a.status)}</span></div>${a.response?`<div class="admin-task-assignment-response"><strong>Response:</strong><br>${esc(a.response)}</div>`:''}${a.status==='Pending'?`<div class="admin-task-assignment-reminder">${esc(assignmentReminderText(a))}</div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(a.id)}" type="button">Send Reminder</button></div>`:''}</div>`).join(''):'<div class="admin-empty-inline">No task assignments found.</div>';
+  const cancel=t.status==='Active'?`<button class="admin-action-button danger-soft" data-task-action="cancel" data-task-id="${esc(t.id)}" type="button">Cancel Task</button>`:'';
+  const remind=stats.pending?`<button class="admin-action-button approve" data-task-action="remind-pending" data-task-id="${esc(t.id)}" type="button">Remind Pending Testers (${stats.pending})</button>`:'';
+  openDrawer('Beta Program Task',t.title||'Required Task',`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(taskDisplayStatus(t,stats))}">${esc(taskDisplayStatus(t,stats))}</span><span class="admin-subtle-chip">Due ${esc(formatDate(t.dueAt))}</span></div>${t.objective?`<div class="admin-feedback-detail"><span>Testing Objective</span><p>${esc(t.objective)}</p></div>`:''}<div class="admin-feedback-detail"><span>Instructions</span><p>${esc(t.instructions||'')}</p></div><div class="admin-detail-grid"><div><span>Template</span><strong>${esc(t.templateLabel||'Custom')}</strong></div><div><span>Response Type</span><strong>${esc(t.responseType||'Acknowledgement')}</strong></div><div><span>Recipients</span><strong>${stats.total}</strong></div><div><span>Completed</span><strong>${stats.completed}</strong></div><div><span>Pending</span><strong>${stats.pending}</strong></div><div><span>Reminded</span><strong>${stats.reminded}</strong></div><div><span>Removed for Missed Deadline</span><strong>${stats.removed}</strong></div><div><span>Automatic Reminders</span><strong>${t.autoReminders===false?'Off':'On'}</strong></div></div><div><label class="admin-detail-label">Tester responses</label><div class="admin-task-response-list">${rows}</div></div><div class="admin-drawer-actions">${remind}${cancel}</div></div>`);
+}
+async function createRequiredTask(){
+  const templateKey=String(document.getElementById('taskTemplateSelect').value||'').trim();
+  const template=TASK_TEMPLATES[templateKey]||null;
+  const title=String(document.getElementById('taskTitle').value||'').trim();
+  const objective=String(document.getElementById('taskObjective').value||'').trim();
+  const instructions=String(document.getElementById('taskInstructions').value||'').trim();
+  const responseType=document.getElementById('taskResponseType').value;
+  const autoReminders=!!document.getElementById('taskAutoReminders').checked;
+  const dueRaw=document.getElementById('taskDueAt').value;
+  const selected=[...document.querySelectorAll('[data-task-recipient]:checked')].map(el=>el.dataset.taskRecipient);
+  if(title.length<2)throw new Error('Enter a task title.');
+  if(objective.length<2)throw new Error('Enter a testing objective.');
+  if(instructions.length<2)throw new Error('Enter clear task instructions.');
+  if(!dueRaw)throw new Error('Choose a required completion date and time.');
+  const due=new Date(dueRaw); if(Number.isNaN(due.getTime())||due.getTime()<=Date.now())throw new Error('The task deadline must be in the future.');
+  if(!selected.length)throw new Error('Select at least one active tester.');
+  if(!emailWorkerEndpoint)throw new Error('Connect the Cloudflare email service before sending a required task.');
+  const testers=activeTaskTesters().filter(t=>selected.includes(t.uid));
+  const taskRef=doc(collection(db,'betaTasks'));
+  const batch=writeBatch(db);
+  batch.set(taskRef,{title,objective,instructions,responseType,dueAt:Timestamp.fromDate(due),status:'Active',recipientCount:testers.length,templateKey:templateKey||'custom',templateLabel:template?template.label:'Custom task',autoReminders,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:adminEmail});
+  for(const t of testers){
+    const assignmentRef=doc(db,'betaTaskAssignments',taskRef.id+'_'+t.uid);
+    batch.set(assignmentRef,{taskId:taskRef.id,taskTitle:title,taskObjective:objective,taskInstructions:instructions,responseType,templateKey:templateKey||'custom',testerUid:t.uid,applicationId:t.applicationId||'',name:t.name||'',email:String(t.email||'').toLowerCase(),platform:t.platform||'',status:'Pending',response:'',assignedAt:serverTimestamp(),dueAt:Timestamp.fromDate(due),dueLabel:'',autoReminders,completedAt:null,removedAt:null,emailStatus:'Sending',lastReminderSentAt:null,reminder24hSentAt:null,reminder4hSentAt:null,updatedAt:serverTimestamp()});
+  }
+  await batch.commit();
+  let sent=0,failed=0;
+  const dueLabel=due.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  for(const t of testers){
+    const ref=doc(db,'betaTaskAssignments',taskRef.id+'_'+t.uid);
+    try{
+      await updateDoc(ref,{dueLabel,updatedAt:serverTimestamp()});
+      await callWorkerAdminAction('task-assigned',{email:String(t.email||'').toLowerCase(),name:t.name||'',platform:t.platform||'',taskTitle:title,taskObjective:objective,taskInstructions:instructions,dueLabel});
+      await updateDoc(ref,{emailStatus:'Sent',emailSentAt:serverTimestamp(),updatedAt:serverTimestamp()}); sent++;
+    }catch(err){await updateDoc(ref,{emailStatus:'Error',updatedAt:serverTimestamp()}).catch(()=>{});failed++;}
+  }
+  state.loaded.tasks=false;
+  await loadMetrics();renderMetrics();
+  await loadTasks(true);
+  document.getElementById('taskTemplateSelect').value='';document.getElementById('taskTitle').value='';document.getElementById('taskObjective').value='';document.getElementById('taskInstructions').value='';document.getElementById('taskDueAt').value='';document.getElementById('taskResponseType').value='Acknowledgement';document.getElementById('taskAutoReminders').checked=true;document.getElementById('taskTemplateMeta').textContent='Choose a template to prefill the testing objective and instructions, or leave this on Custom task.';
+  renderTaskRecipientPicker();
+  return {sent,failed,total:testers.length};
+}
+async function sendAssignmentReminder(a){
+  if(!a||a.status!=='Pending')return false;
+  const dueLabel=a.dueLabel||formatDate(a.dueAt);
+  await callWorkerAdminAction('task-reminder',{email:String(a.email||'').toLowerCase(),name:a.name||'Tester',platform:a.platform||'',taskTitle:a.taskTitle||'Required Beta Program Task',taskObjective:a.taskObjective||'',taskInstructions:a.taskInstructions||'',dueLabel,reminderKind:'Reminder'});
+  await updateDoc(doc(db,'betaTaskAssignments',a.id),{lastReminderSentAt:serverTimestamp(),manualReminderSentAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  a.lastReminderSentAt=new Date();a.manualReminderSentAt=new Date();
+  renderTasks();
+  return true;
+}
+async function remindPendingForTask(t){
+  const rows=state.taskAssignments.filter(a=>a.taskId===t.id&&a.status==='Pending');let sent=0,failed=0;
+  for(const a of rows){try{await sendAssignmentReminder(a);sent++;}catch(_){failed++;}}
+  return {sent,failed,total:rows.length};
+}
+async function cancelRequiredTask(t){
+  const assignments=state.taskAssignments.filter(a=>a.taskId===t.id&&a.status==='Pending');
+  const batch=writeBatch(db);batch.update(doc(db,'betaTasks',t.id),{status:'Cancelled',updatedAt:serverTimestamp()});
+  assignments.forEach(a=>batch.update(doc(db,'betaTaskAssignments',a.id),{status:'Cancelled',updatedAt:serverTimestamp()}));
+  await batch.commit();t.status='Cancelled';assignments.forEach(a=>a.status='Cancelled');
+  await loadMetrics();renderMetrics();renderTasks();
+}
+
 async function switchView(view){
   activeView=view;document.body.classList.remove('admin-nav-open');
   document.querySelectorAll('[data-admin-view]').forEach(b=>b.classList.toggle('is-active',b.dataset.adminView===view));
   document.querySelectorAll('[data-admin-panel]').forEach(p=>p.classList.toggle('is-active',p.dataset.adminPanel===view));
-  const titles={overview:'Overview',applications:'Applications',testers:'Testers',feedback:'Feedback'};document.getElementById('adminViewTitle').textContent=titles[view]||'Overview';
+  const titles={overview:'Overview',applications:'Applications',testers:'Testers',tasks:'Tasks',feedback:'Feedback'};document.getElementById('adminViewTitle').textContent=titles[view]||'Overview';
   try{
     if(view==='applications')await loadApplications();
-    if(view==='testers')await loadTesters();
+    if(view==='testers'){await loadTesters();await loadTasks();renderTesters();}
+    if(view==='tasks'){await loadTesters();await loadTasks();}
     if(view==='feedback')await loadFeedback();
   }catch(e){showToast('Could not load '+view+'. '+friendlyFirebaseError(e),'error');}
 }
@@ -254,6 +534,8 @@ function openApplicationRecord(a){
 function openTesterRecord(t){
   const normalizedEmail=String(t.email||'').trim().toLowerCase();
   const a=state.applications.find(x=>x.testerUid===t.uid||String(x.email||'').trim().toLowerCase()===normalizedEmail);
+  const pending=pendingAssignmentsForTester(t);
+  const pendingHtml=pending.length?pending.map(x=>`<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(x.taskTitle||'Required task')}</strong><small>Due ${esc(formatDate(x.dueAt))}</small></div><span class="admin-status-pill status-pending">Pending</span></div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(x.id)}" type="button">${x.lastReminderSentAt?'Remind Again':'Send Reminder'}</button></div></div>`).join(''):'<div class="admin-empty-inline">No required tasks are pending for this tester.</div>';
   const accessAction=a
     ? (t.accessStatus==='Enabled'
       ? `<button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button>`
@@ -263,7 +545,7 @@ function openTesterRecord(t){
     ? `<button class="admin-action-button danger-soft" data-app-action="delete" data-row="${esc(a.id)}" type="button">Delete Application & Tester</button>`
     : `<button class="admin-action-button danger-soft" data-tester-action="delete" data-tester-uid="${esc(t.uid)}" type="button">Delete Tester</button>`;
   const actions=[accessAction,deleteAction].filter(Boolean).join('');
-  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div></div><div class="admin-drawer-actions">${actions}</div></div>`);
+  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div><div><span>Required Tasks Pending</span><strong>${pending.length}</strong></div></div><div><label class="admin-detail-label">Outstanding required tasks</label><div class="admin-task-response-list">${pendingHtml}</div></div><div class="admin-drawer-actions">${actions}</div></div>`);
 }
 function openFeedbackRecord(f){
   const statuses=['New','Reviewing','Planned','Fixed','Closed','Declined'];
@@ -316,7 +598,7 @@ async function sendWorkerEmail(type,a){
   }finally{clearTimeout(timer);}
 }
 async function callWorkerAdminAction(type,payload={}){
-  if(!emailWorkerEndpoint){const err=new Error('Connect the Cloudflare service in Admin Overview before deleting tester accounts.');err.code='rebatify/service-not-configured';throw err;}
+  if(!emailWorkerEndpoint){const err=new Error('Connect the Cloudflare service in Admin Overview before using this action.');err.code='rebatify/service-not-configured';throw err;}
   if(!auth.currentUser){const err=new Error('Administrator session expired.');err.code='auth/invalid-credential';throw err;}
   const token=await auth.currentUser.getIdToken();
   const controller=new AbortController();
@@ -429,9 +711,19 @@ async function deleteTesterRecordsByEmail(email){
   }
   return snap.size;
 }
+async function deleteTaskAssignmentsForTester(email,uid=''){
+  const normalizedEmail=String(email||'').trim().toLowerCase();
+  const docs=new Map();
+  if(normalizedEmail){const snap=await getDocs(query(collection(db,'betaTaskAssignments'),where('email','==',normalizedEmail)));snap.docs.forEach(d=>docs.set(d.id,d.ref));}
+  if(uid){const snap=await getDocs(query(collection(db,'betaTaskAssignments'),where('testerUid','==',uid)));snap.docs.forEach(d=>docs.set(d.id,d.ref));}
+  await Promise.all([...docs.values()].map(ref=>deleteDoc(ref)));
+  if(state.loaded.tasks){const ids=new Set(docs.keys());state.taskAssignments=state.taskAssignments.filter(a=>!ids.has(a.id));renderTasks();}
+  return docs.size;
+}
 async function deleteTesterOnly(t){
   const email=String(t.email||'').trim().toLowerCase();
   await callWorkerAdminAction('admin-delete-auth-user',{email});
+  await deleteTaskAssignmentsForTester(email,t.uid);
   await deleteTesterRecordsByEmail(email);
 }
 async function deleteApplication(a){
@@ -440,6 +732,7 @@ async function deleteApplication(a){
   // duplicate records left by earlier beta builds/tests.
   const email=String(a.email||'').trim().toLowerCase();
   await callWorkerAdminAction('admin-delete-auth-user',{email});
+  await deleteTaskAssignmentsForTester(email,a.testerUid||'');
   await deleteTesterRecordsByEmail(email);
   if(a.testerUid){
     await deleteDoc(doc(db,'betaUsers',a.testerUid)).catch(()=>{});
@@ -451,7 +744,7 @@ async function deleteApplication(a){
   state.loaded.applications=false;
   await loadOverview();
   if(activeView==='applications')await loadApplications(true);
-  if(activeView==='testers')await loadTesters(true);
+  if(activeView==='testers'){await loadTesters(true);await loadTasks(true);renderTesters();}
 }
 
 
@@ -465,7 +758,8 @@ async function refreshActiveView(){
   try{
     await loadOverview();
     if(activeView==='applications')await loadApplications(true);
-    if(activeView==='testers')await loadTesters(true);
+    if(activeView==='testers'){await loadTesters(true);await loadTasks(true);renderTesters();}
+    if(activeView==='tasks'){await loadTesters(true);await loadTasks(true);}
     if(activeView==='feedback')await loadFeedback(true);
   }catch(e){showToast('Could not refresh beta data. '+friendlyFirebaseError(e),'error');}
   finally{document.getElementById('adminRefresh').classList.remove('is-spinning');}
@@ -531,11 +825,35 @@ document.addEventListener('click',async e=>{
   const nav=e.target.closest('[data-admin-view]');if(nav){await switchView(nav.dataset.adminView);return;}
   const jump=e.target.closest('[data-jump-view]');if(jump){await switchView(jump.dataset.jumpView);return;}
   const appBtn=e.target.closest('[data-open-app]');if(appBtn){try{const a=await ensureApplicationLoaded(appBtn.dataset.openApp);if(a)openApplicationRecord(a);}catch(err){showToast('Could not open that application.','error');}return;}
-  const testerBtn=e.target.closest('[data-open-tester]');if(testerBtn){if(!state.loaded.applications)await loadApplications();const t=findTester(testerBtn.dataset.openTester);if(t)openTesterRecord(t);return;}
+  const testerBtn=e.target.closest('[data-open-tester]');if(testerBtn){if(!state.loaded.applications)await loadApplications();if(!state.loaded.tasks)await loadTasks();const t=findTester(testerBtn.dataset.openTester);if(t)openTesterRecord(t);return;}
+  const taskOpenBtn=e.target.closest('[data-open-task]');if(taskOpenBtn){if(!state.loaded.tasks)await loadTasks();const t=findTask(taskOpenBtn.dataset.openTask);if(t)openTaskRecord(t);return;}
   const feedbackBtn=e.target.closest('[data-open-feedback]');if(feedbackBtn){try{const f=await ensureFeedbackLoaded(feedbackBtn.dataset.openFeedback);if(f)openFeedbackRecord(f);}catch(err){showToast('Could not open that feedback.','error');}return;}
   const noteBtn=e.target.closest('[data-save-app-notes]');if(noteBtn){const a=await ensureApplicationLoaded(noteBtn.dataset.saveAppNotes);if(!a)return;const notes=document.getElementById('drawerApplicantNotes').value;try{await updateDoc(doc(db,'betaApplications',a.id),{notes,lastUpdated:serverTimestamp()});a.notes=notes;a.lastUpdated=new Date();showToast('Private notes saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
   const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=document.getElementById('drawerFeedbackStatus').value;const notes=document.getElementById('drawerFeedbackNotes').value;try{await updateDoc(doc(db,'betaFeedback',f.id),{status,adminNotes:notes,updatedAt:serverTimestamp()});if(f.status==='New'&&status!=='New'&&state.metrics.newFeedback>0)state.metrics.newFeedback--;if(f.status!=='New'&&status==='New')state.metrics.newFeedback++;f.status=status;f.adminNotes=notes;f.updatedAt=new Date();renderMetrics();renderFeedback();renderOverview();showToast('Feedback updated.');openFeedbackRecord(f);}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
   const emailSave=e.target.closest('[data-save-email-worker]');if(emailSave){emailSave.disabled=true;const original=emailSave.textContent;emailSave.textContent='Saving…';try{await saveEmailServiceSettings();showToast('Cloudflare email service connected.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{emailSave.disabled=false;emailSave.textContent=original;}return;}
+  const remindAssignmentBtn=e.target.closest('[data-remind-assignment]');if(remindAssignmentBtn){
+    const a=state.taskAssignments.find(x=>x.id===remindAssignmentBtn.dataset.remindAssignment);if(!a)return;
+    remindAssignmentBtn.disabled=true;const original=remindAssignmentBtn.textContent;remindAssignmentBtn.textContent='Sending…';
+    try{await sendAssignmentReminder(a);showToast('Task reminder sent to '+(a.name||a.email||'tester')+'.');const t=findTask(a.taskId);if(t&&document.getElementById('adminDrawer')?.getAttribute('aria-hidden')==='false')openTaskRecord(t);}
+    catch(err){showToast(friendlyFirebaseError(err),'error');}
+    finally{remindAssignmentBtn.disabled=false;remindAssignmentBtn.textContent=original;}
+    return;
+  }
+  const taskActionBtn=e.target.closest('[data-task-action]');if(taskActionBtn){
+    const t=findTask(taskActionBtn.dataset.taskId);
+    if(t&&taskActionBtn.dataset.taskAction==='remind-pending'){
+      taskActionBtn.disabled=true;const original=taskActionBtn.textContent;taskActionBtn.textContent='Sending Reminders…';
+      try{const result=await remindPendingForTask(t);showToast(result.failed?`${result.sent} reminder${result.sent===1?'':'s'} sent; ${result.failed} failed.`:`Reminder sent to ${result.sent} pending tester${result.sent===1?'':'s'}.`,result.failed?'error':'success');openTaskRecord(t);}
+      catch(err){showToast(friendlyFirebaseError(err),'error');}
+      finally{taskActionBtn.disabled=false;taskActionBtn.textContent=original;}
+      return;
+    }
+    if(t&&taskActionBtn.dataset.taskAction==='cancel'){
+      if(!(await confirmAction('Cancel this required task? Testers who have not completed it will no longer be required to respond, and nobody will be removed for this task.','danger')))return;
+      taskActionBtn.disabled=true;try{await cancelRequiredTask(t);closeDrawer();showToast('Task cancelled.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{taskActionBtn.disabled=false;}
+    }
+    return;
+  }
   const testerActionBtn=e.target.closest('[data-tester-action]');if(testerActionBtn){
     const task=testerActionBtn.dataset.testerAction;
     const uid=testerActionBtn.dataset.testerUid;
@@ -548,7 +866,7 @@ document.addEventListener('click',async e=>{
         await deleteTesterOnly(t);
         closeDrawer();
         showToast('Tester portal record and login deleted.');
-        if(activeView==='testers')await loadTesters(true);
+        if(activeView==='testers'){await loadTesters(true);await loadTasks(true);renderTesters();}
       }catch(err){
         showToast(friendlyFirebaseError(err),'error');
       }finally{testerActionBtn.disabled=false;}
@@ -600,6 +918,13 @@ document.getElementById('adminDrawerBackdrop').addEventListener('click',closeDra
 document.getElementById('adminRefresh').addEventListener('click',refreshActiveView);
 document.getElementById('adminMenuToggle').addEventListener('click',()=>document.body.classList.toggle('admin-nav-open'));
 document.getElementById('adminLogout').addEventListener('click',async()=>{await signOut(auth).catch(()=>{});location.replace('admin-login.html');});
+document.getElementById('taskTemplateSelect').addEventListener('change',e=>applyTaskTemplate(e.target.value));
+document.getElementById('taskSelectAll').addEventListener('click',()=>selectTaskRecipients('All'));
+document.getElementById('taskSelectIOS').addEventListener('click',()=>selectTaskRecipients('iOS'));
+document.getElementById('taskSelectAndroid').addEventListener('click',()=>selectTaskRecipients('Android'));
+document.getElementById('taskClearAll').addEventListener('click',()=>{document.querySelectorAll('[data-task-recipient]').forEach(el=>el.checked=false);updateTaskRecipientSummary();});
+document.getElementById('taskRecipientList').addEventListener('change',e=>{if(e.target.matches('[data-task-recipient]'))updateTaskRecipientSummary();});
+document.getElementById('taskSendButton').addEventListener('click',async()=>{const btn=document.getElementById('taskSendButton');const original=btn.innerHTML;if(!(await confirmAction('Send this required task to the selected testers? They will receive an email and must complete it by the deadline to keep beta access active.','')))return;btn.disabled=true;btn.innerHTML='Sending Task…';try{const result=await createRequiredTask();showToast(result.failed?`Task assigned to ${result.total} testers. ${result.failed} email${result.failed===1?'':'s'} could not be sent.`:`Required task sent to ${result.total} tester${result.total===1?'':'s'}.`,result.failed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{btn.disabled=false;btn.innerHTML=original;}});
 ['applicationSearch','applicationStatusFilter','applicationPlatformFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderApplications));
 ['testerSearch','testerAccessFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderTesters));
 ['feedbackSearch','feedbackStatusFilter','feedbackTypeFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderFeedback));

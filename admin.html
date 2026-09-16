@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=42" rel="stylesheet"/>
+<link href="styles.css?v=45" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -26,9 +26,10 @@
 </div>
 <nav aria-label="Admin navigation" class="admin-nav">
 <button class="admin-nav-item is-active" data-admin-view="overview" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.7 12 3.5l8.5 7.2v9.3a1 1 0 0 1-1 1h-5.2v-6.2H9.7V21H4.5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg></span><span>Overview</span></button>
-<button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Applications</span><span class="admin-nav-badge" id="navPendingCount">0</span></button>
+<button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Applications</span><span class="admin-nav-badge" id="navPendingCount" hidden>0</span></button>
 <button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 19c.5-3.5 2.4-5.2 5.5-5.2s5 1.7 5.5 5.2M15.5 6.3a3 3 0 0 1 0 5.4M16.5 13.9c2.3.5 3.7 2.2 4 5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Testers</span></button>
-<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Feedback</span><span class="admin-nav-badge" id="navFeedbackCount">0</span></button>
+<button class="admin-nav-item" data-admin-view="tasks" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m8 9 1.6 1.6L12.5 7.7M14 9h3M8 15l1.6 1.6 2.9-2.9M14 15h3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Tasks</span><span class="admin-nav-badge" id="navTaskCount" hidden>0</span></button>
+<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Feedback</span><span class="admin-nav-badge" id="navFeedbackCount" hidden>0</span></button>
 </nav>
 <div class="admin-sidebar-footer">
 <div class="admin-admin-card">
@@ -55,7 +56,7 @@
 <div id="adminPortalContent">
 <section class="admin-view is-active" data-admin-panel="overview">
 <div class="admin-welcome-row">
-<div><div class="admin-section-kicker">Beta Operations</div><h2>Everything in one place.</h2><p>Review applications, manage access, and turn tester feedback into action.</p></div>
+<div><div class="admin-section-kicker">Beta Operations</div><h2>Everything in one place.</h2><p>Review applications, manage access, assign required tester tasks, and turn feedback into action.</p></div>
 <button class="admin-primary-button" data-jump-view="applications" type="button">Review Applications <span>→</span></button>
 </div>
 <div class="admin-metrics-grid">
@@ -105,7 +106,63 @@
 <section class="admin-view" data-admin-panel="testers">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>See who can access the tester portal and when they last signed in.</p></div></div>
 <div class="admin-toolbar"><div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
-<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Tester</th><th>Platform</th><th>Access</th><th>Last Login</th><th>Password</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
+<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Tester</th><th>Platform</th><th>Access</th><th>Required Tasks</th><th>Last Login</th><th>Authentication</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
+</section>
+
+<section class="admin-view" data-admin-panel="tasks">
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Participation Tasks</div><h2>Required feature-testing tasks</h2><p>Use premade Rebatify testing objectives or create your own. Assign them to everyone or selected testers, track completion, and send reminders. Missed required deadlines automatically remove beta access.</p></div></div>
+<div class="admin-task-metrics">
+<article><span>Open Tasks</span><strong id="taskMetricOpen">0</strong><small>Task campaigns still active</small></article>
+<article><span>Pending Responses</span><strong id="taskMetricPending">0</strong><small>Tester assignments not completed</small></article>
+<article><span>Due Within 24 Hours</span><strong id="taskMetricDueSoon">0</strong><small>Need attention soon</small></article>
+<article><span>Reminded</span><strong id="taskMetricReminded">0</strong><small>Pending assignments reminded</small></article>
+</div>
+<article class="admin-panel admin-task-attention-panel">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Needs Attention</span><h3>Testers still needing to complete tasks</h3><p>Automatic reminders are sent about 24 hours and 4 hours before the deadline when enabled. You can also remind a tester manually at any time.</p></div></div>
+<div class="admin-task-attention-list" id="taskNeedsAttention"><div class="admin-empty-inline">No outstanding required tasks.</div></div>
+</article>
+<div class="admin-task-layout">
+<article class="admin-panel admin-task-composer">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Create Task</span><h3>Send a required testing objective</h3></div><span class="admin-required-chip">Required</span></div>
+<div class="admin-task-template-box">
+<label for="taskTemplateSelect">Start from a premade Rebatify testing template</label>
+<select id="taskTemplateSelect">
+<option value="">Custom task — write my own</option>
+<optgroup label="Core Experience">
+<option value="walkthrough">Walkthrough & first-time setup</option>
+<option value="add-order">Add and track a rebate order</option>
+<option value="refund-workflow">Partial + final refund workflow</option>
+<option value="multi-order-refund">Multi-order refund workflow</option>
+<option value="reports">Reports & spending insights</option>
+<option value="shared-profiles">Shared Profiles collaboration</option>
+<option value="cloud-sync">Cloud sync across two clients</option>
+</optgroup>
+<optgroup label="Rebatify+ & Billing">
+<option value="plus-ios">Rebatify+ test purchase — iOS / TestFlight</option>
+<option value="plus-android">Rebatify+ test purchase — Android / Google Play</option>
+<option value="web-app">Rebatify Web App smoke test</option>
+</optgroup>
+</select>
+<div class="admin-task-template-meta" id="taskTemplateMeta">Choose a template to prefill the testing objective and instructions, or leave this on Custom task.</div>
+</div>
+<div class="admin-task-form-grid">
+<div class="beta-field admin-task-span"><label for="taskTitle">Task title</label><input id="taskTitle" maxlength="120" placeholder="Example: Test the first-time walkthrough" type="text"/></div>
+<div class="beta-field admin-task-span"><label for="taskObjective">Testing objective</label><textarea id="taskObjective" maxlength="900" placeholder="What are we trying to validate with this task?"></textarea></div>
+<div class="beta-field admin-task-span"><label for="taskInstructions">Tester instructions</label><textarea id="taskInstructions" maxlength="5000" placeholder="Give the tester clear steps and tell them what to report back."></textarea></div>
+<div class="beta-field"><label for="taskResponseType">Required response</label><select id="taskResponseType"><option>Acknowledgement</option><option>Short Answer</option><option>Long Answer</option><option>Yes / No</option></select></div>
+<div class="beta-field"><label for="taskDueAt">Required by</label><input id="taskDueAt" type="datetime-local"/></div>
+<div class="admin-task-span"><label class="admin-task-toggle"><input id="taskAutoReminders" type="checkbox" checked/><span><strong>Automatic deadline reminders</strong><small>Email pending testers about 24 hours and again about 4 hours before the deadline.</small></span></label></div>
+</div>
+<div class="admin-task-recipient-header"><div><strong>Recipients</strong><span id="taskRecipientSummary">0 selected</span></div><div><button class="admin-text-button" id="taskSelectAll" type="button">Select all</button><button class="admin-text-button" id="taskSelectIOS" type="button">Select iOS</button><button class="admin-text-button" id="taskSelectAndroid" type="button">Select Android</button><button class="admin-text-button" id="taskClearAll" type="button">Clear</button></div></div>
+<div class="admin-task-recipient-list" id="taskRecipientList"><div class="admin-empty-inline">Open this section after active testers have been approved.</div></div>
+<div class="admin-task-warning"><strong>Required participation task</strong><span>If a tester does not complete this task by the deadline, their Beta Program access will be disabled automatically and they will be marked inactive.</span></div>
+<button class="admin-primary-button admin-task-send" id="taskSendButton" type="button">Send Required Task <span>→</span></button>
+</article>
+<article class="admin-panel admin-task-list-panel">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Task History</span><h3>Current and past tasks</h3></div></div>
+<div class="admin-table-card admin-task-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Task</th><th>Due</th><th>Recipients</th><th>Completed</th><th>Pending</th><th>Status</th><th></th></tr></thead><tbody id="tasksTableBody"></tbody></table></div><div class="admin-empty" hidden id="tasksEmpty">No beta tasks have been created yet.</div></div>
+</article>
+</div>
 </section>
 <section class="admin-view" data-admin-panel="feedback">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Review bugs, feature requests, confusing experiences, and general feedback.</p></div></div>
@@ -148,5 +205,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=42"></script><script src="admin-firebase.js?v=42" type="module"></script></body>
+<script src="firebase-config.js?v=45"></script><script src="admin-firebase.js?v=45" type="module"></script></body>
 </html>

@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=42" rel="stylesheet"/>
+<link href="styles.css?v=45" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <header class="portal-header">
@@ -36,6 +36,7 @@
 </section>
 
 <div id="portalContent">
+<section class="portal-required-summary" id="portalTaskSummary" hidden><div class="wrap"><div class="portal-required-summary-card"><div><span class="portal-required-summary-kicker">Required Tasks</span><strong id="portalTaskSummaryTitle">You have required Beta Program tasks to complete.</strong><p id="portalTaskSummaryText"></p></div><div class="portal-required-summary-count" id="portalTaskSummaryCount">0</div></div><div class="portal-required-summary-list" id="portalTaskSummaryList"></div></div></section>
 <section class="section portal-timeline-section" id="program-timeline"><div class="wrap">
 <div class="portal-section-heading portal-timeline-heading"><div><div class="kicker">Your Program Timeline</div><h2>Know exactly what happens next.</h2><p class="lead">Your next steps are tailored to the testing platform you selected when you applied.</p></div></div>
 <div class="portal-program-timeline" id="portalProgramTimeline" aria-live="polite"></div>
@@ -48,15 +49,6 @@
 <article class="portal-tile"><div class="portal-tile-icon blue"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="11" rx="4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9.5 7V5.5a2.5 2.5 0 0 1 5 0V7M4 10h3M17 10h3M4 14h3M17 14h3M9 11.5h6M12 11.5V18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></div><h3>What should I report?</h3><p>Anything that crashes, looks wrong, takes too many steps, behaves unexpectedly, or is simply confusing.</p></article>
 <article class="portal-tile"><div class="portal-tile-icon green"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></div><h3>Honest feedback matters</h3><p>Positive feedback is welcome, but constructive criticism is especially useful. You will not lose access for negative feedback.</p></article>
 <article class="portal-tile"><div class="portal-tile-icon teal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 8.5V4.8l-2.2 2.1A8 8 0 1 0 20 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Keep Rebatify current</h3><p>Please update to the latest beta build when a new version becomes available so your testing reflects the current app.</p></article>
-</div>
-</div></section>
-<section class="section portal-howto-section" id="how-to"><div class="wrap">
-<div class="portal-section-heading"><div><div class="kicker">How To</div><h2>Quick guides for the main Rebatify workflows.</h2><p class="lead portal-howto-lead">These guides use actual Rebatify screens so you can quickly see where to go. More step-by-step screenshots will be added as beta workflows expand.</p></div></div>
-<div class="portal-howto-grid">
-<article class="portal-howto-card"><div class="portal-howto-shot"><img src="orders-preview.png" alt="Rebatify Orders screen showing Add New Order and Record a Multi-Order Refund"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Orders</span><h3>How do I add a new order?</h3><ol><li>Open <strong>Orders</strong> from the bottom navigation.</li><li>Tap <strong>Add New Order</strong>.</li><li>Enter the purchase and rebate information, then save the order.</li></ol><p class="portal-howto-note">The same Orders screen is also where you can search existing orders and start a multi-order refund.</p></div></article>
-<article class="portal-howto-card"><div class="portal-howto-shot"><img src="order-detail-preview.png" alt="Rebatify Order Details screen"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Order Details</span><h3>How do I review or update an order?</h3><ol><li>Open <strong>Orders</strong>.</li><li>Tap the order you want to review.</li><li>Use the Order Details screen to review its timeline, amounts, status, and next action.</li></ol></div></article>
-<article class="portal-howto-card"><div class="portal-howto-shot"><img src="reports-plus-preview.png" alt="Rebatify Reports screen"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Reports</span><h3>How do I see what I have spent or received?</h3><ol><li>Tap <strong>Reports</strong> in the bottom navigation.</li><li>Choose the period or report you want to review.</li><li>Use the totals and breakdowns to understand spending, refunds, and Out Of Pocket Expense.</li></ol></div></article>
-<article class="portal-howto-card"><div class="portal-howto-shot"><img src="sharing-plus-preview.png" alt="Rebatify Shared Profiles screen"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Shared Profiles</span><h3>How do I use a shared profile?</h3><ol><li>Open <strong>More</strong>.</li><li>Open <strong>Shared Profiles</strong>.</li><li>Create or join the appropriate shared profile, then follow the on-screen invitation flow.</li></ol></div></article>
 </div>
 </div></section>
 <section class="section alt" id="submit-feedback"><div class="wrap portal-feedback-layout">
@@ -81,6 +73,16 @@
 <button class="beta-submit" type="submit">Submit Feedback <span aria-hidden="true">→</span></button>
 </form>
 </div></section>
+<section class="section portal-howto-section" id="how-to"><div class="wrap">
+<div class="portal-section-heading"><div><div class="kicker">How To</div><h2>Quick guides for the main Rebatify workflows.</h2><p class="lead portal-howto-lead">These guides use actual Rebatify screens so you can quickly see where to go. More step-by-step screenshots will be added as beta workflows expand.</p></div></div>
+<div class="portal-howto-grid">
+<article class="portal-howto-card"><div class="portal-howto-shot"><img src="orders-preview.png" alt="Rebatify Orders screen showing Add New Order and Record a Multi-Order Refund"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Orders</span><h3>How do I add a new order?</h3><ol><li>Open <strong>Orders</strong> from the bottom navigation.</li><li>Tap <strong>Add New Order</strong>.</li><li>Enter the purchase and rebate information, then save the order.</li></ol><p class="portal-howto-note">The same Orders screen is also where you can search existing orders and start a multi-order refund.</p></div></article>
+<article class="portal-howto-card"><div class="portal-howto-shot"><img src="order-detail-preview.png" alt="Rebatify Order Details screen"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Order Details</span><h3>How do I review or update an order?</h3><ol><li>Open <strong>Orders</strong>.</li><li>Tap the order you want to review.</li><li>Use the Order Details screen to review its timeline, amounts, status, and next action.</li></ol></div></article>
+<article class="portal-howto-card"><div class="portal-howto-shot"><img src="reports-plus-preview.png" alt="Rebatify Reports screen"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Reports</span><h3>How do I see what I have spent or received?</h3><ol><li>Tap <strong>Reports</strong> in the bottom navigation.</li><li>Choose the period or report you want to review.</li><li>Use the totals and breakdowns to understand spending, refunds, and Out Of Pocket Expense.</li></ol></div></article>
+<article class="portal-howto-card"><div class="portal-howto-shot"><img src="sharing-plus-preview.png" alt="Rebatify Shared Profiles screen"/></div><div class="portal-howto-copy"><span class="portal-howto-step">Shared Profiles</span><h3>How do I use a shared profile?</h3><ol><li>Open <strong>More</strong>.</li><li>Open <strong>Shared Profiles</strong>.</li><li>Create or join the appropriate shared profile, then follow the on-screen invitation flow.</li></ol></div></article>
+</div>
+</div></section>
+
 <section class="section"><div class="wrap">
 <div class="portal-section-heading"><div><div class="kicker">FAQ</div><h2>Beta tester questions.</h2></div></div>
 <div class="faq portal-faq">
@@ -101,5 +103,19 @@
 </main>
 
 
-<script src="firebase-config.js?v=42"></script><script src="beta-portal-firebase.js?v=42" type="module"></script></body>
+<div class="portal-task-backdrop" id="portalTaskBackdrop" hidden>
+<div class="portal-task-modal" role="dialog" aria-modal="true" aria-labelledby="portalTaskTitle">
+<div class="portal-task-topline"><span>Required Beta Program Task</span><span id="portalTaskPosition"></span></div>
+<h2 id="portalTaskTitle">Required task</h2>
+<div class="portal-task-due" id="portalTaskDue"></div>
+<div class="portal-task-objective" id="portalTaskObjective" hidden><strong>Testing Objective</strong><span id="portalTaskObjectiveText"></span></div>
+<p class="portal-task-instructions" id="portalTaskInstructions"></p>
+<div class="portal-task-response" id="portalTaskResponse"></div>
+<div class="portal-task-message" id="portalTaskMessage" role="status" aria-live="polite"></div>
+<button class="beta-submit" id="portalTaskSubmit" type="button">Complete Required Task <span aria-hidden="true">→</span></button>
+<p class="portal-task-policy">Required Beta Program tasks must be completed by the stated deadline to keep beta access active.</p>
+</div>
+</div>
+
+<script src="firebase-config.js?v=45"></script><script src="beta-portal-firebase.js?v=45" type="module"></script></body>
 </html>

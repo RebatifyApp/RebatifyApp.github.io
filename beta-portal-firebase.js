@@ -6,7 +6,10 @@ import {
   updateDoc,
   addDoc,
   collection,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  where,
+  getDocs
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const loading = document.getElementById('portalLoading');
@@ -17,6 +20,11 @@ const feedbackForm = document.getElementById('portalFeedbackForm');
 const feedbackMessage = document.getElementById('feedbackMessage');
 let currentProfile = null;
 let initialized = false;
+let requiredTasks = [];
+let allTaskAssignments = [];
+let activeTask = null;
+const taskBackdrop = document.getElementById('portalTaskBackdrop');
+const taskSubmit = document.getElementById('portalTaskSubmit');
 
 function fail(reason='session') {
   signOut(auth).catch(() => {}).finally(() => location.replace('beta-login.html?error=' + encodeURIComponent(reason)));
@@ -26,6 +34,75 @@ function setFeedbackMessage(text,type='') {
   if (!feedbackMessage) return;
   feedbackMessage.textContent=text || '';
   feedbackMessage.className='portal-feedback-message' + (type ? ' ' + type : '');
+}
+
+function formatTaskDue(value){
+  const d=timestampToDate(value);if(!d)return 'Deadline not available';
+  return 'Required by '+d.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function setTaskMessage(text,type=''){
+  const el=document.getElementById('portalTaskMessage');if(!el)return;el.textContent=text||'';el.className='portal-task-message'+(type?' '+type:'');
+}
+function taskIsOverdue(task){const d=timestampToDate(task.dueAt);return !!d&&d.getTime()<Date.now();}
+function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderPortalTaskSummary(){
+  const section=document.getElementById('portalTaskSummary');if(!section)return;
+  const pending=allTaskAssignments.filter(t=>t.status==='Pending').sort((a,b)=>(timestampToDate(a.dueAt)?.getTime()||0)-(timestampToDate(b.dueAt)?.getTime()||0));
+  if(!pending.length){section.hidden=true;return;}
+  section.hidden=false;
+  document.getElementById('portalTaskSummaryCount').textContent=pending.length;
+  document.getElementById('portalTaskSummaryTitle').textContent=pending.length===1?'You have 1 required Beta Program task to complete.':`You have ${pending.length} required Beta Program tasks to complete.`;
+  document.getElementById('portalTaskSummaryText').textContent='Complete every required task by its deadline to keep your Beta Program access active. Reminder emails are sent as deadlines approach.';
+  const list=document.getElementById('portalTaskSummaryList');
+  list.innerHTML=pending.slice(0,6).map(t=>`<div class="portal-required-summary-item"><strong>${escapeHtml(t.taskTitle||'Required task')}</strong><span>${escapeHtml(formatTaskDue(t.dueAt))}</span></div>`).join('');
+}
+function renderRequiredTask(){
+  if(!taskBackdrop)return;
+  if(!requiredTasks.length){activeTask=null;taskBackdrop.hidden=true;document.body.classList.remove('portal-task-open');return;}
+  activeTask=requiredTasks[0];
+  document.getElementById('portalTaskPosition').textContent=requiredTasks.length>1?`1 of ${requiredTasks.length}`:'';
+  document.getElementById('portalTaskTitle').textContent=activeTask.taskTitle||'Required Beta Program Task';
+  document.getElementById('portalTaskDue').textContent=formatTaskDue(activeTask.dueAt);
+  const objectiveBox=document.getElementById('portalTaskObjective');const objectiveText=document.getElementById('portalTaskObjectiveText');
+  if(activeTask.taskObjective){objectiveBox.hidden=false;objectiveText.textContent=activeTask.taskObjective;}else{objectiveBox.hidden=true;objectiveText.textContent='';}
+  document.getElementById('portalTaskInstructions').textContent=activeTask.taskInstructions||'';
+  const response=document.getElementById('portalTaskResponse');
+  const overdue=taskIsOverdue(activeTask);
+  const modal=taskBackdrop.querySelector('.portal-task-modal');if(modal)modal.classList.toggle('is-overdue',overdue);
+  setTaskMessage('');
+  if(overdue){response.innerHTML='<div class="portal-task-overdue">This required task deadline has passed. Your Rebatify Beta Program access is being removed because the task was not completed on time.</div>';}
+  else if(activeTask.responseType==='Short Answer')response.innerHTML='<label for="portalTaskShortAnswer">Your response</label><input id="portalTaskShortAnswer" type="text" maxlength="500" placeholder="Enter your response"/>';
+  else if(activeTask.responseType==='Long Answer')response.innerHTML='<label for="portalTaskLongAnswer">Your response</label><textarea id="portalTaskLongAnswer" maxlength="5000" placeholder="Enter your response"></textarea>';
+  else if(activeTask.responseType==='Yes / No')response.innerHTML='<label for="portalTaskYesNo">Your response</label><select id="portalTaskYesNo"><option value="">Choose one</option><option value="Yes">Yes</option><option value="No">No</option></select>';
+  else response.innerHTML='<label class="portal-task-ack"><input id="portalTaskAck" type="checkbox"/><span>I have completed or reviewed this required Beta Program task.</span></label>';
+  taskBackdrop.hidden=false;document.body.classList.add('portal-task-open');
+}
+async function loadRequiredTasks(uid){
+  const snap=await getDocs(query(collection(db,'betaTaskAssignments'),where('testerUid','==',uid)));
+  allTaskAssignments=snap.docs.map(d=>({id:d.id,...d.data()}));
+  requiredTasks=allTaskAssignments.filter(t=>t.status==='Pending').sort((a,b)=>{
+    const ad=timestampToDate(a.dueAt),bd=timestampToDate(b.dueAt);return (ad?ad.getTime():0)-(bd?bd.getTime():0);
+  });
+  renderPortalTaskSummary();
+  renderRequiredTask();
+}
+function collectTaskResponse(task){
+  if(task.responseType==='Short Answer')return String(document.getElementById('portalTaskShortAnswer')?.value||'').trim();
+  if(task.responseType==='Long Answer')return String(document.getElementById('portalTaskLongAnswer')?.value||'').trim();
+  if(task.responseType==='Yes / No')return String(document.getElementById('portalTaskYesNo')?.value||'').trim();
+  return document.getElementById('portalTaskAck')?.checked?'Completed':'';
+}
+async function completeRequiredTask(){
+  if(!activeTask||!auth.currentUser)return;
+  if(taskIsOverdue(activeTask)){setTaskMessage('This task deadline has passed and can no longer be completed.','error');return;}
+  const response=collectTaskResponse(activeTask);
+  if(!response){setTaskMessage(activeTask.responseType==='Acknowledgement'?'Confirm that you completed or reviewed this task before continuing.':'A response is required before you can continue.','error');return;}
+  const original=taskSubmit.innerHTML;taskSubmit.disabled=true;taskSubmit.innerHTML='Saving…';setTaskMessage('');
+  try{
+    await updateDoc(doc(db,'betaTaskAssignments',activeTask.id),{status:'Completed',response,completedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    const completedId=activeTask.id;requiredTasks=requiredTasks.filter(t=>t.id!==completedId);const allRow=allTaskAssignments.find(t=>t.id===completedId);if(allRow)allRow.status='Completed';renderPortalTaskSummary();renderRequiredTask();
+  }catch(error){setTaskMessage('We could not complete this task. '+friendlyFirebaseError(error),'error');}
+  finally{taskSubmit.disabled=false;taskSubmit.innerHTML=original;}
 }
 
 function timelineStep(number,status,title,body){
@@ -115,6 +192,7 @@ if (!firebaseConfigured) {
     try {
       currentProfile = await loadProfile(user);
       renderProfile(currentProfile);
+      await loadRequiredTasks(user.uid);
     } catch (error) {
       fail(error && error.message === 'access' ? 'access' : 'session');
     }
@@ -127,6 +205,8 @@ if (logout) {
     location.replace('beta-login.html');
   });
 }
+
+if(taskSubmit)taskSubmit.addEventListener('click',completeRequiredTask);
 
 if (feedbackForm) {
   feedbackForm.addEventListener('submit', async event => {
