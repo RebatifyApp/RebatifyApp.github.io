@@ -2,7 +2,7 @@ import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14
 import {
   getAuth,
   setPersistence,
-  browserLocalPersistence
+  browserSessionPersistence
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -24,7 +24,7 @@ let db = null;
 if (firebaseConfigured) {
   app = getApps().find(a => a.name === '[DEFAULT]') || initializeApp(config);
   auth = getAuth(app);
-  setPersistence(auth, browserLocalPersistence).catch(() => {});
+  setPersistence(auth, browserSessionPersistence).catch(() => {});
   db = getFirestore(app);
 }
 
