@@ -419,10 +419,11 @@ function assignmentReminderText(a){return a.lastReminderSentAt?`Last reminder ${
 function openTaskRecord(t){
   const stats=taskAssignmentStats(t.id);
   const assignments=stats.rows.sort((a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email)));
-  const rows=assignments.length?assignments.map(a=>{const d=timestampToDate(a.dueAt);const overdue=a.status==='Pending'&&d&&d.getTime()<Date.now();return `<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(a.name||'Tester')}</strong><small>${esc(a.email||'')}</small></div><span class="admin-status-pill ${statusClass(overdue?'Removal Pending':a.status)}">${esc(overdue?'Removal Pending':a.status)}</span></div><div class="admin-task-assignment-reminder">Email: ${esc(a.emailStatus||'Unknown')}${a.emailError?` · ${esc(a.emailError)}`:''}</div>${a.response?`<div class="admin-task-assignment-response"><strong>Response:</strong><br>${esc(a.response)}</div>`:''}${a.status==='Pending'?`<div class="admin-task-assignment-reminder">${overdue?'Deadline passed — run a deadline check now.':esc(assignmentReminderText(a))}</div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(a.id)}" type="button">${a.emailStatus==='Error'?'Retry Task Email':'Send Reminder'}</button></div>`:''}</div>`;}).join(''):'<div class="admin-empty-inline">No task assignments found.</div>';
+  const rows=assignments.length?assignments.map(a=>{const d=timestampToDate(a.dueAt);const overdue=a.status==='Pending'&&d&&d.getTime()<Date.now();const reminder=a.status==='Pending'?`<button class="admin-task-remind-button" data-remind-assignment="${esc(a.id)}" type="button">${a.emailStatus==='Error'?'Retry Task Email':'Send Reminder'}</button>`:'';const remove=`<button class="admin-task-remind-button admin-task-remove-button" data-remove-task-assignment="${esc(a.id)}" type="button">Remove from Tester</button>`;return `<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(a.name||'Tester')}</strong><small>${esc(a.email||'')}</small></div><span class="admin-status-pill ${statusClass(overdue?'Removal Pending':a.status)}">${esc(overdue?'Removal Pending':a.status)}</span></div><div class="admin-task-assignment-reminder">Email: ${esc(a.emailStatus||'Unknown')}${a.emailError?` · ${esc(a.emailError)}`:''}</div>${a.response?`<div class="admin-task-assignment-response"><strong>Response:</strong><br>${esc(a.response)}</div>`:''}${a.status==='Pending'?`<div class="admin-task-assignment-reminder">${overdue?'Deadline passed — run a deadline check now.':esc(assignmentReminderText(a))}</div>`:''}<div class="admin-task-assignment-actions">${reminder}${remove}</div></div>`;}).join(''):'<div class="admin-empty-inline">No task assignments found.</div>';
   const cancel=t.status==='Active'?`<button class="admin-action-button danger-soft" data-task-action="cancel" data-task-id="${esc(t.id)}" type="button">Cancel Task</button>`:'';
   const remind=stats.pending?`<button class="admin-action-button approve" data-task-action="remind-pending" data-task-id="${esc(t.id)}" type="button">Remind Pending Testers (${stats.pending})</button>`:'';
-  openDrawer('Beta Program Task',t.title||'Required Task',`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(taskDisplayStatus(t,stats))}">${esc(taskDisplayStatus(t,stats))}</span><span class="admin-subtle-chip">Due ${esc(formatDate(t.dueAt))}</span></div>${t.objective?`<div class="admin-feedback-detail"><span>Testing Objective</span><p>${esc(t.objective)}</p></div>`:''}<div class="admin-feedback-detail"><span>Instructions</span><p>${esc(t.instructions||'')}</p></div><div class="admin-detail-grid"><div><span>Template</span><strong>${esc(t.templateLabel||'Custom')}</strong></div><div><span>Response Type</span><strong>${esc(t.responseType||'Acknowledgement')}</strong></div><div><span>Recipients</span><strong>${stats.total}</strong></div><div><span>Completed</span><strong>${stats.completed}</strong></div><div><span>Pending</span><strong>${stats.pending}</strong></div><div><span>Reminded</span><strong>${stats.reminded}</strong></div><div><span>Removed for Missed Deadline</span><strong>${stats.removed}</strong></div><div><span>Automatic Reminders</span><strong>${t.autoReminders===false?'Off':'On'}</strong></div></div><div><label class="admin-detail-label">Tester responses</label><div class="admin-task-response-list">${rows}</div></div><div class="admin-drawer-actions">${remind}${cancel}</div></div>`);
+  const deleteTask=`<button class="admin-action-button danger" data-task-action="delete-task" data-task-id="${esc(t.id)}" type="button">Delete Task from All Testers</button>`;
+  openDrawer('Beta Program Task',t.title||'Required Task',`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(taskDisplayStatus(t,stats))}">${esc(taskDisplayStatus(t,stats))}</span><span class="admin-subtle-chip">Due ${esc(formatDate(t.dueAt))}</span></div>${t.objective?`<div class="admin-feedback-detail"><span>Testing Objective</span><p>${esc(t.objective)}</p></div>`:''}<div class="admin-feedback-detail"><span>Instructions</span><p>${esc(t.instructions||'')}</p></div><div class="admin-detail-grid"><div><span>Template</span><strong>${esc(t.templateLabel||'Custom')}</strong></div><div><span>Response Type</span><strong>${esc(t.responseType||'Acknowledgement')}</strong></div><div><span>Recipients</span><strong>${stats.total}</strong></div><div><span>Completed</span><strong>${stats.completed}</strong></div><div><span>Pending</span><strong>${stats.pending}</strong></div><div><span>Reminded</span><strong>${stats.reminded}</strong></div><div><span>Removed for Missed Deadline</span><strong>${stats.removed}</strong></div><div><span>Automatic Reminders</span><strong>${t.autoReminders===false?'Off':'On'}</strong></div></div><div><label class="admin-detail-label">Tester responses</label><div class="admin-task-response-list">${rows}</div></div><div class="admin-drawer-actions">${remind}${cancel}${deleteTask}</div></div>`);
 }
 async function createRequiredTask(){
   const templateKey=String(document.getElementById('taskTemplateSelect').value||'').trim();
@@ -499,6 +500,33 @@ async function cancelRequiredTask(t){
   await loadMetrics();renderMetrics();renderTasks();
 }
 
+async function removeTaskAssignment(a){
+  if(!a)return;
+  await deleteDoc(doc(db,'betaTaskAssignments',a.id));
+  state.taskAssignments=state.taskAssignments.filter(x=>x.id!==a.id);
+  const remaining=state.taskAssignments.filter(x=>x.taskId===a.taskId).length;
+  const t=findTask(a.taskId);
+  if(t){
+    t.recipientCount=remaining;
+    await updateDoc(doc(db,'betaTasks',t.id),{recipientCount:remaining,updatedAt:serverTimestamp()}).catch(()=>{});
+  }
+  renderTasks();
+  if(state.loaded.testers)renderTesters();
+}
+async function deleteTaskCampaign(t){
+  if(!t)return;
+  const assignments=state.taskAssignments.filter(a=>a.taskId===t.id);
+  const batch=writeBatch(db);
+  assignments.forEach(a=>batch.delete(doc(db,'betaTaskAssignments',a.id)));
+  batch.delete(doc(db,'betaTasks',t.id));
+  await batch.commit();
+  state.taskAssignments=state.taskAssignments.filter(a=>a.taskId!==t.id);
+  state.tasks=state.tasks.filter(x=>x.id!==t.id);
+  renderTasks();
+  if(state.loaded.testers)renderTesters();
+  await loadMetrics();renderMetrics();
+}
+
 async function switchView(view){
   activeView=view;document.body.classList.remove('admin-nav-open');
   document.querySelectorAll('[data-admin-view]').forEach(b=>b.classList.toggle('is-active',b.dataset.adminView===view));
@@ -547,7 +575,7 @@ function openTesterRecord(t){
   const normalizedEmail=String(t.email||'').trim().toLowerCase();
   const a=state.applications.find(x=>x.testerUid===t.uid||String(x.email||'').trim().toLowerCase()===normalizedEmail);
   const pending=pendingAssignmentsForTester(t);
-  const pendingHtml=pending.length?pending.map(x=>`<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(x.taskTitle||'Required task')}</strong><small>Due ${esc(formatDate(x.dueAt))}</small></div><span class="admin-status-pill status-pending">Pending</span></div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(x.id)}" type="button">${x.lastReminderSentAt?'Remind Again':'Send Reminder'}</button></div></div>`).join(''):'<div class="admin-empty-inline">No required tasks are pending for this tester.</div>';
+  const pendingHtml=pending.length?pending.map(x=>`<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(x.taskTitle||'Required task')}</strong><small>Due ${esc(formatDate(x.dueAt))}</small></div><span class="admin-status-pill status-pending">Pending</span></div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(x.id)}" type="button">${x.lastReminderSentAt?'Remind Again':'Send Reminder'}</button><button class="admin-task-remind-button admin-task-remove-button" data-remove-task-assignment="${esc(x.id)}" type="button">Remove Task</button></div></div>`).join(''):'<div class="admin-empty-inline">No required tasks are pending for this tester.</div>';
   const accessAction=a
     ? (t.accessStatus==='Enabled'
       ? `<button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button>`
@@ -851,6 +879,17 @@ document.addEventListener('click',async e=>{
     finally{remindAssignmentBtn.disabled=false;remindAssignmentBtn.textContent=original;}
     return;
   }
+  const removeTaskAssignmentBtn=e.target.closest('[data-remove-task-assignment]');if(removeTaskAssignmentBtn){
+    const a=state.taskAssignments.find(x=>x.id===removeTaskAssignmentBtn.dataset.removeTaskAssignment);if(!a)return;
+    const alreadyRemoved=String(a.status||'').toLowerCase().includes('removed');
+    const warning=alreadyRemoved?' This deletes the task assignment record only; it will not automatically restore beta access that was already removed.':'';
+    if(!(await confirmAction(`Remove "${a.taskTitle||'this task'}" from ${a.name||a.email||'this tester'}? The task will disappear from their Beta Program Portal.${warning}`,'danger')))return;
+    removeTaskAssignmentBtn.disabled=true;
+    try{await removeTaskAssignment(a);showToast('Task removed from tester.');const t=findTask(a.taskId);if(t&&document.getElementById('adminDrawer')?.getAttribute('aria-hidden')==='false')openTaskRecord(t);else closeDrawer();}
+    catch(err){showToast(friendlyFirebaseError(err),'error');}
+    finally{removeTaskAssignmentBtn.disabled=false;}
+    return;
+  }
   const taskActionBtn=e.target.closest('[data-task-action]');if(taskActionBtn){
     const t=findTask(taskActionBtn.dataset.taskId);
     if(t&&taskActionBtn.dataset.taskAction==='remind-pending'){
@@ -858,6 +897,11 @@ document.addEventListener('click',async e=>{
       try{const result=await remindPendingForTask(t);showToast(result.failed?`${result.sent} reminder${result.sent===1?'':'s'} sent; ${result.failed} failed.`:`Reminder sent to ${result.sent} pending tester${result.sent===1?'':'s'}.`,result.failed?'error':'success');openTaskRecord(t);}
       catch(err){showToast(friendlyFirebaseError(err),'error');}
       finally{taskActionBtn.disabled=false;taskActionBtn.textContent=original;}
+      return;
+    }
+    if(t&&taskActionBtn.dataset.taskAction==='delete-task'){
+      if(!(await confirmAction('Permanently delete this task and remove it from every assigned tester? Responses and task history for this campaign will also be deleted. This does not restore access for anyone who was already removed from the Beta Program.','danger')))return;
+      taskActionBtn.disabled=true;try{await deleteTaskCampaign(t);closeDrawer();showToast('Task deleted from all testers.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{taskActionBtn.disabled=false;}
       return;
     }
     if(t&&taskActionBtn.dataset.taskAction==='cancel'){
