@@ -1,10 +1,8 @@
-import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {
   getAuth,
   setPersistence,
-  browserLocalPersistence,
-  inMemoryPersistence,
-  signOut
+  browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -22,8 +20,6 @@ export const testerPortalUrl = String(settings.testerPortalUrl || 'https://rebat
 let app = null;
 let auth = null;
 let db = null;
-let secondaryApp = null;
-let secondaryAuth = null;
 
 if (firebaseConfigured) {
   app = getApps().find(a => a.name === '[DEFAULT]') || initializeApp(config);
@@ -36,22 +32,6 @@ export { app, auth, db };
 
 export function isAdminUser(user) {
   return !!user && String(user.email || '').trim().toLowerCase() === adminEmail;
-}
-
-export function getProvisioningAuth() {
-  if (!firebaseConfigured) throw new Error('firebase-not-configured');
-  if (!secondaryApp) {
-    secondaryApp = getApps().find(a => a.name === 'rebatifyBetaProvisioner') || initializeApp(config, 'rebatifyBetaProvisioner');
-    secondaryAuth = getAuth(secondaryApp);
-    setPersistence(secondaryAuth, inMemoryPersistence).catch(() => {});
-  }
-  return secondaryAuth;
-}
-
-export async function clearProvisioningAuth() {
-  if (secondaryAuth && secondaryAuth.currentUser) {
-    try { await signOut(secondaryAuth); } catch (_) {}
-  }
 }
 
 export function timestampToDate(value) {
@@ -83,8 +63,13 @@ export function friendlyFirebaseError(error) {
     'auth/email-already-in-use': 'An authentication account already exists for this email address.',
     'auth/weak-password': 'Please use a stronger password.',
     'auth/network-request-failed': 'The connection could not be completed. Please check your connection and try again.',
+    'auth/unauthorized-continue-uri': 'The password email could not open the requested return page. Refresh the website and try again.',
     'permission-denied': 'This action could not be completed because access is not permitted.',
-    'failed-precondition': 'This feature is not fully configured yet.'
+    'failed-precondition': 'This feature is not fully configured yet.',
+    'rebatify/email-not-configured': 'The Rebatify email service has not been connected yet.',
+    'rebatify/email-send-failed': 'The Rebatify invitation email could not be sent.',
+    'rebatify/invite-expired': 'This beta invitation has expired.',
+    'rebatify/invite-invalid': 'This beta invitation is invalid or has already been used.'
   };
   return map[code] || (error && error.message ? error.message : 'Something went wrong. Please try again.');
 }

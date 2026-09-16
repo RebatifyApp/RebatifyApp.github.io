@@ -12,6 +12,7 @@ window.REBATIFY_FIREBASE_CONFIG = {
 window.REBATIFY_BETA_SETTINGS = {
   adminEmail: "support.rebatifyapp@gmail.com",
   testerPortalUrl: "https://rebatifyapp.github.io/beta-login.html",
-  // Turn this on only after installing/configuring Firebase's Trigger Email extension.
-  emailAutomationEnabled: false
+  activationUrl: "https://rebatifyapp.github.io/beta-activate.html",
+  // Professional beta email is sent by a Cloudflare Worker while Firebase remains on Spark.
+  emailAutomationEnabled: true
 };
