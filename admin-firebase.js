@@ -314,7 +314,9 @@ async function init(user){
   // Never make the whole portal wait for Firestore. Authentication opens the shell;
   // dashboard data loads on demand in the background.
   loading.hidden=true;
+  loading.style.display='none';
   app.hidden=false;
+  app.style.display='';
 
   try{
     await withTimeout(loadOverview(), 12000, 'Dashboard data');
