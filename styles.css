@@ -541,3 +541,10 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 @media(max-width:620px){.portal-timeline-step{grid-template-columns:44px 1fr;padding:19px 17px}.portal-timeline-step-top{align-items:flex-start;flex-direction:column;gap:6px}.portal-timeline-marker span{width:31px;height:31px}.portal-timeline-step:not(:last-child) .portal-timeline-marker:after{left:15px;top:31px;bottom:-20px}}
 
 /* Build 40 - session-isolated Firebase authentication for Admin and Beta Portal tabs. */
+
+/* Build 41 — passwordless Beta Program Portal sign-in */
+.portal-auth-card h1{line-height:1.04}
+.portal-code-form[hidden],.portal-login-form[hidden]{display:none!important}
+.portal-code-sent{padding:13px 15px;border-radius:16px;background:#eef5ff;border:1px solid rgba(20,92,242,.14);color:#53677e;font-size:.9rem;font-weight:700;line-height:1.5;margin-bottom:16px}
+#portalCode{font-size:1.45rem;font-weight:800;letter-spacing:.2em;text-align:center;font-variant-numeric:tabular-nums}
+.beta-submit-link{display:flex;align-items:center;justify-content:center;text-decoration:none;width:100%;box-sizing:border-box}
