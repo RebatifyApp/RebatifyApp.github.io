@@ -6,22 +6,18 @@ import {
   isAdminUser,
   adminEmail,
   emailAutomationEnabled,
-  testerPortalUrl,
-  getProvisioningAuth,
-  clearProvisioningAuth,
   timestampToDate,
   friendlyFirebaseError
 } from './firebase-core.js';
 import {
   onAuthStateChanged,
-  signOut,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  signOut
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
   collection,
   doc,
   getDocs,
+  getDoc,
   getCountFromServer,
   query,
   where,
@@ -29,8 +25,9 @@ import {
   limit,
   setDoc,
   updateDoc,
-  addDoc,
-  serverTimestamp
+  deleteDoc,
+  serverTimestamp,
+  Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 'use strict';
@@ -59,6 +56,8 @@ function withTimeout(promise, ms, label){
   });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
+let emailWorkerEndpoint = '';
+
 let state = {
   metrics: {},
   recentApplications: [],
@@ -94,12 +93,18 @@ function relativeDate(value){
   return d.toLocaleDateString([], {month:'short',day:'numeric'});
 }
 function statusClass(status){return 'status-'+String(status||'').toLowerCase().replace(/[^a-z]+/g,'-');}
-function typeIcon(type){if(type==='Feature Request')return '✦';if(type==='Crash / Performance')return '⚡';if(type==='Confusing Experience')return '?';if(type==='General Feedback')return '💬';return '●';}
-function normalizeDoc(snap){return { id:snap.id, row:snap.id, ...snap.data() };}
-function randomPassword(){
-  const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);
-  return 'Rbt!'+Array.from(bytes,b=>b.toString(36).slice(-1)).join('')+'7a';
+function iconSvg(name){
+  const paths={
+    feature:'<path d="m12 3 1.4 4.2L17.5 9l-4.1 1.8L12 15l-1.4-4.2L6.5 9l4.1-1.8L12 3ZM18.5 14.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7.7-2.1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    crash:'<path d="M13 2.8 5.7 13h5.2L10 21.2 18.3 10h-5.4L13 2.8Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
+    confusing:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9.7 9a2.5 2.5 0 0 1 4.8 1c0 2-2.5 2.2-2.5 4M12 17.5h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    general:'<path d="M5 5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    bug:'<rect x="7" y="7" width="10" height="11" rx="4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9.5 7V5.5a2.5 2.5 0 0 1 5 0V7M4 10h3M17 10h3M4 14h3M17 14h3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>'
+  };
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(paths[name]||paths.bug)+'</svg>';
 }
+function typeIcon(type){if(type==='Feature Request')return iconSvg('feature');if(type==='Crash / Performance')return iconSvg('crash');if(type==='Confusing Experience')return iconSvg('confusing');if(type==='General Feedback')return iconSvg('general');return iconSvg('bug');}
+function normalizeDoc(snap){return { id:snap.id, row:snap.id, ...snap.data() };}
 function isEnabledStatus(status){return ['Approved','Active'].includes(status);}
 
 function confirmAction(message,tone){
@@ -181,7 +186,7 @@ function applicationFiltered(){
 }
 function renderApplications(){
   const data=applicationFiltered();const body=document.getElementById('applicationsTableBody');
-  body.innerHTML=data.map(a=>`<tr><td><div class="admin-table-person"><span>${esc((a.fullName||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(a.fullName)}</strong><small>${esc(a.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(a.platform)}</span></td><td>${esc(relativeDate(a.submittedAt))}</td><td><span class="admin-status-pill ${statusClass(a.status)}">${esc(a.status)}</span></td><td>${esc(a.portalAccess||'Not Enabled')}</td><td><button class="admin-table-open" data-open-app="${esc(a.id)}" type="button">View</button></td></tr>`).join('');
+  body.innerHTML=data.map(a=>`<tr><td><div class="admin-table-person"><span>${esc((a.fullName||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(a.fullName)}</strong><small>${esc(a.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(a.platform)}</span></td><td>${esc(relativeDate(a.submittedAt))}</td><td><span class="admin-status-pill ${statusClass(a.status)}">${esc(a.status)}</span></td><td>${esc(a.portalAccess||'Not Enabled')}</td><td><span class="admin-email-status ${esc(String(a.inviteEmailStatus||'').toLowerCase())}">${esc(a.inviteEmailStatus||'Not sent')}</span></td><td><button class="admin-table-open" data-open-app="${esc(a.id)}" type="button">View</button></td></tr>`).join('');
   document.getElementById('applicationsEmpty').hidden=data.length>0;
 }
 function testerFiltered(){
@@ -224,12 +229,36 @@ async function ensureApplicationLoaded(id){
   let a=findApp(id);if(a)return a;await loadApplications();return findApp(id);
 }
 async function ensureFeedbackLoaded(id){let f=findFeedback(id);if(f)return f;await loadFeedback();return findFeedback(id);}
+function applicationActionButtons(a){
+  const status=String(a.status||'Applied');
+  const buttons=[];
+  const btn=(cls,action,label)=>`<button class="admin-action-button ${cls||''}" data-app-action="${action}" data-row="${esc(a.id)}" type="button">${label}</button>`;
+  if(['Applied','Waitlist','Declined'].includes(status)){
+    buttons.push(btn('approve','approve','Approve & Send Invite'));
+    if(status!=='Waitlist')buttons.push(btn('','waitlist','Waitlist'));
+    if(status!=='Declined')buttons.push(btn('danger','decline','Decline'));
+  }else if(status==='Approved'){
+    buttons.push(btn('approve','resend','Resend Invitation'));
+    buttons.push(btn('danger-soft','inactive','Disable Access'));
+  }else if(status==='Active'){
+    buttons.push(btn('danger-soft','inactive','Disable Access'));
+  }else if(status==='Inactive'){
+    buttons.push(btn('approve','active','Enable Access'));
+  }
+  buttons.push(btn('danger-soft','delete','Delete Application'));
+  return buttons.join('');
+}
 function openApplicationRecord(a){
-  openDrawer('Beta Application',a.fullName,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(a.status)}">${esc(a.status)}</span><span class="admin-platform-pill">${esc(a.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(a.email)}</strong></div><div><span>Submitted</span><strong>${esc(formatDate(a.submittedAt))}</strong></div><div><span>Terms</span><strong>${a.termsAccepted?'Accepted':'—'}</strong></div><div><span>Portal Access</span><strong>${esc(a.portalAccess||'Not Enabled')}</strong></div><div><span>Last Updated</span><strong>${esc(formatDate(a.lastUpdated))}</strong></div><div><span>Invite / Decision Email</span><strong>${esc(formatDate(a.lastDecisionEmail))}</strong></div></div><div><label class="admin-detail-label" for="drawerApplicantNotes">Private admin notes</label><textarea id="drawerApplicantNotes" class="admin-detail-textarea" placeholder="Notes only administrators can see">${esc(a.notes||'')}</textarea><button class="admin-secondary-button admin-save-notes" data-save-app-notes="${esc(a.id)}" type="button">Save Notes</button></div><div class="admin-drawer-actions"><button class="admin-action-button approve" data-app-action="approve" data-row="${esc(a.id)}" type="button">Approve & Send Invite</button><button class="admin-action-button" data-app-action="waitlist" data-row="${esc(a.id)}" type="button">Waitlist</button><button class="admin-action-button danger" data-app-action="decline" data-row="${esc(a.id)}" type="button">Decline</button><button class="admin-action-button" data-app-action="active" data-row="${esc(a.id)}" type="button">Mark Active</button><button class="admin-action-button" data-app-action="resend" data-row="${esc(a.id)}" type="button">Resend Password Setup</button><button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button></div></div>`);
+  openDrawer('Beta Application',a.fullName,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(a.status)}">${esc(a.status)}</span><span class="admin-platform-pill">${esc(a.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(a.email)}</strong></div><div><span>Submitted</span><strong>${esc(formatDate(a.submittedAt))}</strong></div><div><span>Terms</span><strong>${a.termsAccepted?'Accepted':'—'}</strong></div><div><span>Portal Access</span><strong>${esc(a.portalAccess||'Not Enabled')}</strong></div><div><span>Last Updated</span><strong>${esc(formatDate(a.lastUpdated))}</strong></div><div><span>Invite Email</span><strong>${esc(formatDate(a.inviteEmailSentAt||a.lastDecisionEmail))}</strong></div><div><span>Email Delivery</span><strong><span class="admin-email-status ${esc(String(a.inviteEmailStatus||'').toLowerCase())}">${esc(a.inviteEmailStatus||'Not sent')}</span></strong></div></div><div><label class="admin-detail-label" for="drawerApplicantNotes">Private admin notes</label><textarea id="drawerApplicantNotes" class="admin-detail-textarea" placeholder="Notes only administrators can see">${esc(a.notes||'')}</textarea><button class="admin-secondary-button admin-save-notes" data-save-app-notes="${esc(a.id)}" type="button">Save Notes</button></div><div class="admin-drawer-actions">${applicationActionButtons(a)}</div></div>`);
 }
 function openTesterRecord(t){
   const a=state.applications.find(x=>x.testerUid===t.uid||x.email===t.email);
-  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email / Password</strong></div></div><div class="admin-drawer-actions"><button class="admin-action-button approve" data-app-action="resend" data-row="${a?esc(a.id):''}" type="button">Send Password Setup / Reset</button><button class="admin-action-button" data-app-action="active" data-row="${a?esc(a.id):''}" type="button">Enable / Mark Active</button><button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${a?esc(a.id):''}" type="button">Disable Access</button></div></div>`);
+  const action=a
+    ? (t.accessStatus==='Enabled'
+      ? `<button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button>`
+      : `<button class="admin-action-button approve" data-app-action="active" data-row="${esc(a.id)}" type="button">Enable Access</button>`)
+    : '';
+  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email / Password</strong></div></div>${action?`<div class="admin-drawer-actions">${action}</div>`:''}</div>`);
 }
 function openFeedbackRecord(f){
   const statuses=['New','Reviewing','Planned','Fixed','Closed','Declined'];
@@ -242,40 +271,101 @@ function updateMetricTransition(oldStatus,newStatus,platform){
   if(map[newStatus])state.metrics[map[newStatus]]=(state.metrics[map[newStatus]]||0)+1;
   renderMetrics();
 }
+function normalizeWorkerUrl(value){
+  const raw=String(value||'').trim().replace(/\/+$/,'');
+  if(!raw)return '';
+  try{const u=new URL(raw);return u.protocol==='https:'?u.toString().replace(/\/$/,''):'';}catch(_){return '';}
+}
+function renderEmailServiceSettings(){
+  const input=document.getElementById('emailWorkerUrl');
+  const status=document.getElementById('emailWorkerStatus');
+  if(input)input.value=emailWorkerEndpoint;
+  if(status){status.textContent=emailWorkerEndpoint?'Connected':'Not connected';status.className='admin-subtle-chip '+(emailWorkerEndpoint?'admin-service-connected':'admin-service-disconnected');}
+}
+async function loadEmailServiceSettings(){
+  try{
+    const snap=await getDoc(doc(db,'betaSystem','emailService'));
+    emailWorkerEndpoint=snap.exists()?normalizeWorkerUrl(snap.data().workerUrl):'';
+  }catch(_){emailWorkerEndpoint='';}
+  renderEmailServiceSettings();
+}
+async function saveEmailServiceSettings(){
+  const input=document.getElementById('emailWorkerUrl');
+  const value=normalizeWorkerUrl(input&&input.value);
+  if(!value)throw new Error('Enter the full HTTPS workers.dev URL from Cloudflare.');
+  await setDoc(doc(db,'betaSystem','emailService'),{workerUrl:value,updatedAt:serverTimestamp()},{merge:true});
+  emailWorkerEndpoint=value;
+  renderEmailServiceSettings();
+}
+async function sendWorkerEmail(type,a,inviteId=''){
+  if(!emailWorkerEndpoint){const err=new Error('Connect the Cloudflare email Worker in Admin Overview before sending invitations.');err.code='rebatify/email-not-configured';throw err;}
+  if(!auth.currentUser){const err=new Error('Administrator session expired.');err.code='auth/invalid-credential';throw err;}
+  const token=await auth.currentUser.getIdToken();
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),20000);
+  try{
+    const response=await fetch(emailWorkerEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,name:a.fullName||'',email:a.email||'',platform:a.platform||'',inviteId}),signal:controller.signal});
+    let payload={};try{payload=await response.json();}catch(_){}
+    if(!response.ok||payload.ok!==true){const err=new Error(payload.error||'The Rebatify email service could not send this message.');err.code='rebatify/email-send-failed';throw err;}
+    return payload;
+  }finally{clearTimeout(timer);}
+}
+function newInviteId(){
+  const bytes=crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function createPendingInvite(a){
+  if(a.inviteId)await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
+  const inviteId=newInviteId();
+  const expiresAt=Timestamp.fromDate(new Date(Date.now()+7*24*60*60*1000));
+  await setDoc(doc(db,'betaInvites',inviteId),{
+    applicationId:a.id,
+    fullName:a.fullName||'',
+    email:String(a.email||'').toLowerCase(),
+    platform:a.platform||'',
+    status:'Pending',
+    createdAt:serverTimestamp(),
+    expiresAt
+  });
+  await updateDoc(doc(db,'betaApplications',a.id),{
+    status:'Approved',
+    portalAccess:'Pending Activation',
+    testerUid:'',
+    inviteId,
+    inviteEmailStatus:'Sending',
+    lastUpdated:serverTimestamp()
+  });
+  a.inviteId=inviteId;
+  a.portalAccess='Pending Activation';
+  a.testerUid='';
+  a.inviteEmailStatus='Sending';
+  a.lastUpdated=new Date();
+  return inviteId;
+}
 async function queueDecisionEmail(a,status){
-  if(!emailAutomationEnabled)return false;
-  const first=String(a.fullName||'Tester').trim().split(/\s+/)[0]||'Tester';
-  const templates={
-    Waitlist:{subject:'Rebatify Beta application update',body:`Hi ${first},\n\nThank you for your interest in the Rebatify Beta. The current beta group is full, so your application has been placed on the waitlist. We will contact you if a spot becomes available.\n\nOrder. Track. Complete. Get Refunded.\nSimplify with Rebatify.`},
-    Declined:{subject:'Rebatify Beta application update',body:`Hi ${first},\n\nThank you for your interest in helping test Rebatify. We are not able to offer a beta spot for this testing group. We appreciate your interest and support as Rebatify moves toward public launch.\n\nOrder. Track. Complete. Get Refunded.\nSimplify with Rebatify.`},
-    Inactive:{subject:'Rebatify Beta access update',body:`Hi ${first},\n\nYour Rebatify Beta portal access has been paused. If you believe this was unexpected, reply to this message or contact Rebatify Support.\n\nSimplify with Rebatify.`}
-  };
-  const t=templates[status];if(!t)return false;
-  await addDoc(collection(db,'mail'),{to:[a.email],message:{subject:t.subject,text:t.body}});return true;
+  if(!emailAutomationEnabled||!emailWorkerEndpoint)return false;
+  const map={Waitlist:'waitlist',Declined:'declined',Inactive:'inactive'};
+  const type=map[status];if(!type)return false;
+  await sendWorkerEmail(type,a);return true;
 }
 
 async function approveApplicant(a){
-  let uid=a.testerUid||'';
-  if(!uid){
-    const provisioningAuth=getProvisioningAuth();
-    try{
-      const cred=await createUserWithEmailAndPassword(provisioningAuth,a.email,randomPassword());
-      uid=cred.user.uid;
-    }finally{await clearProvisioningAuth();}
+  const old=a.status;
+  const inviteId=await createPendingInvite(a);
+  a.status='Approved';
+  if(old!=='Approved')updateMetricTransition(old,'Approved',a.platform);
+  try{
+    await sendWorkerEmail('invite',a,inviteId);
+    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Sent',inviteEmailSentAt:serverTimestamp(),lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
+    a.inviteEmailStatus='Sent';a.inviteEmailSentAt=new Date();a.lastDecisionEmail=new Date();
+  }catch(error){
+    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Error',lastUpdated:serverTimestamp()}).catch(()=>{});
+    a.inviteEmailStatus='Error';
+    error.rebatifyApprovalCompleted=true;
+    throw error;
   }
-  const testerPayload={name:a.fullName,email:a.email,platform:a.platform,status:'Approved',accessStatus:'Enabled',applicationId:a.id,updatedAt:serverTimestamp()};
-  if(!a.testerUid){testerPayload.createdAt=serverTimestamp();testerPayload.lastLogin=null;}
-  await setDoc(doc(db,'betaUsers',uid),testerPayload,{merge:true});
-  await updateDoc(doc(db,'betaApplications',a.id),{status:'Approved',portalAccess:'Enabled',testerUid:uid,lastUpdated:serverTimestamp(),lastDecisionEmail:serverTimestamp()});
-  await sendPasswordResetEmail(auth,a.email,{url:testerPortalUrl});
-  const old=a.status;a.status='Approved';a.portalAccess='Enabled';a.testerUid=uid;a.lastUpdated=new Date();a.lastDecisionEmail=new Date();updateMetricTransition(old,'Approved',a.platform);
-  if(state.loaded.testers){
-    const existing=state.testers.find(t=>t.uid===uid);
-    if(existing){Object.assign(existing,{name:a.fullName,email:a.email,platform:a.platform,status:'Approved',accessStatus:'Enabled',applicationId:a.id});}
-    else{state.testers.unshift({uid,name:a.fullName,email:a.email,platform:a.platform,status:'Approved',accessStatus:'Enabled',applicationId:a.id,createdAt:new Date(),lastLogin:null});}
-    renderTesters();
-  }else state.loaded.testers=false;
 }
+
 async function statusAction(a,newStatus,portalAccess){
   const old=a.status;const changes={status:newStatus,portalAccess,lastUpdated:serverTimestamp()};
   if(['Waitlist','Declined','Inactive'].includes(newStatus))changes.lastDecisionEmail=serverTimestamp();
@@ -289,11 +379,27 @@ async function statusAction(a,newStatus,portalAccess){
   a.status=newStatus;a.portalAccess=portalAccess;a.lastUpdated=new Date();updateMetricTransition(old,newStatus,a.platform);
 }
 async function resendInvite(a){
-  if(!a.testerUid)throw new Error('Tester access has not been created yet. Approve this applicant first.');
-  await sendPasswordResetEmail(auth,a.email,{url:testerPortalUrl});
-  await updateDoc(doc(db,'betaApplications',a.id),{lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
-  a.lastDecisionEmail=new Date();a.lastUpdated=new Date();
+  const inviteId=await createPendingInvite(a);
+  try{
+    await sendWorkerEmail('invite',a,inviteId);
+    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Sent',inviteEmailSentAt:serverTimestamp(),lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
+    a.inviteEmailStatus='Sent';a.inviteEmailSentAt=new Date();a.lastDecisionEmail=new Date();
+  }catch(error){
+    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Error',lastUpdated:serverTimestamp()}).catch(()=>{});
+    a.inviteEmailStatus='Error';
+    throw error;
+  }
 }
+async function deleteApplication(a){
+  if(a.inviteId)await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
+  await deleteDoc(doc(db,'betaApplications',a.id));
+  state.applications=state.applications.filter(x=>x.id!==a.id);
+  state.recentApplications=state.recentApplications.filter(x=>x.id!==a.id);
+  state.loaded.applications=false;
+  await loadOverview();
+  if(activeView==='applications')await loadApplications(true);
+}
+
 
 async function refreshActiveView(){
   document.getElementById('adminRefresh').classList.add('is-spinning');
@@ -319,6 +425,7 @@ async function init(user){
   app.style.display='';
 
   try{
+    await loadEmailServiceSettings();
     await withTimeout(loadOverview(), 12000, 'Dashboard data');
   }catch(error){
     const detail = error && error.code === 'rebatify/timeout'
@@ -369,12 +476,22 @@ document.addEventListener('click',async e=>{
   const feedbackBtn=e.target.closest('[data-open-feedback]');if(feedbackBtn){try{const f=await ensureFeedbackLoaded(feedbackBtn.dataset.openFeedback);if(f)openFeedbackRecord(f);}catch(err){showToast('Could not open that feedback.','error');}return;}
   const noteBtn=e.target.closest('[data-save-app-notes]');if(noteBtn){const a=await ensureApplicationLoaded(noteBtn.dataset.saveAppNotes);if(!a)return;const notes=document.getElementById('drawerApplicantNotes').value;try{await updateDoc(doc(db,'betaApplications',a.id),{notes,lastUpdated:serverTimestamp()});a.notes=notes;a.lastUpdated=new Date();showToast('Private notes saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
   const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=document.getElementById('drawerFeedbackStatus').value;const notes=document.getElementById('drawerFeedbackNotes').value;try{await updateDoc(doc(db,'betaFeedback',f.id),{status,adminNotes:notes,updatedAt:serverTimestamp()});if(f.status==='New'&&status!=='New'&&state.metrics.newFeedback>0)state.metrics.newFeedback--;if(f.status!=='New'&&status==='New')state.metrics.newFeedback++;f.status=status;f.adminNotes=notes;f.updatedAt=new Date();renderMetrics();renderFeedback();renderOverview();showToast('Feedback updated.');openFeedbackRecord(f);}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
+  const emailSave=e.target.closest('[data-save-email-worker]');if(emailSave){emailSave.disabled=true;const original=emailSave.textContent;emailSave.textContent='Saving…';try{await saveEmailServiceSettings();showToast('Cloudflare email service connected.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{emailSave.disabled=false;emailSave.textContent=original;}return;}
   const actionBtn=e.target.closest('[data-app-action]');if(actionBtn){
     const task=actionBtn.dataset.appAction;const id=actionBtn.dataset.row;if(!id){showToast('Could not find the tester application record.','error');return;}
     const a=await ensureApplicationLoaded(id);if(!a)return;
-    const notification=emailAutomationEnabled?' and notify them':'';
-    const confirmation={approve:'Approve this tester and send a secure password-setup email?',waitlist:'Move this applicant to the waitlist'+notification+'?',decline:'Decline this application'+notification+'?',resend:'Send a fresh password-setup email?',inactive:'Disable this tester’s portal access'+notification+'?',active:'Enable access and mark this tester active?'}[task];
-    if(confirmation&&!(await confirmAction(confirmation,(task==='decline'||task==='inactive')?'danger':'')))return;
+    const notification=(emailAutomationEnabled&&emailWorkerEndpoint)?' and notify them':'';
+    const deleteNote=a.testerUid?' This deletes the application record and invitation only; the tester account will remain.':'';
+    const confirmation={
+      approve:'Approve this tester and send the branded Rebatify beta invitation?',
+      waitlist:'Move this applicant to the waitlist'+notification+'?',
+      decline:'Decline this application'+notification+'?',
+      resend:'Send a fresh branded Rebatify beta invitation? The previous invitation link will stop working.',
+      inactive:'Disable this tester’s portal access'+notification+'?',
+      active:'Enable access and mark this tester active?',
+      delete:'Permanently delete this beta application?'+deleteNote
+    }[task];
+    if(confirmation&&!(await confirmAction(confirmation,['decline','inactive','delete'].includes(task)?'danger':'')))return;
     actionBtn.disabled=true;
     try{
       if(task==='approve')await approveApplicant(a);
@@ -383,10 +500,18 @@ document.addEventListener('click',async e=>{
       if(task==='inactive')await statusAction(a,'Inactive','Disabled');
       if(task==='active')await statusAction(a,'Active','Enabled');
       if(task==='resend')await resendInvite(a);
-      if(state.loaded.applications)renderApplications();renderOverview();
-      const messages={approve:'Tester approved and the password-setup email was sent.',resend:'Password-setup email sent.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.'};
+      if(task==='delete')await deleteApplication(a);
+      if(task!=='delete'){if(state.loaded.applications)renderApplications();renderOverview();}
+      const messages={approve:'Tester approved and the branded Rebatify invitation was sent.',resend:'Branded Rebatify invitation sent. The previous link was replaced.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application deleted.'};
       showToast(messages[task]||'Tester record updated.');closeDrawer();
-    }catch(err){showToast(friendlyFirebaseError(err),'error');}
+    }catch(err){
+      if(task==='approve'&&err&&err.rebatifyApprovalCompleted){
+        showToast('Tester approved, but the branded invitation email could not be sent. Use Resend Invitation after the email service is connected. '+friendlyFirebaseError(err),'error');
+        if(state.loaded.applications)renderApplications();renderOverview();openApplicationRecord(a);
+      }else{
+        showToast(friendlyFirebaseError(err),'error');
+      }
+    }
     finally{actionBtn.disabled=false;}
     return;
   }

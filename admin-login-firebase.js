@@ -74,7 +74,7 @@ if (resetButton) {
     const original = resetButton.textContent;
     resetButton.textContent = 'Sending…';
     try {
-      await sendPasswordResetEmail(auth, adminEmail, { url: 'https://rebatifyapp.github.io/admin-login.html' });
+      await sendPasswordResetEmail(auth, adminEmail);
       showError('A password-reset email has been requested for the Rebatify support account.', 'warning');
     } catch (error) {
       showError(friendlyFirebaseError(error));

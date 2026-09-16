@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=35" rel="stylesheet"/>
+<link href="styles.css?v=38" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -25,10 +25,10 @@
 <div><strong>Rebatify</strong><span>Beta Admin</span></div>
 </div>
 <nav aria-label="Admin navigation" class="admin-nav">
-<button class="admin-nav-item is-active" data-admin-view="overview" type="button"><span class="admin-nav-icon">⌂</span><span>Overview</span></button>
-<button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon">◎</span><span>Applications</span><span class="admin-nav-badge" id="navPendingCount">0</span></button>
-<button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon">◇</span><span>Testers</span></button>
-<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon">✦</span><span>Feedback</span><span class="admin-nav-badge" id="navFeedbackCount">0</span></button>
+<button class="admin-nav-item is-active" data-admin-view="overview" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.7 12 3.5l8.5 7.2v9.3a1 1 0 0 1-1 1h-5.2v-6.2H9.7V21H4.5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg></span><span>Overview</span></button>
+<button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Applications</span><span class="admin-nav-badge" id="navPendingCount">0</span></button>
+<button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 19c.5-3.5 2.4-5.2 5.5-5.2s5 1.7 5.5 5.2M15.5 6.3a3 3 0 0 1 0 5.4M16.5 13.9c2.3.5 3.7 2.2 4 5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Testers</span></button>
+<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Feedback</span><span class="admin-nav-badge" id="navFeedbackCount">0</span></button>
 </nav>
 <div class="admin-sidebar-footer">
 <div class="admin-admin-card">
@@ -40,13 +40,13 @@
 </aside>
 <div class="admin-main">
 <header class="admin-topbar">
-<button aria-label="Open navigation" class="admin-menu-toggle" id="adminMenuToggle" type="button">☰</button>
+<button aria-label="Open navigation" class="admin-menu-toggle" id="adminMenuToggle" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <div>
 <div class="admin-topbar-eyebrow">Rebatify Beta Program</div>
 <h1 id="adminViewTitle">Overview</h1>
 </div>
 <div class="admin-topbar-actions">
-<button aria-label="Refresh data" class="admin-icon-button" id="adminRefresh" title="Refresh data" type="button">↻</button>
+<button aria-label="Refresh data" class="admin-icon-button" id="adminRefresh" title="Refresh data" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 8.5V4.8l-2.2 2.1A8 8 0 1 0 20 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 <div class="admin-live-chip"><span></span> On demand</div>
 </div>
 </header>
@@ -82,6 +82,12 @@
 <div class="admin-recent-list" id="overviewApplications"></div>
 </article>
 </div>
+<article class="admin-panel admin-email-service-panel">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Professional Email</span><h3>Cloudflare email service</h3></div><span class="admin-subtle-chip admin-service-disconnected" id="emailWorkerStatus">Not connected</span></div>
+<p class="admin-email-service-copy">Connect the free Cloudflare Worker that sends branded Rebatify beta invitations while Firebase remains on the Spark plan.</p>
+<div class="admin-email-service-row"><input id="emailWorkerUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://rebatify-beta-email.your-subdomain.workers.dev"/><button class="admin-primary-button" data-save-email-worker type="button">Connect Email Service</button></div>
+<small class="admin-email-service-note">Only the Worker URL is saved here. Your Gmail App Password stays encrypted in Cloudflare and is never stored on the website or in Firestore.</small>
+</article>
 <article class="admin-panel admin-feedback-preview-panel">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Feedback Inbox</span><h3>Latest tester feedback</h3></div><button class="admin-text-button" data-jump-view="feedback" type="button">Open feedback</button></div>
 <div class="admin-feedback-preview-list" id="overviewFeedback"></div>
@@ -90,21 +96,21 @@
 <section class="admin-view" data-admin-panel="applications">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Applicant Review</div><h2>Beta applications</h2><p>Approve testers, manage the waitlist, and keep private notes.</p></div></div>
 <div class="admin-toolbar">
-<div class="admin-search"><span>⌕</span><input id="applicationSearch" placeholder="Search name or email" type="search"/></div>
-<select class="admin-filter" id="applicationStatusFilter"><option value="">All statuses</option><option>Applied</option><option>Approved</option><option>Active</option><option>Waitlist</option><option>Declined</option><option>Inactive</option><option>Removed</option></select>
+<div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="applicationSearch" placeholder="Search name or email" type="search"/></div>
+<select class="admin-filter" id="applicationStatusFilter"><option value="">All statuses</option><option>Applied</option><option>Approved</option><option>Active</option><option>Waitlist</option><option>Declined</option><option>Inactive</option></select>
 <select class="admin-filter" id="applicationPlatformFilter"><option value="">All platforms</option><option>iOS</option><option>Android</option></select>
 </div>
-<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Applicant</th><th>Platform</th><th>Applied</th><th>Status</th><th>Portal</th><th></th></tr></thead><tbody id="applicationsTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="applicationsEmpty">No applications match these filters.</div></div>
+<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Applicant</th><th>Platform</th><th>Applied</th><th>Status</th><th>Portal</th><th>Invite Email</th><th></th></tr></thead><tbody id="applicationsTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="applicationsEmpty">No applications match these filters.</div></div>
 </section>
 <section class="admin-view" data-admin-panel="testers">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>See who can access the tester portal and when they last signed in.</p></div></div>
-<div class="admin-toolbar"><div class="admin-search"><span>⌕</span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
+<div class="admin-toolbar"><div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
 <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Tester</th><th>Platform</th><th>Access</th><th>Last Login</th><th>Password</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
 </section>
 <section class="admin-view" data-admin-panel="feedback">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Review bugs, feature requests, confusing experiences, and general feedback.</p></div></div>
 <div class="admin-toolbar">
-<div class="admin-search"><span>⌕</span><input id="feedbackSearch" placeholder="Search feedback" type="search"/></div>
+<div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="feedbackSearch" placeholder="Search feedback" type="search"/></div>
 <select class="admin-filter" id="feedbackStatusFilter"><option value="">All statuses</option><option>New</option><option>Reviewing</option><option>Planned</option><option>Fixed</option><option>Closed</option><option>Declined</option></select>
 <select class="admin-filter" id="feedbackTypeFilter"><option value="">All types</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select>
 </div>
@@ -116,7 +122,7 @@
 </div>
 <div class="admin-drawer-backdrop" hidden="" id="adminDrawerBackdrop"></div>
 <aside aria-hidden="true" class="admin-drawer" id="adminDrawer">
-<div class="admin-drawer-header"><div><span class="admin-section-kicker" id="drawerKicker">Details</span><h2 id="drawerTitle">Record</h2></div><button aria-label="Close details" class="admin-icon-button" id="adminDrawerClose" type="button">×</button></div>
+<div class="admin-drawer-header"><div><span class="admin-section-kicker" id="drawerKicker">Details</span><h2 id="drawerTitle">Record</h2></div><button aria-label="Close details" class="admin-icon-button" id="adminDrawerClose" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
 <div class="admin-drawer-content" id="adminDrawerContent"></div>
 </aside>
 <div class="admin-confirm-backdrop" hidden="" id="adminConfirmBackdrop">
@@ -142,5 +148,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=35"></script><script src="admin-firebase.js?v=35" type="module"></script></body>
+<script src="firebase-config.js?v=38"></script><script src="admin-firebase.js?v=38" type="module"></script></body>
 </html>

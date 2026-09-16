@@ -77,8 +77,8 @@ if (resetButton) {
     const original = resetButton.textContent;
     resetButton.textContent = 'Sending…';
     try {
-      await sendPasswordResetEmail(auth, email, { url: 'https://rebatifyapp.github.io/beta-login.html' });
-      showError('If that email has beta access, a password-reset message has been sent.', 'success');
+      await sendPasswordResetEmail(auth, email);
+      showError('If that email has beta access, a password-reset message has been sent. Open the email, set your password, then return here to sign in.', 'success');
     } catch (error) {
       showError(friendlyFirebaseError(error));
     } finally {
