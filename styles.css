@@ -566,3 +566,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 
 /* Build 47 - task removal controls */
 .admin-task-remove-button{color:#9d2f38!important;border-color:rgba(183,48,58,.22)!important;background:rgba(255,246,246,.95)!important}.admin-task-remove-button:hover{background:#fff0f0!important;border-color:rgba(183,48,58,.34)!important}
+
+/* Build 49 — Beta Portal session security and feedback form label */
+.portal-auth-security-note{margin:-8px 0 18px;color:#7b8ca2;font-size:.84rem;line-height:1.5}
+.portal-feedback-form-kicker{margin:28px 0 12px;color:var(--green);font-size:.78rem;letter-spacing:.12em}
