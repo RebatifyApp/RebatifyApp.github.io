@@ -8,7 +8,7 @@
   <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
   <title>Rebatify Beta Admin</title>
   <link rel="icon" href="app-icon.png">
-  <link rel="stylesheet" href="styles.css?v=30">
+  <link rel="stylesheet" href="styles.css?v=31">
 </head>
 <body class="admin-body">
   <div id="adminLoading" class="admin-loading-screen">
@@ -259,14 +259,19 @@
     if(!endpoint || endpoint.indexOf('script.google.com')===-1){showFatal('The Rebatify admin portal has not been connected to its backend.');return;}
     sessionToken=parseHash(); if(!sessionToken){fail();return;}
     try{
-      const auth=await jsonp('adminsession');
-      if(!auth||!auth.authenticated){fail();return;}
-      document.getElementById('adminIdentityEmail').textContent=auth.email||'Administrator';
+      // Validate the session and fetch the dashboard in one request so the portal
+      // opens with one backend round trip instead of two.
+      const data=await jsonp('admindata');
+      if(!data||data.authenticated===false){fail();return;}
+      if(data.ok===false){showFatal(data.message||'Could not load beta administration data.');return;}
+      const admin=data.admin||{};
+      document.getElementById('adminIdentityEmail').textContent=admin.email||'support.rebatifyapp@gmail.com';
       document.getElementById('adminPasswordToken').value=sessionToken;
-      if(auth.mustChangePassword){passwordGate.hidden=false;portalContent.classList.add('admin-content-locked');}
+      if(admin.mustChangePassword){passwordGate.hidden=false;portalContent.classList.add('admin-content-locked');}
+      state=data;
+      renderAll();
       loading.hidden=true;app.hidden=false;window.__REBATIFY_ADMIN_READY=true;
-      await loadData();
-    }catch(err){showFatal('The browser could not verify your administrator session.', err && err.message ? err.message : 'Backend session check failed.');}
+    }catch(err){showFatal('The browser could not open your administrator session.', err && err.message ? err.message : 'Backend connection failed.');}
   }
 
   async function loadData(silent){
@@ -441,10 +446,10 @@
     const requestId=randomRequestId();
     const params=new URLSearchParams(Object.assign({action:postAction,requestId},fields||{}));
     await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()});
-    for(let i=0;i<24;i++){
-      await new Promise(r=>setTimeout(r,i<3?250:500));
+    for(let i=0;i<8;i++){
       const result=await jsonp(resultAction,{requestId});
       if(result&&result.ready)return result;
+      await new Promise(r=>setTimeout(r,i<2?120:250));
     }
     throw new Error('timeout');
   }

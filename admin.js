@@ -92,15 +92,16 @@
     if(!endpoint || endpoint.indexOf('script.google.com')===-1){showFatal('The Rebatify admin portal has not been connected to its backend.');return;}
     sessionToken=parseHash(); if(!sessionToken){fail();return;}
     try{
-      const auth=await jsonp('adminsession');
-      if(!auth||!auth.authenticated){fail();return;}
-      document.getElementById('adminIdentityEmail').textContent=auth.email||'Administrator';
+      const data=await jsonp('admindata');
+      if(!data||data.authenticated===false){fail();return;}
+      if(data.ok===false){showFatal(data.message||'Could not load beta administration data.');return;}
+      const admin=data.admin||{};
+      document.getElementById('adminIdentityEmail').textContent=admin.email||'support.rebatifyapp@gmail.com';
       document.getElementById('adminPasswordToken').value=sessionToken;
-      document.getElementById('adminPasswordForm').action=endpoint;
-      if(auth.mustChangePassword){passwordGate.hidden=false;portalContent.classList.add('admin-content-locked');}
+      if(admin.mustChangePassword){passwordGate.hidden=false;portalContent.classList.add('admin-content-locked');}
+      state=data; renderAll();
       loading.hidden=true;app.hidden=false;window.__REBATIFY_ADMIN_READY=true;
-      await loadData();
-    }catch(err){showFatal('The browser could not verify your administrator session.', err && err.message ? err.message : 'Backend session check failed.');}
+    }catch(err){showFatal('The browser could not open your administrator session.', err && err.message ? err.message : 'Backend connection failed.');}
   }
 
   async function loadData(silent){
