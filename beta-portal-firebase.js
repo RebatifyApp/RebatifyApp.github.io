@@ -161,7 +161,7 @@ async function completeRequiredTask(){
 }
 
 function timelineStep(number,status,title,body,actionHtml=''){
-  const statusLabel={complete:'Complete',now:'Do now',waiting:'Waiting',next:'Next',ongoing:'Ongoing'}[status]||status;
+  const statusLabel={complete:'Completed',now:'Action Needed',waiting:'Upcoming',next:'Upcoming',ongoing:'In Progress'}[status]||status;
   return `<article class="portal-timeline-step ${status}"><div class="portal-timeline-marker"><span>${number}</span></div><div class="portal-timeline-copy"><div class="portal-timeline-step-top"><h3>${title}</h3><span class="portal-timeline-status">${statusLabel}</span></div><p>${body}</p>${actionHtml}</div></article>`;
 }
 
@@ -175,7 +175,17 @@ function normalizeProgramTimelineStage(value){
 }
 
 function testFlightActionHtml(){
-  return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Open / Install TestFlight</span></button><small>Opens TestFlight if it is installed; otherwise opens TestFlight in the App Store.</small></div>`;
+  return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Open TestFlight</span></button><small><strong>Shortcut only —</strong> opens TestFlight if installed or its App Store page if needed. It does not complete this step or advance your Beta Program status.</small></div>`;
+}
+
+function showPortalShortcutToast(message){
+  const toast=document.getElementById('portalShortcutToast');
+  if(!toast)return;
+  toast.textContent=message;
+  toast.hidden=false;
+  toast.classList.add('show');
+  clearTimeout(showPortalShortcutToast.timer);
+  showPortalShortcutToast.timer=setTimeout(()=>{toast.classList.remove('show');setTimeout(()=>{toast.hidden=true;},180);},4200);
 }
 
 function openTestFlightOrStore(){
@@ -187,10 +197,11 @@ function openTestFlightOrStore(){
   const visibilityHandler=()=>{if(document.hidden)cancelFallback();};
   document.addEventListener('visibilitychange',visibilityHandler,{once:true});
   window.addEventListener('pagehide',cancelFallback,{once:true});
+  showPortalShortcutToast('Opening TestFlight. This shortcut does not advance your Beta Program status.');
   fallbackTimer=setTimeout(()=>{
     if(!leftPage)window.location.href=appStoreUrl;
-  },850);
-  window.location.href=deepLink;
+  },1050);
+  setTimeout(()=>{window.location.href=deepLink;},180);
 }
 
 function bindTestFlightButtons(scope=document){
@@ -211,8 +222,8 @@ function renderProgramTimeline(profile){
   let content;
   if(ios){
     const accessCopy=stage==='inviteSent'
-      ? 'Your <strong>TestFlight invitation has been sent</strong> to your approved beta email. Open that invitation on your iPhone and accept it in TestFlight. If you do not already have TestFlight, use the button below to install it first.'
-      : 'Install or open Apple’s <strong>TestFlight</strong> app on your iPhone now. Then watch your approved beta email for the Rebatify TestFlight invitation. When it arrives, open the invitation on your iPhone and accept it in TestFlight.';
+      ? 'Your <strong>TestFlight invitation has been sent</strong> to your approved beta email. Open that invitation on your iPhone and accept it in TestFlight. If you do not already have TestFlight, use the shortcut below. <strong>Opening TestFlight does not advance this timeline.</strong>'
+      : 'Install or open Apple’s <strong>TestFlight</strong> app on your iPhone now. Then watch your approved beta email for the Rebatify TestFlight invitation. When it arrives, open the invitation on your iPhone and accept it in TestFlight. <strong>Your timeline will be advanced by the Rebatify team when testing access is released to you.</strong>';
     content=[
       ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.',''],
       ['Prepare your iPhone & watch for your TestFlight invitation',accessCopy,testFlightActionHtml()],
@@ -220,8 +231,8 @@ function renderProgramTimeline(profile){
     ];
   }else{
     const accessCopy=stage==='inviteSent'
-      ? 'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone while Google Play is signed into the Google Account that matches your approved beta email, then opt in as a tester.'
-      : 'Make sure Google Play is signed into the <strong>Google Account that matches your approved beta email</strong>. Then watch that email for the Rebatify Google Play closed-testing link. When it arrives, open it on your Android phone and opt in as a tester.';
+      ? 'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone while Google Play is signed into the Google Account that matches your approved beta email, then opt in as a tester. <strong>Opening the testing link does not advance this timeline.</strong>'
+      : 'Make sure Google Play is signed into the <strong>Google Account that matches your approved beta email</strong>. Then watch that email for the Rebatify Google Play closed-testing link. When it arrives, open it on your Android phone and opt in as a tester. <strong>Your timeline will be advanced by the Rebatify team when testing access is released to you.</strong>';
     content=[
       ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.',''],
       ['Prepare your Android phone & watch for your testing link',accessCopy,''],
@@ -243,9 +254,7 @@ function renderProgramTimeline(profile){
       inviteSent:ios?'TestFlight Invitation Sent':'Google Play Testing Link Sent',
       activeTesting:'Active Beta Testing'
     }[stage];
-    footnote.innerHTML=(ios
-      ? '<strong>iOS:</strong> Rebatify will progress your timeline when your TestFlight access is released and again when you move into active testing.'
-      : '<strong>Android:</strong> Rebatify will progress your timeline when your Google Play testing link is released and again when you move into active testing.')+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
+    footnote.innerHTML='<strong>How progress works:</strong> This is a program-status timeline, not a checklist. The Rebatify team controls progression and will update your stage as testing access is released and you move into active testing. Opening an app or link does not mark a step complete.'+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
   }
 }
 
@@ -293,13 +302,13 @@ function renderProfile(profile) {
       activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'
     }[stage];
     const meta={
-      approved:'The button below opens TestFlight if installed, or takes you to TestFlight in the App Store.',
-      inviteSent:'After accepting the invitation, install Rebatify, create your app account, and begin testing.',
+      approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Your timeline is updated by the Rebatify team.',
+      inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',
       activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'
     }[stage];
     if(installCopy)installCopy.textContent=copy;
     if(installMeta)installMeta.textContent=meta;
-    if(installAction){installAction.innerHTML='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open / Install TestFlight <span aria-hidden="true">↗</span></button>';bindTestFlightButtons(installAction);}
+    if(installAction){installAction.innerHTML='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>';bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
     const copy={
       approved:'Confirm the correct Google Play account now, then watch your approved beta email for the closed-testing link.',

@@ -856,7 +856,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
 @media(max-width:980px){.admin-timeline-bulk-controls{grid-template-columns:1fr 1fr}.admin-timeline-apply{grid-column:1/-1;width:100%}}
 @media(max-width:620px){.admin-timeline-bulk-controls{grid-template-columns:1fr}.admin-timeline-apply{grid-column:auto}.admin-timeline-drawer-actions{grid-template-columns:1fr}.admin-timeline-stage-guide{align-items:flex-start;flex-direction:column}.admin-timeline-stage-guide span{border-radius:10px}}
 
-/* Build 56 — feedback layout, task cleanup, and simplified timeline */
+/* Build 57 — feedback layout, task cleanup, and simplified timeline */
 .portal-feedback-layout{
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   gap:44px;
@@ -896,7 +896,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
 .portal-tile-testflight-button{width:100%;padding:11px 13px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.24);box-shadow:0 8px 20px rgba(0,0,0,.10)}
 .portal-tile-testflight-button:hover{transform:translateY(-1px);background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.34)}
 
-/* Build 56 uses three administrator-controlled milestones. Older Build 55 values are normalized in JavaScript. */
+/* Build 57 uses three administrator-controlled milestones. Older Build 55 values are normalized in JavaScript. */
 .admin-timeline-chip.timeline-inviteSent{background:#fff7e3;color:#8b6200;border-color:#f2e2ad}
 .admin-timeline-chip.timeline-activeTesting{background:linear-gradient(135deg,#e9f7ed,#effcff);color:#267b39;border-color:#cee7d5}
 
@@ -909,3 +909,16 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-timeline-actions{align-items:stretch;flex-direction:column}
   .portal-testflight-button{width:100%}
 }
+
+
+/* Build 58 — clarify that Beta Program progression is controlled by Rebatify, not by shortcut buttons */
+.portal-progress-notice{display:grid;grid-template-columns:42px minmax(0,1fr);gap:13px;align-items:start;margin:-2px 0 18px;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,rgba(20,92,242,.055),rgba(59,158,74,.045));border:1px solid rgba(20,92,242,.12);box-shadow:0 10px 28px rgba(8,34,92,.045)}
+.portal-progress-notice-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#145cf2,#19a5a8);color:#fff;font-size:.9rem;font-weight:950;box-shadow:0 8px 18px rgba(20,92,242,.16)}
+.portal-progress-notice strong{display:block;color:#19324f;font-size:.88rem;font-weight:900;line-height:1.35;margin-top:1px}
+.portal-progress-notice p{margin:4px 0 0;color:#61758d;font-size:.8rem;line-height:1.55;max-width:860px}
+.portal-timeline-actions small strong{color:#4f647b;font-weight:900}
+.portal-tile-shortcut-note{display:block;margin-top:9px;color:rgba(255,255,255,.78);font-size:.69rem;line-height:1.4}
+.portal-tile-shortcut-note strong{color:#fff;font-weight:900}
+.portal-shortcut-toast{position:fixed;left:50%;bottom:28px;z-index:1000;max-width:min(560px,calc(100vw - 30px));transform:translate(-50%,16px);opacity:0;padding:12px 16px;border-radius:14px;background:rgba(10,28,54,.96);color:#fff;font-size:.78rem;font-weight:800;line-height:1.45;box-shadow:0 18px 42px rgba(0,0,0,.24);transition:opacity .18s ease,transform .18s ease;pointer-events:none;text-align:center}
+.portal-shortcut-toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:620px){.portal-progress-notice{grid-template-columns:36px minmax(0,1fr);padding:14px 15px}.portal-progress-notice-icon{width:30px;height:30px;border-radius:10px}.portal-shortcut-toast{bottom:18px}}
