@@ -1,0 +1,90 @@
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
+  signOut
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+const config = window.REBATIFY_FIREBASE_CONFIG || {};
+const settings = window.REBATIFY_BETA_SETTINGS || {};
+const required = ['apiKey','authDomain','projectId','appId'];
+const missing = required.filter(k => !String(config[k] || '').trim());
+
+export const firebaseConfigured = missing.length === 0;
+export const firebaseMissingFields = missing;
+export const adminEmail = String(settings.adminEmail || 'support.rebatifyapp@gmail.com').trim().toLowerCase();
+export const emailAutomationEnabled = settings.emailAutomationEnabled === true;
+export const testerPortalUrl = String(settings.testerPortalUrl || 'https://rebatifyapp.github.io/beta-login.html').trim();
+
+let app = null;
+let auth = null;
+let db = null;
+let secondaryApp = null;
+let secondaryAuth = null;
+
+if (firebaseConfigured) {
+  app = getApps().find(a => a.name === '[DEFAULT]') || initializeApp(config);
+  auth = getAuth(app);
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
+  db = getFirestore(app);
+}
+
+export { app, auth, db };
+
+export function isAdminUser(user) {
+  return !!user && String(user.email || '').trim().toLowerCase() === adminEmail;
+}
+
+export function getProvisioningAuth() {
+  if (!firebaseConfigured) throw new Error('firebase-not-configured');
+  if (!secondaryApp) {
+    secondaryApp = getApps().find(a => a.name === 'rebatifyBetaProvisioner') || initializeApp(config, 'rebatifyBetaProvisioner');
+    secondaryAuth = getAuth(secondaryApp);
+    setPersistence(secondaryAuth, inMemoryPersistence).catch(() => {});
+  }
+  return secondaryAuth;
+}
+
+export async function clearProvisioningAuth() {
+  if (secondaryAuth && secondaryAuth.currentUser) {
+    try { await signOut(secondaryAuth); } catch (_) {}
+  }
+}
+
+export function timestampToDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  if (value instanceof Date) return value;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function timestampToIso(value) {
+  const d = timestampToDate(value);
+  return d ? d.toISOString() : '';
+}
+
+export async function sha256Hex(text) {
+  const data = new TextEncoder().encode(String(text || ''));
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2,'0')).join('');
+}
+
+export function friendlyFirebaseError(error) {
+  const code = String(error && error.code || '');
+  const map = {
+    'auth/invalid-credential': 'That email or password was not recognized.',
+    'auth/invalid-login-credentials': 'That email or password was not recognized.',
+    'auth/user-disabled': 'This account is currently disabled.',
+    'auth/too-many-requests': 'Too many attempts were made. Please wait a moment and try again.',
+    'auth/email-already-in-use': 'An authentication account already exists for this email address.',
+    'auth/weak-password': 'Please use a stronger password.',
+    'auth/network-request-failed': 'The connection could not be completed. Please check your connection and try again.',
+    'permission-denied': 'This action could not be completed because access is not permitted.',
+    'failed-precondition': 'This feature is not fully configured yet.'
+  };
+  return map[code] || (error && error.message ? error.message : 'Something went wrong. Please try again.');
+}

@@ -1,129 +1,47 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#145cf2">
-  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
-  <title>Rebatify Beta Admin — Sign In</title>
-  <link rel="icon" href="app-icon.png">
-  <link rel="stylesheet" href="styles.css?v=31">
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="#145cf2" name="theme-color"/>
+<meta content="noindex,nofollow,noarchive,nosnippet" name="robots"/>
+<meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
+<title>Rebatify Beta Admin — Sign In</title>
+<link href="app-icon.png" rel="icon"/>
+<link href="styles.css?v=33" rel="stylesheet"/>
 </head>
 <body class="admin-auth-body">
-  <main class="admin-auth-shell">
-    <section class="admin-auth-card">
-      <div class="admin-auth-brand">
-        <img src="app-icon.png" alt="Rebatify app icon">
-        <div><strong>Rebatify</strong><span>Beta Administration</span></div>
-      </div>
-      <div class="admin-eyebrow">Private Admin Portal</div>
-      <h1>Welcome back.</h1>
-      <p class="admin-auth-lead">Review beta applications, manage tester access, and organize feedback from one private workspace.</p>
+<main class="admin-auth-shell">
+<section class="admin-auth-card">
+<div class="admin-auth-brand">
+<img alt="Rebatify app icon" src="app-icon.png"/>
+<div><strong>Rebatify</strong><span>Beta Administration</span></div>
+</div>
+<div class="admin-eyebrow">Private Admin Portal</div>
+<h1>Welcome back.</h1>
+<p class="admin-auth-lead">Review beta applications, manage tester access, and organize feedback from one private workspace.</p>
+<div class="admin-alert admin-alert-error" hidden="" id="adminLoginError"></div>
+<div class="admin-alert admin-alert-warning" hidden="" id="adminNotConnected">The admin portal has not been connected to the Rebatify beta backend yet.</div>
+<form class="admin-login-form" id="adminLoginForm" method="post">
 
-      <div id="adminLoginError" class="admin-alert admin-alert-error" hidden></div>
-      <div id="adminNotConnected" class="admin-alert admin-alert-warning" hidden>The admin portal has not been connected to the Rebatify beta backend yet.</div>
+<div class="beta-field">
+<label for="adminEmail">Administrator email</label>
+<input autocomplete="username" id="adminEmail" name="email" required="" type="email" value="support.rebatifyapp@gmail.com"/>
+</div>
+<div class="beta-field">
+<label for="adminPassword">Password</label>
+<input autocomplete="current-password" id="adminPassword" name="password" placeholder="Admin password" required="" type="password"/>
+</div>
+<button class="admin-primary-button" type="submit">Sign In <span aria-hidden="true">→</span></button><button class="admin-text-button" id="adminForgotPassword" type="button">Reset Admin Password</button>
+</form>
+<div class="admin-auth-note">
+<div aria-hidden="true" class="admin-lock-dot"></div>
+<p>This portal is restricted to authorized Rebatify administrators. Applicant and tester information is never embedded in the public website.</p>
+</div>
+</section>
+</main>
 
-      <form id="adminLoginForm" method="post" class="admin-login-form">
-        <input type="hidden" name="action" value="adminLogin">
-        <div class="beta-field">
-          <label for="adminEmail">Administrator email</label>
-          <input id="adminEmail" name="email" type="email" autocomplete="username" required value="support.rebatifyapp@gmail.com">
-        </div>
-        <div class="beta-field">
-          <label for="adminPassword">Password</label>
-          <input id="adminPassword" name="password" type="password" autocomplete="current-password" required placeholder="Admin password">
-        </div>
-        <button class="admin-primary-button" type="submit">Sign In <span aria-hidden="true">→</span></button>
-      </form>
 
-      <div class="admin-auth-note">
-        <div class="admin-lock-dot" aria-hidden="true"></div>
-        <p>This portal is restricted to authorized Rebatify administrators. Applicant and tester information is never embedded in the public website.</p>
-      </div>
-    </section>
-  </main>
-  <script src="beta-config.js?v=31"></script>
-  <script>
-
-  (function(){
-    const form=document.getElementById('adminLoginForm');
-    const endpoint=(window.REBATIFY_BETA_ENDPOINT||'').trim();
-    const notConnected=document.getElementById('adminNotConnected');
-    const error=document.getElementById('adminLoginError');
-    const button=form.querySelector('button[type="submit"]');
-
-    function randomId(){
-      const bytes=new Uint8Array(24); crypto.getRandomValues(bytes);
-      return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
-    }
-    function jsonp(action,args){
-      return new Promise((resolve,reject)=>{
-        const cb='rebatifyAdminLogin_'+Date.now()+'_'+Math.floor(Math.random()*100000);
-        const script=document.createElement('script');
-        const timer=setTimeout(()=>{cleanup();reject(new Error('timeout'));},10000);
-        function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
-        window[cb]=data=>{cleanup();resolve(data);};
-        script.onerror=()=>{cleanup();reject(new Error('network'));};
-        const params=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},args||{}));
-        script.src=endpoint+'?'+params.toString();
-        document.head.appendChild(script);
-      });
-    }
-    async function poll(requestId){
-      // The POST does not resolve until Apps Script has handled the request, so the
-      // result is normally ready immediately. Only retry briefly if Google is still
-      // propagating the result between web-app instances.
-      for(let i=0;i<8;i++){
-        const result=await jsonp('adminloginresult',{requestId});
-        if(result&&result.ready)return result;
-        await new Promise(r=>setTimeout(r,i<2?120:250));
-      }
-      throw new Error('timeout');
-    }
-    function showError(message){error.textContent=message;error.hidden=false;}
-
-    if(!endpoint || endpoint.indexOf('script.google.com')===-1){
-      notConnected.hidden=false; button.disabled=true;
-    }
-    const p=new URLSearchParams(location.search);
-    const code=p.get('error');
-    const messages={
-      invalid:'That administrator email or password was not recognized.',
-      session:'Your administrator session has expired. Please sign in again.',
-      access:'Administrator access is not enabled for this account.',
-      server:'The admin portal could not sign you in right now. Please try again.'
-    };
-    if(code&&messages[code])showError(messages[code]);
-
-    form.addEventListener('submit',async e=>{
-      e.preventDefault();
-      if(!form.checkValidity()){form.reportValidity();return;}
-      error.hidden=true;
-      const original=button.innerHTML;
-      button.disabled=true;button.innerHTML='Signing In…';
-      const requestId=randomId();
-      const params=new URLSearchParams();
-      params.set('action','adminLogin');
-      params.set('email',document.getElementById('adminEmail').value.trim());
-      params.set('password',document.getElementById('adminPassword').value);
-      params.set('requestId',requestId);
-      try{
-        await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()});
-        const result=await poll(requestId);
-        if(!result.ok){
-          showError(result.error==='invalid'?'That administrator email or password was not recognized.':'The admin portal could not sign you in right now. Please try again.');
-          return;
-        }
-        localStorage.setItem('rebatifyAdminSession',result.token);
-        location.replace('admin.html#session='+encodeURIComponent(result.token));
-      }catch(err){
-        showError('The admin portal could not complete sign-in. Please try again.');
-      }finally{
-        button.disabled=false;button.innerHTML=original;
-      }
-    });
-  })();
-  </script>
-</body>
+<script src="firebase-config.js?v=33"></script><script src="admin-login-firebase.js?v=33" type="module"></script></body>
 </html>

@@ -1,123 +1,44 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#145cf2">
-  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet">
-  <title>Rebatify Beta Tester Portal — Sign In</title>
-  <link rel="icon" href="app-icon.png">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="#145cf2" name="theme-color"/>
+<meta content="noindex,nofollow,noarchive,nosnippet" name="robots"/>
+<meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
+<title>Rebatify Beta Tester Portal — Sign In</title>
+<link href="app-icon.png" rel="icon"/>
+<link href="styles.css?v=33" rel="stylesheet"/>
 </head>
 <body class="portal-body">
-  <main class="portal-auth-shell">
-    <section class="portal-auth-card">
-      <a class="portal-logo" href="beta.html" aria-label="Back to Rebatify Beta"><img src="app-icon.png" alt="Rebatify app icon"></a>
-      <div class="portal-kicker">Beta Tester Portal</div>
-      <h1>Welcome back.</h1>
-      <p class="portal-auth-lead">Approved Rebatify beta testers can sign in using the email address from their application and the password provided in their approval email.</p>
+<main class="portal-auth-shell">
+<section class="portal-auth-card">
+<a aria-label="Back to Rebatify Beta" class="portal-logo" href="beta.html"><img alt="Rebatify app icon" src="app-icon.png"/></a>
+<div class="portal-kicker">Beta Tester Portal</div>
+<h1>Welcome back.</h1>
+<p class="portal-auth-lead">Approved Rebatify beta testers can sign in with the email address from their application after setting a password from the approval email.</p>
+<div class="portal-alert error" hidden="" id="portalLoginError"></div>
+<div class="portal-alert warning" hidden="" id="portalNotConnected">The tester portal has not been connected to the beta backend yet.</div>
+<form class="portal-login-form" id="portalLoginForm" method="post">
 
-      <div id="portalLoginError" class="portal-alert error" hidden></div>
-      <div id="portalNotConnected" class="portal-alert warning" hidden>The tester portal has not been connected to the beta backend yet.</div>
+<div class="beta-field">
+<label for="portalEmail">Email address</label>
+<input autocomplete="username" id="portalEmail" name="email" placeholder="you@example.com" required="" type="email"/>
+</div>
+<div class="beta-field">
+<label for="portalPassword">Password</label>
+<input autocomplete="current-password" id="portalPassword" name="password" placeholder="Your password" required="" type="password"/>
+</div>
+<button class="beta-submit" type="submit">Sign In <span aria-hidden="true">→</span></button><button class="admin-text-button" id="portalForgotPassword" type="button">Reset Password</button>
+</form>
+<div class="portal-auth-footer">
+<p>Need access or password help? <a href="mailto:support.rebatifyapp@gmail.com">Contact Rebatify Support</a>.</p>
+<a href="beta.html">← Back to beta information</a>
+</div>
+</section>
+</main>
 
-      <form id="portalLoginForm" method="post" class="portal-login-form">
-        <input type="hidden" name="action" value="login">
-        <div class="beta-field">
-          <label for="portalEmail">Email address</label>
-          <input id="portalEmail" name="email" type="email" autocomplete="username" required placeholder="you@example.com">
-        </div>
-        <div class="beta-field">
-          <label for="portalPassword">Password</label>
-          <input id="portalPassword" name="password" type="password" autocomplete="current-password" required placeholder="Your password">
-        </div>
-        <button class="beta-submit" type="submit">Sign In <span aria-hidden="true">→</span></button>
-      </form>
 
-      <div class="portal-auth-footer">
-        <p>Need access or password help? <a href="mailto:support.rebatifyapp@gmail.com">Contact Rebatify Support</a>.</p>
-        <a href="beta.html">← Back to beta information</a>
-      </div>
-    </section>
-  </main>
-  <script src="beta-config.js?v=30"></script>
-  <script>
-
-  (function(){
-    const form=document.getElementById('portalLoginForm');
-    const endpoint=(window.REBATIFY_BETA_ENDPOINT||'').trim();
-    const notConnected=document.getElementById('portalNotConnected');
-    const error=document.getElementById('portalLoginError');
-    const button=form.querySelector('button[type="submit"]');
-
-    function randomId(){
-      const bytes=new Uint8Array(24); crypto.getRandomValues(bytes);
-      return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
-    }
-    function jsonp(action,args){
-      return new Promise((resolve,reject)=>{
-        const cb='rebatifyPortalLogin_'+Date.now()+'_'+Math.floor(Math.random()*100000);
-        const script=document.createElement('script');
-        const timer=setTimeout(()=>{cleanup();reject(new Error('timeout'));},10000);
-        function cleanup(){clearTimeout(timer);delete window[cb];script.remove();}
-        window[cb]=data=>{cleanup();resolve(data);};
-        script.onerror=()=>{cleanup();reject(new Error('network'));};
-        const params=new URLSearchParams(Object.assign({action,callback:cb,_:Date.now()},args||{}));
-        script.src=endpoint+'?'+params.toString();
-        document.head.appendChild(script);
-      });
-    }
-    async function poll(requestId){
-      for(let i=0;i<24;i++){
-        await new Promise(r=>setTimeout(r,i<3?250:500));
-        const result=await jsonp('loginresult',{requestId});
-        if(result&&result.ready)return result;
-      }
-      throw new Error('timeout');
-    }
-    function showError(message){error.textContent=message;error.hidden=false;}
-
-    if(!endpoint || endpoint.indexOf('script.google.com')===-1){
-      notConnected.hidden=false; button.disabled=true;
-    }
-    const p=new URLSearchParams(location.search);
-    const code=p.get('error');
-    const messages={
-      invalid:'That email or password was not recognized, or portal access is not enabled.',
-      session:'Your session has expired. Please sign in again.',
-      access:'Your beta portal access is currently disabled.',
-      server:'The tester portal could not sign you in right now. Please try again.'
-    };
-    if(code&&messages[code])showError(messages[code]);
-
-    form.addEventListener('submit',async e=>{
-      e.preventDefault();
-      if(!form.checkValidity()){form.reportValidity();return;}
-      error.hidden=true;
-      const original=button.innerHTML;
-      button.disabled=true;button.innerHTML='Signing In…';
-      const requestId=randomId();
-      const params=new URLSearchParams();
-      params.set('action','login');
-      params.set('email',document.getElementById('portalEmail').value.trim());
-      params.set('password',document.getElementById('portalPassword').value);
-      params.set('requestId',requestId);
-      try{
-        await fetch(endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()});
-        const result=await poll(requestId);
-        if(!result.ok){
-          showError(result.error==='invalid'?'That email or password was not recognized, or portal access is not enabled.':'The tester portal could not sign you in right now. Please try again.');
-          return;
-        }
-        localStorage.setItem('rebatifyBetaSession',result.token);
-        location.replace('beta-portal.html#session='+encodeURIComponent(result.token));
-      }catch(err){
-        showError('The tester portal could not complete sign-in. Please try again.');
-      }finally{
-        button.disabled=false;button.innerHTML=original;
-      }
-    });
-  })();
-  </script>
-</body>
+<script src="firebase-config.js?v=33"></script><script src="beta-login-firebase.js?v=33" type="module"></script></body>
 </html>
