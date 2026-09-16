@@ -288,6 +288,35 @@ async function loadTasks(force=false){
   renderTaskRecipientPicker();
 }
 
+async function reconcilePendingTasksForInactiveTesters(){
+  if(!state.loaded.testers||!state.loaded.tasks)return 0;
+  const inactiveUids=new Set();
+  const inactiveEmails=new Set();
+  state.testers.forEach(t=>{
+    if(t.accessStatus==='Enabled'&&['Approved','Active'].includes(t.status))return;
+    if(t.uid)inactiveUids.add(t.uid);
+    const email=String(t.email||'').trim().toLowerCase();if(email)inactiveEmails.add(email);
+  });
+  const stale=state.taskAssignments.filter(a=>{
+    if(a.status!=='Pending')return false;
+    const email=String(a.email||'').trim().toLowerCase();
+    return (a.testerUid&&inactiveUids.has(a.testerUid))||(email&&inactiveEmails.has(email));
+  });
+  if(!stale.length)return 0;
+  const batch=writeBatch(db);
+  stale.forEach(a=>batch.update(doc(db,'betaTaskAssignments',a.id),{
+    status:'Cancelled - Tester Removed',
+    removalReason:'Tester no longer has active Beta Program access.',
+    removedAt:serverTimestamp(),
+    updatedAt:serverTimestamp()
+  }));
+  await batch.commit();
+  stale.forEach(a=>{a.status='Cancelled - Tester Removed';a.removalReason='Tester no longer has active Beta Program access.';a.removedAt=new Date();a.updatedAt=new Date();});
+  renderTasks();
+  renderTesters();
+  return stale.length;
+}
+
 function renderMetrics(){
   const m=state.metrics||{};
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v==null?0:v;};
@@ -389,12 +418,18 @@ function renderTaskRecipientPicker(){
 }
 function taskAssignmentStats(taskId){
   const rows=state.taskAssignments.filter(a=>a.taskId===taskId);
-  return {rows,total:rows.length,completed:rows.filter(a=>a.status==='Completed').length,removed:rows.filter(a=>a.status==='Overdue - Removed').length,pending:rows.filter(a=>a.status==='Pending').length,reminded:rows.filter(a=>a.status==='Pending'&&a.lastReminderSentAt).length};
+  const completed=rows.filter(a=>a.status==='Completed').length;
+  const removed=rows.filter(a=>a.status==='Overdue - Removed').length;
+  const accessEnded=rows.filter(a=>a.status==='Cancelled - Tester Removed').length;
+  const cancelled=rows.filter(a=>a.status==='Cancelled').length;
+  const pending=rows.filter(a=>a.status==='Pending').length;
+  const reminded=rows.filter(a=>a.status==='Pending'&&a.lastReminderSentAt).length;
+  return {rows,total:rows.length,completed,removed,accessEnded,cancelled,pending,reminded};
 }
 function taskDisplayStatus(t,stats){
   if(t.status==='Cancelled')return 'Cancelled';
-  if(stats.removed>0&&stats.pending===0)return 'Closed';
   if(stats.total>0&&stats.completed===stats.total)return 'Completed';
+  if(stats.pending===0&&stats.total>0)return 'Closed';
   return t.status||'Active';
 }
 function renderTaskDashboard(){
@@ -420,10 +455,10 @@ function openTaskRecord(t){
   const stats=taskAssignmentStats(t.id);
   const assignments=stats.rows.sort((a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email)));
   const rows=assignments.length?assignments.map(a=>{const d=timestampToDate(a.dueAt);const overdue=a.status==='Pending'&&d&&d.getTime()<Date.now();const reminder=a.status==='Pending'?`<button class="admin-task-remind-button" data-remind-assignment="${esc(a.id)}" type="button">${a.emailStatus==='Error'?'Retry Task Email':'Send Reminder'}</button>`:'';const remove=`<button class="admin-task-remind-button admin-task-remove-button" data-remove-task-assignment="${esc(a.id)}" type="button">Remove from Tester</button>`;return `<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(a.name||'Tester')}</strong><small>${esc(a.email||'')}</small></div><span class="admin-status-pill ${statusClass(overdue?'Removal Pending':a.status)}">${esc(overdue?'Removal Pending':a.status)}</span></div><div class="admin-task-assignment-reminder">Email: ${esc(a.emailStatus||'Unknown')}${a.emailError?` · ${esc(a.emailError)}`:''}</div>${a.response?`<div class="admin-task-assignment-response"><strong>Response:</strong><br>${esc(a.response)}</div>`:''}${a.status==='Pending'?`<div class="admin-task-assignment-reminder">${overdue?'Deadline passed — run a deadline check now.':esc(assignmentReminderText(a))}</div>`:''}<div class="admin-task-assignment-actions">${reminder}${remove}</div></div>`;}).join(''):'<div class="admin-empty-inline">No task assignments found.</div>';
-  const cancel=t.status==='Active'?`<button class="admin-action-button danger-soft" data-task-action="cancel" data-task-id="${esc(t.id)}" type="button">Cancel Task</button>`:'';
+  const cancel=(t.status==='Active'&&stats.pending>0)?`<button class="admin-action-button danger-soft" data-task-action="cancel" data-task-id="${esc(t.id)}" type="button">Cancel Task</button>`:'';
   const remind=stats.pending?`<button class="admin-action-button approve" data-task-action="remind-pending" data-task-id="${esc(t.id)}" type="button">Remind Pending Testers (${stats.pending})</button>`:'';
   const deleteTask=`<button class="admin-action-button danger" data-task-action="delete-task" data-task-id="${esc(t.id)}" type="button">Delete Task from All Testers</button>`;
-  openDrawer('Beta Program Task',t.title||'Required Task',`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(taskDisplayStatus(t,stats))}">${esc(taskDisplayStatus(t,stats))}</span><span class="admin-subtle-chip">Due ${esc(formatDate(t.dueAt))}</span></div>${t.objective?`<div class="admin-feedback-detail"><span>Testing Objective</span><p>${esc(t.objective)}</p></div>`:''}<div class="admin-feedback-detail"><span>Instructions</span><p>${esc(t.instructions||'')}</p></div><div class="admin-detail-grid"><div><span>Template</span><strong>${esc(t.templateLabel||'Custom')}</strong></div><div><span>Response Type</span><strong>${esc(t.responseType||'Acknowledgement')}</strong></div><div><span>Recipients</span><strong>${stats.total}</strong></div><div><span>Completed</span><strong>${stats.completed}</strong></div><div><span>Pending</span><strong>${stats.pending}</strong></div><div><span>Reminded</span><strong>${stats.reminded}</strong></div><div><span>Removed for Missed Deadline</span><strong>${stats.removed}</strong></div><div><span>Automatic Reminders</span><strong>${t.autoReminders===false?'Off':'On'}</strong></div></div><div><label class="admin-detail-label">Tester responses</label><div class="admin-task-response-list">${rows}</div></div><div class="admin-drawer-actions">${remind}${cancel}${deleteTask}</div></div>`);
+  openDrawer('Beta Program Task',t.title||'Required Task',`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(taskDisplayStatus(t,stats))}">${esc(taskDisplayStatus(t,stats))}</span><span class="admin-subtle-chip">Due ${esc(formatDate(t.dueAt))}</span></div>${t.objective?`<div class="admin-feedback-detail"><span>Testing Objective</span><p>${esc(t.objective)}</p></div>`:''}<div class="admin-feedback-detail"><span>Instructions</span><p>${esc(t.instructions||'')}</p></div><div class="admin-detail-grid"><div><span>Template</span><strong>${esc(t.templateLabel||'Custom')}</strong></div><div><span>Response Type</span><strong>${esc(t.responseType||'Acknowledgement')}</strong></div><div><span>Recipients</span><strong>${stats.total}</strong></div><div><span>Completed</span><strong>${stats.completed}</strong></div><div><span>Pending</span><strong>${stats.pending}</strong></div><div><span>Reminded</span><strong>${stats.reminded}</strong></div><div><span>Removed for Missed Deadline</span><strong>${stats.removed}</strong></div><div><span>Closed After Tester Removal</span><strong>${stats.accessEnded}</strong></div><div><span>Automatic Reminders</span><strong>${t.autoReminders===false?'Off':'On'}</strong></div></div><div><label class="admin-detail-label">Tester responses</label><div class="admin-task-response-list">${rows}</div></div><div class="admin-drawer-actions">${remind}${cancel}${deleteTask}</div></div>`);
 }
 async function createRequiredTask(){
   const templateKey=String(document.getElementById('taskTemplateSelect').value||'').trim();
@@ -534,8 +569,8 @@ async function switchView(view){
   const titles={overview:'Overview',applications:'Applications',testers:'Testers',tasks:'Tasks',feedback:'Feedback'};document.getElementById('adminViewTitle').textContent=titles[view]||'Overview';
   try{
     if(view==='applications')await loadApplications();
-    if(view==='testers'){await loadTesters();await loadTasks();renderTesters();}
-    if(view==='tasks'){await loadTesters();await loadTasks();}
+    if(view==='testers'){await loadTesters();await loadTasks();await reconcilePendingTasksForInactiveTesters();renderTesters();}
+    if(view==='tasks'){await loadTesters();await loadTasks();await reconcilePendingTasksForInactiveTesters();}
     if(view==='feedback')await loadFeedback();
   }catch(e){showToast('Could not load '+view+'. '+friendlyFirebaseError(e),'error');}
 }
