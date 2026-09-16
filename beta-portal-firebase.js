@@ -70,7 +70,7 @@ function renderRequiredTask(){
   const overdue=taskIsOverdue(activeTask);
   const modal=taskBackdrop.querySelector('.portal-task-modal');if(modal)modal.classList.toggle('is-overdue',overdue);
   setTaskMessage('');
-  if(overdue){response.innerHTML='<div class="portal-task-overdue">This required task deadline has passed. Your Rebatify Beta Program access is being removed because the task was not completed on time.</div>';}
+  if(overdue){response.innerHTML='<div class="portal-task-overdue">This required task deadline has passed. Your Rebatify Beta Program access is scheduled for automatic removal because the task was not completed on time.</div>';}
   else if(activeTask.responseType==='Short Answer')response.innerHTML='<label for="portalTaskShortAnswer">Your response</label><input id="portalTaskShortAnswer" type="text" maxlength="500" placeholder="Enter your response"/>';
   else if(activeTask.responseType==='Long Answer')response.innerHTML='<label for="portalTaskLongAnswer">Your response</label><textarea id="portalTaskLongAnswer" maxlength="5000" placeholder="Enter your response"></textarea>';
   else if(activeTask.responseType==='Yes / No')response.innerHTML='<label for="portalTaskYesNo">Your response</label><select id="portalTaskYesNo"><option value="">Choose one</option><option value="Yes">Yes</option><option value="No">No</option></select>';
