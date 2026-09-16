@@ -542,7 +542,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 
 /* Build 40 - session-isolated Firebase authentication for Admin and Beta Portal tabs. */
 
-/* Build 41 — passwordless Beta Program Portal sign-in */
+/* Build 42 — tester cleanup and duplicate-record deletion */
 .portal-auth-card h1{line-height:1.04}
 .portal-code-form[hidden],.portal-login-form[hidden]{display:none!important}
 .portal-code-sent{padding:13px 15px;border-radius:16px;background:#eef5ff;border:1px solid rgba(20,92,242,.14);color:#53677e;font-size:.9rem;font-weight:700;line-height:1.5;margin-bottom:16px}
