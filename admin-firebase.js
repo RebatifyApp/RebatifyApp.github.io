@@ -252,13 +252,18 @@ function openApplicationRecord(a){
   openDrawer('Beta Application',a.fullName,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${statusClass(a.status)}">${esc(a.status)}</span><span class="admin-platform-pill">${esc(a.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(a.email)}</strong></div><div><span>Submitted</span><strong>${esc(formatDate(a.submittedAt))}</strong></div><div><span>Terms</span><strong>${a.termsAccepted?'Accepted':'—'}</strong></div><div><span>Portal Access</span><strong>${esc(a.portalAccess||'Not Enabled')}</strong></div><div><span>Last Updated</span><strong>${esc(formatDate(a.lastUpdated))}</strong></div><div><span>Invite Email</span><strong>${esc(formatDate(a.inviteEmailSentAt||a.lastDecisionEmail))}</strong></div><div><span>Email Delivery</span><strong><span class="admin-email-status ${esc(String(a.inviteEmailStatus||'').toLowerCase())}">${esc(a.inviteEmailStatus||'Not sent')}</span></strong></div></div><div><label class="admin-detail-label" for="drawerApplicantNotes">Private admin notes</label><textarea id="drawerApplicantNotes" class="admin-detail-textarea" placeholder="Notes only administrators can see">${esc(a.notes||'')}</textarea><button class="admin-secondary-button admin-save-notes" data-save-app-notes="${esc(a.id)}" type="button">Save Notes</button></div><div class="admin-drawer-actions">${applicationActionButtons(a)}</div></div>`);
 }
 function openTesterRecord(t){
-  const a=state.applications.find(x=>x.testerUid===t.uid||x.email===t.email);
-  const action=a
+  const normalizedEmail=String(t.email||'').trim().toLowerCase();
+  const a=state.applications.find(x=>x.testerUid===t.uid||String(x.email||'').trim().toLowerCase()===normalizedEmail);
+  const accessAction=a
     ? (t.accessStatus==='Enabled'
       ? `<button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button>`
       : `<button class="admin-action-button approve" data-app-action="active" data-row="${esc(a.id)}" type="button">Enable Access</button>`)
     : '';
-  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div></div>${action?`<div class="admin-drawer-actions">${action}</div>`:''}</div>`);
+  const deleteAction=a
+    ? `<button class="admin-action-button danger-soft" data-app-action="delete" data-row="${esc(a.id)}" type="button">Delete Application & Tester</button>`
+    : `<button class="admin-action-button danger-soft" data-tester-action="delete" data-tester-uid="${esc(t.uid)}" type="button">Delete Tester</button>`;
+  const actions=[accessAction,deleteAction].filter(Boolean).join('');
+  openDrawer('Tester Access',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div></div><div class="admin-drawer-actions">${actions}</div></div>`);
 }
 function openFeedbackRecord(f){
   const statuses=['New','Reviewing','Planned','Fixed','Closed','Declined'];
@@ -412,13 +417,32 @@ async function resendInvite(a){
     throw error;
   }
 }
+async function deleteTesterRecordsByEmail(email){
+  const normalizedEmail=String(email||'').trim().toLowerCase();
+  if(!normalizedEmail)return 0;
+  const snap=await getDocs(query(collection(db,'betaUsers'),where('email','==',normalizedEmail)));
+  await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
+  if(state.loaded.testers){
+    const removedIds=new Set(snap.docs.map(d=>d.id));
+    state.testers=state.testers.filter(t=>!removedIds.has(t.uid)&&String(t.email||'').trim().toLowerCase()!==normalizedEmail);
+    renderTesters();
+  }
+  return snap.size;
+}
+async function deleteTesterOnly(t){
+  const email=String(t.email||'').trim().toLowerCase();
+  await callWorkerAdminAction('admin-delete-auth-user',{email});
+  await deleteTesterRecordsByEmail(email);
+}
 async function deleteApplication(a){
-  // Remove the Firebase Authentication login first so a deleted test applicant
-  // can apply and activate again cleanly with the same email address.
-  await callWorkerAdminAction('admin-delete-auth-user',{email:String(a.email||'').toLowerCase()});
+  // A deleted application must leave no stale portal identity behind. Clean up
+  // the Auth user plus every betaUsers document for this email, including
+  // duplicate records left by earlier beta builds/tests.
+  const email=String(a.email||'').trim().toLowerCase();
+  await callWorkerAdminAction('admin-delete-auth-user',{email});
+  await deleteTesterRecordsByEmail(email);
   if(a.testerUid){
     await deleteDoc(doc(db,'betaUsers',a.testerUid)).catch(()=>{});
-    if(state.loaded.testers){state.testers=state.testers.filter(x=>x.uid!==a.testerUid);renderTesters();}
   }
   if(a.inviteId)await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
   await deleteDoc(doc(db,'betaApplications',a.id));
@@ -427,6 +451,7 @@ async function deleteApplication(a){
   state.loaded.applications=false;
   await loadOverview();
   if(activeView==='applications')await loadApplications(true);
+  if(activeView==='testers')await loadTesters(true);
 }
 
 
@@ -511,6 +536,25 @@ document.addEventListener('click',async e=>{
   const noteBtn=e.target.closest('[data-save-app-notes]');if(noteBtn){const a=await ensureApplicationLoaded(noteBtn.dataset.saveAppNotes);if(!a)return;const notes=document.getElementById('drawerApplicantNotes').value;try{await updateDoc(doc(db,'betaApplications',a.id),{notes,lastUpdated:serverTimestamp()});a.notes=notes;a.lastUpdated=new Date();showToast('Private notes saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
   const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=document.getElementById('drawerFeedbackStatus').value;const notes=document.getElementById('drawerFeedbackNotes').value;try{await updateDoc(doc(db,'betaFeedback',f.id),{status,adminNotes:notes,updatedAt:serverTimestamp()});if(f.status==='New'&&status!=='New'&&state.metrics.newFeedback>0)state.metrics.newFeedback--;if(f.status!=='New'&&status==='New')state.metrics.newFeedback++;f.status=status;f.adminNotes=notes;f.updatedAt=new Date();renderMetrics();renderFeedback();renderOverview();showToast('Feedback updated.');openFeedbackRecord(f);}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
   const emailSave=e.target.closest('[data-save-email-worker]');if(emailSave){emailSave.disabled=true;const original=emailSave.textContent;emailSave.textContent='Saving…';try{await saveEmailServiceSettings();showToast('Cloudflare email service connected.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{emailSave.disabled=false;emailSave.textContent=original;}return;}
+  const testerActionBtn=e.target.closest('[data-tester-action]');if(testerActionBtn){
+    const task=testerActionBtn.dataset.testerAction;
+    const uid=testerActionBtn.dataset.testerUid;
+    const t=findTester(uid);
+    if(task==='delete'&&t){
+      const confirmation='Permanently delete this tester portal record and Firebase Authentication login? This removes every tester record using '+String(t.email||'this email')+'.';
+      if(!(await confirmAction(confirmation,'danger')))return;
+      testerActionBtn.disabled=true;
+      try{
+        await deleteTesterOnly(t);
+        closeDrawer();
+        showToast('Tester portal record and login deleted.');
+        if(activeView==='testers')await loadTesters(true);
+      }catch(err){
+        showToast(friendlyFirebaseError(err),'error');
+      }finally{testerActionBtn.disabled=false;}
+    }
+    return;
+  }
   const actionBtn=e.target.closest('[data-app-action]');if(actionBtn){
     const task=actionBtn.dataset.appAction;const id=actionBtn.dataset.row;if(!id){showToast('Could not find the tester application record.','error');return;}
     const a=await ensureApplicationLoaded(id);if(!a)return;
@@ -523,7 +567,7 @@ document.addEventListener('click',async e=>{
       resend:'Send the branded Rebatify Beta Program Portal invitation again?',
       inactive:'Disable this tester’s portal access'+notification+'?',
       active:'Enable access and mark this tester active?',
-      delete:'Permanently delete this Rebatify Beta Program application?'+deleteNote
+      delete:'Permanently delete this Rebatify Beta Program application?'+deleteNote+' Any duplicate tester records using the same email will also be removed.'
     }[task];
     if(confirmation&&!(await confirmAction(confirmation,['decline','inactive','delete'].includes(task)?'danger':'')))return;
     actionBtn.disabled=true;
@@ -536,7 +580,7 @@ document.addEventListener('click',async e=>{
       if(task==='resend')await resendInvite(a);
       if(task==='delete')await deleteApplication(a);
       if(task!=='delete'){if(state.loaded.applications)renderApplications();renderOverview();}
-      const messages={approve:'Tester approved, passwordless portal access enabled, and the branded invitation was sent.',resend:'Branded Rebatify Beta Program Portal invitation sent.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application, tester profile, and login deleted.'};
+      const messages={approve:'Tester approved, passwordless portal access enabled, and the branded invitation was sent.',resend:'Branded Rebatify Beta Program Portal invitation sent.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application, all matching tester profiles, and login deleted.'};
       showToast(messages[task]||'Tester record updated.');closeDrawer();
     }catch(err){
       if(task==='approve'&&err&&err.rebatifyApprovalCompleted){
