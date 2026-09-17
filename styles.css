@@ -923,7 +923,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
 .portal-shortcut-toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:620px){.portal-progress-notice{grid-template-columns:36px minmax(0,1fr);padding:14px 15px}.portal-progress-notice-icon{width:30px;height:30px;border-radius:10px}.portal-shortcut-toast{bottom:18px}}
 
-/* Build 66 - Beta activity, setup timeline, feedback/retest workflow, scorecards, announcements, and private admin-note isolation */
+/* Build 67 - Beta activity, setup timeline, feedback/retest workflow, scorecards, announcements, and private admin-note isolation */
 .admin-activity-metrics{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 66 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 67 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
