@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=65" rel="stylesheet"/>
+<link href="styles.css?v=66" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -17,7 +17,6 @@
 <div class="portal-spinner"></div>
 <p id="adminLoadingStatus">Checking administrator access…</p>
 </div>
-
 <div class="admin-shell" hidden="" id="adminApp">
 <aside class="admin-sidebar">
 <div class="admin-sidebar-brand">
@@ -25,12 +24,12 @@
 <div><strong>Rebatify</strong><span>Beta Admin</span></div>
 </div>
 <nav aria-label="Admin navigation" class="admin-nav">
-<button class="admin-nav-item is-active" data-admin-view="overview" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.7 12 3.5l8.5 7.2v9.3a1 1 0 0 1-1 1h-5.2v-6.2H9.7V21H4.5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg></span><span>Overview</span></button>
-<button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Applications</span><span class="admin-nav-badge" id="navPendingCount" hidden>0</span></button>
-<button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 19c.5-3.5 2.4-5.2 5.5-5.2s5 1.7 5.5 5.2M15.5 6.3a3 3 0 0 1 0 5.4M16.5 13.9c2.3.5 3.7 2.2 4 5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Testers</span></button>
-<button class="admin-nav-item" data-admin-view="tasks" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m8 9 1.6 1.6L12.5 7.7M14 9h3M8 15l1.6 1.6 2.9-2.9M14 15h3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Tasks</span><span class="admin-nav-badge" id="navTaskCount" hidden>0</span></button>
-<button class="admin-nav-item" data-admin-view="announcements" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11.5h3l8-4.2v9.4l-8-4.2h-3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M15.5 9.3c1.7.6 3 2.2 3 4.2s-1.3 3.6-3 4.2M7.5 12.5l1.2 5h3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Announcements</span></button>
-<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Feedback</span><span class="admin-nav-badge" id="navFeedbackCount" hidden>0</span></button>
+<button class="admin-nav-item is-active" data-admin-view="overview" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M3.5 10.7 12 3.5l8.5 7.2v9.3a1 1 0 0 1-1 1h-5.2v-6.2H9.7V21H4.5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.9"></path></svg></span><span>Overview</span></button>
+<button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect fill="none" height="17" rx="2.5" stroke="currentColor" stroke-width="1.9" width="14" x="5" y="4"></rect><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Applications</span><span class="admin-nav-badge" hidden="" id="navPendingCount">0</span></button>
+<button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="9" cy="8" fill="none" r="3" stroke="currentColor" stroke-width="1.9"></circle><path d="M3.5 19c.5-3.5 2.4-5.2 5.5-5.2s5 1.7 5.5 5.2M15.5 6.3a3 3 0 0 1 0 5.4M16.5 13.9c2.3.5 3.7 2.2 4 5.1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Testers</span></button>
+<button class="admin-nav-item" data-admin-view="tasks" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect fill="none" height="16" rx="3" stroke="currentColor" stroke-width="1.9" width="16" x="4" y="4"></rect><path d="m8 9 1.6 1.6L12.5 7.7M14 9h3M8 15l1.6 1.6 2.9-2.9M14 15h3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"></path></svg></span><span>Tasks</span><span class="admin-nav-badge" hidden="" id="navTaskCount">0</span></button>
+<button class="admin-nav-item" data-admin-view="announcements" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4.5 11.5h3l8-4.2v9.4l-8-4.2h-3z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.9"></path><path d="M15.5 9.3c1.7.6 3 2.2 3 4.2s-1.3 3.6-3 4.2M7.5 12.5l1.2 5h3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Announcements</span></button>
+<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.9"></path><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Feedback</span><span class="admin-nav-badge" hidden="" id="navFeedbackCount">0</span></button>
 </nav>
 <div class="admin-sidebar-footer">
 <div class="admin-admin-card">
@@ -42,18 +41,17 @@
 </aside>
 <div class="admin-main">
 <header class="admin-topbar">
-<button aria-label="Open navigation" class="admin-menu-toggle" id="adminMenuToggle" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+<button aria-label="Open navigation" class="admin-menu-toggle" id="adminMenuToggle" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
 <div>
 <div class="admin-topbar-eyebrow">Rebatify Beta Program</div>
 <h1 id="adminViewTitle">Overview</h1>
 </div>
 <div class="admin-topbar-actions">
-<button aria-label="Refresh data" class="admin-icon-button" id="adminRefresh" title="Refresh data" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 8.5V4.8l-2.2 2.1A8 8 0 1 0 20 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+<button aria-label="Refresh data" class="admin-icon-button" id="adminRefresh" title="Refresh data" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M19.5 8.5V4.8l-2.2 2.1A8 8 0 1 0 20 14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
 <div class="admin-live-chip"><span></span> On demand</div>
 </div>
 </header>
 <main class="admin-content">
-
 <div id="adminPortalContent">
 <section class="admin-view is-active" data-admin-panel="overview">
 <div class="admin-welcome-row">
@@ -86,8 +84,8 @@
 </div>
 <article class="admin-panel admin-email-service-panel">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Professional Email</span><h3>Cloudflare email service</h3></div><span class="admin-subtle-chip admin-service-disconnected" id="emailWorkerStatus">Not connected</span></div>
-<p class="admin-email-service-copy">Connect the free Cloudflare Worker that sends branded Rebatify beta invitations while Firebase remains on the Spark plan.</p>
-<div class="admin-email-service-row"><input id="emailWorkerUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://rebatify-beta-email.your-subdomain.workers.dev"/><button class="admin-primary-button" data-save-email-worker type="button">Connect Email Service</button></div>
+<p class="admin-email-service-copy">Connect the Cloudflare Worker that sends branded Rebatify beta invitations, verification codes, required-task messages, feedback updates, retest requests, and portal-alert emails.</p>
+<div class="admin-email-service-row"><input autocomplete="off" id="emailWorkerUrl" inputmode="url" placeholder="https://rebatify-beta-email.your-subdomain.workers.dev" type="url"/><button class="admin-primary-button" data-save-email-worker="" type="button">Connect Email Service</button></div>
 <small class="admin-email-service-note">Only the Worker URL is saved here. Your Gmail App Password stays encrypted in Cloudflare and is never stored on the website or in Firestore.</small>
 </article>
 <article class="admin-panel admin-feedback-preview-panel">
@@ -98,14 +96,14 @@
 <section class="admin-view" data-admin-panel="applications">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Applicant Review</div><h2>Beta applications</h2><p>Approve testers, manage the waitlist, and keep private notes.</p></div></div>
 <div class="admin-toolbar">
-<div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="applicationSearch" placeholder="Search name or email" type="search"/></div>
+<div class="admin-search"><span><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" fill="none" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></span><input id="applicationSearch" placeholder="Search name or email" type="search"/></div>
 <select class="admin-filter" id="applicationStatusFilter"><option value="">All statuses</option><option>Applied</option><option>Approved</option><option>Active</option><option>Waitlist</option><option>Declined</option><option>Inactive</option></select>
 <select class="admin-filter" id="applicationPlatformFilter"><option value="">All platforms</option><option>iOS</option><option>Android</option></select>
 </div>
 <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Applicant</th><th>Platform</th><th>Applied</th><th>Status</th><th>Portal</th><th>Invite Email</th><th></th></tr></thead><tbody id="applicationsTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="applicationsEmpty">No applications match these filters.</div></div>
 </section>
 <section class="admin-view" data-admin-panel="testers">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>Monitor tester activity, participation, device/build details, access, required tasks, and each tester’s Beta Program timeline.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>Monitor tester activity, participation, saved testing device details, access, required tasks, and each tester’s Beta Program timeline.</p></div></div>
 <div class="admin-activity-metrics">
 <article><span>Active</span><strong id="testerActivityActive">0</strong><small>Active within the last 7 days</small></article>
 <article><span>Needs Attention</span><strong id="testerActivityAttention">0</strong><small>7–13 days without portal activity</small></article>
@@ -117,15 +115,14 @@
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Program Timeline</span><h3>Progress tester timelines</h3><p>Move one tester or a selected group to the milestone they have reached. The tester portal will show all earlier milestones as complete and the next action as current.</p></div><span class="admin-subtle-chip" id="timelineSelectionCount">0 selected</span></div>
 <div class="admin-timeline-bulk-controls">
 <div class="admin-timeline-select-tools"><span class="admin-detail-label">Select testers</span><div><button class="admin-text-button" id="timelineSelectAll" type="button">Select all</button><button class="admin-text-button" id="timelineSelectIOS" type="button">Select iOS</button><button class="admin-text-button" id="timelineSelectAndroid" type="button">Select Android</button><button class="admin-text-button" id="timelineClearSelection" type="button">Clear</button></div></div>
-<div class="beta-field admin-timeline-stage-field"><label for="bulkTimelineStage">Move selected testers to</label><select id="bulkTimelineStage"><option value="approved">Approved / Portal Ready</option><option value="inviteSent">Testing Access Sent</option><option value="activeTesting">Active Beta Testing</option></select></div>
+<div class="beta-field admin-timeline-stage-field"><label for="bulkTimelineStage">Move selected testers to</label><select id="bulkTimelineStage"><option value="approved">Testing Setup Required</option><option value="setupComplete">Testing Setup Complete</option><option value="inviteSent">Testing Access Sent</option><option value="activeTesting">Active Beta Testing</option></select></div>
 <button class="admin-primary-button admin-timeline-apply" id="bulkTimelineApply" type="button">Update Selected Timelines</button>
 </div>
 <div class="admin-timeline-stage-guide"><strong>Timeline stages:</strong><span><b>Approved</b> → prepare device and wait for access</span><span><b>Testing Access Sent</b> → accept invitation/link, install Rebatify, create app account</span><span><b>Active Testing</b> → ongoing workflows, required tasks, and feedback</span></div>
 </article>
-<div class="admin-toolbar"><div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerActivityFilter"><option value="">All activity</option><option>Active</option><option>Needs Attention</option><option>Inactive</option></select><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
+<div class="admin-toolbar"><div class="admin-search"><span><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" fill="none" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerActivityFilter"><option value="">All activity</option><option>Active</option><option>Needs Attention</option><option>Inactive</option></select><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
 <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table admin-testers-table"><thead><tr><th class="admin-select-col"><span class="sr-only">Select</span></th><th>Tester</th><th>Platform</th><th>Activity</th><th>Last Active</th><th>Scorecard</th><th>Build / Device</th><th>Access</th><th>Timeline</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
 </section>
-
 <section class="admin-view" data-admin-panel="tasks">
 <div class="admin-page-heading"><div><div class="admin-section-kicker">Participation Tasks</div><h2>Required feature-testing tasks</h2><p>Use premade Rebatify testing objectives or create your own. Assign them to everyone or selected testers, track completion, and send reminders. Missed required deadlines automatically remove beta access.</p></div><button class="admin-secondary-button" id="taskRunDeadlineCheck" type="button">Run Deadline Check Now</button></div>
 <div class="admin-task-metrics">
@@ -146,15 +143,15 @@
 <select id="taskTemplateSelect">
 <option value="">Custom task — write my own</option>
 <optgroup label="Core Experience">
-<option value="walkthrough">Walkthrough & first-time setup</option>
+<option value="walkthrough">Walkthrough &amp; first-time setup</option>
 <option value="add-order">Add and track a rebate order</option>
 <option value="refund-workflow">Partial + final refund workflow</option>
 <option value="multi-order-refund">Multi-order refund workflow</option>
-<option value="reports">Reports & spending insights</option>
+<option value="reports">Reports &amp; spending insights</option>
 <option value="shared-profiles">Shared Profiles collaboration</option>
 <option value="cloud-sync">Cloud sync across two clients</option>
 </optgroup>
-<optgroup label="Rebatify+ & Billing">
+<optgroup label="Rebatify+ &amp; Billing">
 <option value="plus-ios">Rebatify+ test purchase — iOS / TestFlight</option>
 <option value="plus-android">Rebatify+ test purchase — Android / Google Play</option>
 <option value="web-app">Rebatify Web App smoke test</option>
@@ -168,7 +165,7 @@
 <div class="beta-field admin-task-span"><label for="taskInstructions">Tester instructions</label><textarea id="taskInstructions" maxlength="5000" placeholder="Give the tester clear steps and tell them what to report back."></textarea></div>
 <div class="beta-field"><label for="taskResponseType">Required response</label><select id="taskResponseType"><option>Acknowledgement</option><option>Short Answer</option><option>Long Answer</option><option>Yes / No</option></select></div>
 <div class="beta-field"><label for="taskDueAt">Required by</label><input id="taskDueAt" type="datetime-local"/></div>
-<div class="admin-task-span"><label class="admin-task-toggle"><input id="taskAutoReminders" type="checkbox" checked/><span><strong>Automatic deadline reminders</strong><small>Email pending testers about 24 hours and again about 4 hours before the deadline.</small></span></label></div>
+<div class="admin-task-span"><label class="admin-task-toggle"><input checked="" id="taskAutoReminders" type="checkbox"/><span><strong>Automatic deadline reminders</strong><small>Email pending testers about 24 hours and again about 4 hours before the deadline.</small></span></label></div>
 </div>
 <div class="admin-task-recipient-header"><div><strong>Recipients</strong><span id="taskRecipientSummary">0 selected</span></div><div><button class="admin-text-button" id="taskSelectAll" type="button">Select all</button><button class="admin-text-button" id="taskSelectIOS" type="button">Select iOS</button><button class="admin-text-button" id="taskSelectAndroid" type="button">Select Android</button><button class="admin-text-button" id="taskClearAll" type="button">Clear</button></div></div>
 <div class="admin-task-recipient-list" id="taskRecipientList"><div class="admin-empty-inline">Open this section after active testers have been approved.</div></div>
@@ -177,12 +174,12 @@
 </article>
 <article class="admin-panel admin-task-list-panel">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Task History</span><h3>Current and past tasks</h3></div></div>
-<div class="admin-table-card admin-task-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Task</th><th>Due</th><th>Recipients</th><th>Completed</th><th>Pending</th><th>Status</th><th></th></tr></thead><tbody id="tasksTableBody"></tbody></table></div><div class="admin-empty" hidden id="tasksEmpty">No beta tasks have been created yet.</div></div>
+<div class="admin-table-card admin-task-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Task</th><th>Due</th><th>Recipients</th><th>Completed</th><th>Pending</th><th>Status</th><th></th></tr></thead><tbody id="tasksTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="tasksEmpty">No beta tasks have been created yet.</div></div>
 </article>
 </div>
 </section>
 <section class="admin-view" data-admin-panel="announcements">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Beta News</div><h2>Announcements</h2><p>Publish dated updates to active testers, target a platform, and optionally require acknowledgement.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Beta News</div><h2>Announcements</h2><p>Publish dated updates to active testers, target a platform, optionally require acknowledgement, and send matching email alerts.</p></div></div>
 <div class="admin-announcement-layout">
 <article class="admin-panel admin-announcement-composer">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Publish Update</span><h3>New beta announcement</h3></div></div>
@@ -190,7 +187,7 @@
 <div class="beta-field admin-task-span"><label for="announcementTitle">Headline</label><input id="announcementTitle" maxlength="140" placeholder="Example: Build 228 is available" type="text"/></div>
 <div class="beta-field admin-task-span"><label for="announcementMessage">Announcement</label><textarea id="announcementMessage" maxlength="3000" placeholder="Tell testers what changed, what to focus on, or anything they need to know."></textarea></div>
 <div class="beta-field"><label for="announcementAudience">Audience</label><select id="announcementAudience"><option>All</option><option>iOS</option><option>Android</option></select></div>
-<div class="beta-field"><label>Options</label><div class="admin-announcement-options"><label><input id="announcementImportant" type="checkbox"/><span><strong>Important</strong><small>Highlights the announcement in the tester portal.</small></span></label><label><input id="announcementAckRequired" type="checkbox"/><span><strong>Require acknowledgement</strong><small>Tester must confirm they have read it.</small></span></label></div></div>
+<div class="beta-field"><label>Options</label><div class="admin-announcement-options"><label><input id="announcementImportant" type="checkbox"/><span><strong>Important</strong><small>Marks the update as important. Important updates are emailed automatically.</small></span></label><label><input id="announcementAckRequired" type="checkbox"/><span><strong>Require acknowledgement</strong><small>Tester must confirm they have read it. Acknowledgement-required updates are emailed automatically.</small></span></label><label><input id="announcementEmailTesters" type="checkbox"/><span><strong>Email testers</strong><small>Also email targeted testers for a normal informational update.</small></span></label></div></div>
 </div>
 <button class="admin-primary-button admin-announcement-publish" id="announcementPublishButton" type="button">Publish Announcement <span>→</span></button>
 </article>
@@ -201,9 +198,9 @@
 </div>
 </section>
 <section class="admin-view" data-admin-panel="feedback">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Move reports through New → Reviewing → Confirmed → Fixed → Needs Retest → Closed. Testers see a simplified status in their portal.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Move reports through New → Reviewing → Confirmed → Fixed → Needs Retest → Closed. Testers see Received → Reviewing → Fix in progress → Needs retest → Resolved.</p></div></div>
 <div class="admin-toolbar">
-<div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="feedbackSearch" placeholder="Search feedback" type="search"/></div>
+<div class="admin-search"><span><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" fill="none" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></span><input id="feedbackSearch" placeholder="Search feedback" type="search"/></div>
 <select class="admin-filter" id="feedbackStatusFilter"><option value="">All statuses</option><option>New</option><option>Reviewing</option><option>Confirmed</option><option>Fixed</option><option>Needs Retest</option><option>Closed</option></select>
 <select class="admin-filter" id="feedbackTypeFilter"><option value="">All types</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select>
 </div>
@@ -215,7 +212,7 @@
 </div>
 <div class="admin-drawer-backdrop" hidden="" id="adminDrawerBackdrop"></div>
 <aside aria-hidden="true" class="admin-drawer" id="adminDrawer">
-<div class="admin-drawer-header"><div><span class="admin-section-kicker" id="drawerKicker">Details</span><h2 id="drawerTitle">Record</h2></div><button aria-label="Close details" class="admin-icon-button" id="adminDrawerClose" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<div class="admin-drawer-header"><div><span class="admin-section-kicker" id="drawerKicker">Details</span><h2 id="drawerTitle">Record</h2></div><button aria-label="Close details" class="admin-icon-button" id="adminDrawerClose" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="m6.5 6.5 11 11m0-11-11 11" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button></div>
 <div class="admin-drawer-content" id="adminDrawerContent"></div>
 </aside>
 <div class="admin-confirm-backdrop" hidden="" id="adminConfirmBackdrop">
@@ -227,7 +224,6 @@
 </div>
 </div>
 <div class="admin-toast" hidden="" id="adminToast"></div>
-
 <script>
 window.__REBATIFY_ADMIN_BOOT = { moduleLoaded:false, authResolved:false };
 setTimeout(function(){
@@ -241,5 +237,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=65"></script><script src="admin-firebase.js?v=65" type="module"></script></body>
+<script src="firebase-config.js?v=66"></script><script src="admin-firebase.js?v=66" type="module"></script></body>
 </html>

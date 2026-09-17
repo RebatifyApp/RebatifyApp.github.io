@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 65
+// Rebatify Beta Tester Portal - Website Build 66
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -31,6 +31,7 @@ let lastFirestoreActivityWrite = 0;
 const PORTAL_ACTIVITY_WRITE_MS = 5 * 60 * 1000;
 const taskBackdrop = document.getElementById('portalTaskBackdrop');
 const taskSubmit = document.getElementById('portalTaskSubmit');
+const workerUrl = String(window.REBATIFY_BETA_SETTINGS?.emailWorkerUrl || '').trim().replace(/\/+$/, '');
 
 const PORTAL_INACTIVITY_MS = 6 * 60 * 60 * 1000;
 const PORTAL_ACTIVITY_KEY = 'rebatifyBetaPortalLastActivity';
@@ -38,6 +39,19 @@ let inactivityTimer = null;
 let inactivityStarted = false;
 let sessionEnding = false;
 let lastActivityWrite = 0;
+
+
+async function workerPostAuthorized(type,payload={}){
+  if(!workerUrl||!auth.currentUser)return {ok:false,skipped:true};
+  const token=await auth.currentUser.getIdToken();
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20000);
+  try{
+    const response=await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,...payload}),signal:controller.signal});
+    let data={};try{data=await response.json();}catch(_){ }
+    if(!response.ok||data.ok!==true)throw new Error(data.error||'Notification service could not complete this request.');
+    return data;
+  }finally{clearTimeout(timer);}
+}
 
 
 function detectedScreenSize(){
@@ -64,21 +78,23 @@ function setDeviceMessage(text,type=''){
   const el=document.getElementById('portalDeviceMessage');if(!el)return;el.textContent=text||'';el.className='portal-device-message'+(type?' '+type:'');
 }
 function renderDeviceProfile(profile){
-  const model=document.getElementById('testerDeviceModel');const os=document.getElementById('testerOsVersion');const build=document.getElementById('testerCurrentBuild');const screen=document.getElementById('testerScreenSize');
+  const model=document.getElementById('testerDeviceModel');const os=document.getElementById('testerOsVersion');const screen=document.getElementById('testerScreenSize');
   if(model)model.value=profile.deviceModel||'';
   if(os)os.value=profile.osVersion||detectedOsVersion();
-  if(build)build.value=profile.currentBuild||'';
-  if(screen)screen.value=profile.screenSize||detectedScreenSize();
-  const appVersion=document.getElementById('appVersion');if(appVersion&&!appVersion.value)appVersion.value=profile.currentBuild||'';
-  const deviceDetails=document.getElementById('deviceDetails');if(deviceDetails&&!deviceDetails.value)deviceDetails.value=profileDeviceDetails(profile);
+  if(screen)screen.value=detectedScreenSize()||profile.screenSize||'';
+  const deviceDetails=document.getElementById('deviceDetails');if(deviceDetails)deviceDetails.value=profileDeviceDetails(profile)||'Complete Testing Setup first';
 }
+
 function feedbackPublicStatus(f){
   const raw=String(f.status||'New');const status=raw==='Planned'?'Confirmed':raw==='Declined'?'Closed':raw;
   if(status==='Closed')return {label:'Resolved',className:'resolved'};
   if(status==='Needs Retest'&&f.retestedAt)return {label:'Retest submitted',className:'testing'};
-  if(status==='Fixed'||status==='Needs Retest')return {label:'Fix in testing',className:'testing'};
+  if(status==='Needs Retest')return {label:'Needs retest',className:'testing'};
+  if(status==='Fixed')return {label:'Fix in progress',className:'testing'};
+  if(status==='Reviewing'||status==='Confirmed')return {label:'Reviewing',className:'reviewing'};
   return {label:'Received',className:'received'};
 }
+
 function formatPortalDate(value){const d=timestampToDate(value);return d?d.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'}):'';}
 
 function scheduleInactivityLogout() {
@@ -153,14 +169,20 @@ function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/
 function renderPortalTaskSummary(){
   const section=document.getElementById('portalTaskSummary');if(!section)return;
   const pending=allTaskAssignments.filter(t=>t.status==='Pending').sort((a,b)=>(timestampToDate(a.dueAt)?.getTime()||0)-(timestampToDate(b.dueAt)?.getTime()||0));
-  if(!pending.length){section.hidden=true;return;}
+  const retests=feedbackHistory.filter(f=>String(f.status||'')==='Needs Retest'&&!f.retestedAt);
+  const total=pending.length+retests.length;
+  const mobileCount=document.getElementById('portalMobileActionCount');if(mobileCount){mobileCount.textContent=total;mobileCount.hidden=total===0;}
+  if(!total){section.hidden=true;return;}
   section.hidden=false;
-  document.getElementById('portalTaskSummaryCount').textContent=pending.length;
-  document.getElementById('portalTaskSummaryTitle').textContent=pending.length===1?'You have 1 required Beta Program task to complete.':`You have ${pending.length} required Beta Program tasks to complete.`;
-  document.getElementById('portalTaskSummaryText').textContent='Complete every required task by its deadline to keep your Beta Program access active. Reminder emails are sent as deadlines approach.';
+  document.getElementById('portalTaskSummaryCount').textContent=total;
+  document.getElementById('portalTaskSummaryTitle').textContent=total===1?'You have 1 required action to complete.':`You have ${total} required actions to complete.`;
+  document.getElementById('portalTaskSummaryText').textContent=retests.length?'A reported issue is ready for retesting. Complete retests and required Beta Program tasks as soon as possible.':'Complete every required task by its deadline to keep your Beta Program access active. Reminder emails are sent as deadlines approach.';
   const list=document.getElementById('portalTaskSummaryList');
-  list.innerHTML=pending.slice(0,6).map(t=>`<div class="portal-required-summary-item"><strong>${escapeHtml(t.taskTitle||'Required task')}</strong><span>${escapeHtml(formatTaskDue(t.dueAt))}</span></div>`).join('');
+  const taskRows=pending.slice(0,6).map(t=>`<button class="portal-required-summary-item" data-open-required-task="${escapeHtml(t.id)}" type="button"><strong>${escapeHtml(t.taskTitle||'Required task')}</strong><span>${escapeHtml(formatTaskDue(t.dueAt))}</span></button>`);
+  const retestRows=retests.slice(0,6).map(f=>`<button class="portal-required-summary-item portal-required-retest" data-retest-feedback="${escapeHtml(f.id)}" type="button"><strong>Retest: ${escapeHtml(f.subject||'Reported issue')}</strong><span>Action required</span></button>`);
+  list.innerHTML=[...retestRows,...taskRows].slice(0,8).join('');
 }
+
 function renderRequiredTask(){
   if(!taskBackdrop)return;
   if(!requiredTasks.length){activeTask=null;taskBackdrop.hidden=true;document.body.classList.remove('portal-task-open');return;}
@@ -201,7 +223,7 @@ function renderPortalAnnouncements(){
   list.innerHTML=portalAnnouncements.map(a=>{
     const requires=!!a.requiresAcknowledgement;const acknowledged=a.status==='Acknowledged'&&!!a.acknowledgedAt;
     const action=requires?(acknowledged?`<span class="portal-announcement-acknowledged">✓ Acknowledged ${escapeHtml(formatPortalDate(a.acknowledgedAt))}</span>`:`<button class="portal-announcement-ack" data-ack-announcement="${escapeHtml(a.id)}" type="button">Acknowledge</button>`):'<span class="portal-announcement-info">For your information</span>';
-    return `<article class="portal-announcement-card${a.announcementImportant?' is-important':''}"><div class="portal-announcement-meta"><span>${a.announcementImportant?'Important Beta Update':'Beta Update'}</span><time>${escapeHtml(formatPortalDate(a.publishedAt||a.assignedAt))}</time></div><h3>${escapeHtml(a.announcementTitle||'Rebatify Beta Update')}</h3><p>${escapeHtml(a.announcementMessage||'')}</p><div class="portal-announcement-footer">${requires?'<small>Rebatify asks you to confirm that you have read this update.</small>':'<small>No acknowledgement is required.</small>'}${action}</div></article>`;
+    return `<article class="portal-announcement-card${a.announcementImportant?' is-important':''}"><div class="portal-announcement-meta"><span><b class="portal-announcement-icon" aria-hidden="true">!</b>${a.announcementImportant?'Important Beta Update':'Beta Update'}</span><time>${escapeHtml(formatPortalDate(a.publishedAt||a.assignedAt))}</time></div><h3>${escapeHtml(a.announcementTitle||'Rebatify Beta Update')}</h3><p>${escapeHtml(a.announcementMessage||'')}</p><div class="portal-announcement-footer">${requires?'<small>Rebatify asks you to confirm that you have read this update.</small>':'<small>No acknowledgement is required.</small>'}${action}</div></article>`;
   }).join('');
 }
 async function acknowledgeAnnouncement(id,button){
@@ -216,16 +238,25 @@ async function loadFeedbackHistory(uid){
   const snap=await getDocs(query(collection(db,'betaFeedback'),where('ownerUid','==',uid),where('adminNotes','==','')));
   feedbackHistory=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(timestampToDate(b.submittedAt)?.getTime()||0)-(timestampToDate(a.submittedAt)?.getTime()||0));
   renderFeedbackHistory();
+  renderPortalTaskSummary();
+  const pendingRetest=feedbackHistory.find(f=>String(f.status||'')==='Needs Retest'&&!f.retestedAt);
+  if(pendingRetest){const promptKey='rebatifyBetaRetestPrompted:'+pendingRetest.id;if(!sessionStorage.getItem(promptKey)){sessionStorage.setItem(promptKey,'1');setTimeout(()=>openRetestFeedback(pendingRetest.id),350);}}
 }
 function renderFeedbackHistory(){
   const list=document.getElementById('portalFeedbackHistory');if(!list)return;
   if(!feedbackHistory.length){list.innerHTML='<div class="portal-feedback-history-empty">No feedback submitted yet.</div>';return;}
-  list.innerHTML=feedbackHistory.slice(0,30).map(f=>{const publicStatus=feedbackPublicStatus(f);const needsRetest=String(f.status||'')==='Needs Retest'&&!f.retestedAt;const action=needsRetest?`<button class="portal-retest-button" data-retest-feedback="${escapeHtml(f.id)}" type="button">Retest This Fix</button>`:'';return `<article class="portal-feedback-history-card"><div class="portal-feedback-history-top"><div><span>${escapeHtml(f.type||'Feedback')}</span><h3>${escapeHtml(f.subject||'Feedback')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}${action}</article>`;}).join('');
+  list.innerHTML=feedbackHistory.slice(0,30).map(f=>{const publicStatus=feedbackPublicStatus(f);const needsRetest=String(f.status||'')==='Needs Retest'&&!f.retestedAt;const action=needsRetest?`<button class="portal-retest-button" data-retest-feedback="${escapeHtml(f.id)}" type="button">Retest This Issue</button>`:'';return `<article class="portal-feedback-history-card${needsRetest?' needs-action':''}"><div class="portal-feedback-history-top"><div><span>${escapeHtml(f.type||'Feedback')}</span><h3>${escapeHtml(f.subject||'Feedback')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}${action}</article>`;}).join('');
 }
+
 function openRetestFeedback(id){
   const f=feedbackHistory.find(x=>x.id===id);if(!f)return;activeRetestFeedback=f;
-  document.getElementById('portalRetestSubject').textContent=f.subject||'Feedback';document.getElementById('portalRetestResult').value='';document.getElementById('portalRetestNotes').value='';document.getElementById('portalRetestMessage').textContent='';document.getElementById('portalRetestBackdrop').hidden=false;document.body.classList.add('portal-retest-open');
+  document.getElementById('portalRetestSubject').textContent=f.subject||'Feedback';
+  document.getElementById('portalRetestOriginalDetails').textContent=f.details||'';
+  const meta=[f.pageFeature?`Page / feature: ${f.pageFeature}`:'',f.appVersion||'',f.deviceDetails||profileDeviceDetails(currentProfile)].filter(Boolean).join(' · ');
+  document.getElementById('portalRetestOriginalMeta').textContent=meta;
+  document.getElementById('portalRetestResult').value='';document.getElementById('portalRetestNotes').value='';document.getElementById('portalRetestMessage').textContent='';document.getElementById('portalRetestBackdrop').hidden=false;document.body.classList.add('portal-retest-open');
 }
+
 function closeRetestFeedback(){activeRetestFeedback=null;const back=document.getElementById('portalRetestBackdrop');if(back)back.hidden=true;document.body.classList.remove('portal-retest-open');}
 async function submitRetest(){
   if(!activeRetestFeedback||!auth.currentUser)return;const result=String(document.getElementById('portalRetestResult').value||'').trim();const notes=String(document.getElementById('portalRetestNotes').value||'').trim();const message=document.getElementById('portalRetestMessage');
@@ -234,7 +265,7 @@ async function submitRetest(){
   try{
     const retestCount=(Number(activeRetestFeedback.retestCount)||0)+1;
     await updateDoc(doc(db,'betaFeedback',activeRetestFeedback.id),{retestResult:result,retestNotes:notes,retestedAt:serverTimestamp(),retestCount,updatedAt:serverTimestamp()});
-    activeRetestFeedback.retestResult=result;activeRetestFeedback.retestNotes=notes;activeRetestFeedback.retestedAt=new Date();activeRetestFeedback.retestCount=retestCount;renderFeedbackHistory();closeRetestFeedback();setFeedbackMessage('Retest submitted. Thank you for checking the fix.','success');
+    const feedbackId=activeRetestFeedback.id;activeRetestFeedback.retestResult=result;activeRetestFeedback.retestNotes=notes;activeRetestFeedback.retestedAt=new Date();activeRetestFeedback.retestCount=retestCount;renderFeedbackHistory();renderPortalTaskSummary();closeRetestFeedback();setFeedbackMessage('Retest submitted. Thank you for checking the fix.','success');workerPostAuthorized('feedback-retest-submitted',{feedbackId}).catch(err=>console.warn('Retest email notification failed:',err));
   }catch(error){message.textContent='We could not submit your retest. '+friendlyFirebaseError(error);message.className='portal-task-message error';}
   finally{btn.disabled=false;btn.innerHTML=original;}
 }
@@ -263,14 +294,13 @@ function timelineStep(number,status,title,body,actionHtml=''){
   return `<article class="portal-timeline-step ${status}"><div class="portal-timeline-marker"><span>${number}</span></div><div class="portal-timeline-copy"><div class="portal-timeline-step-top"><h3>${title}</h3><span class="portal-timeline-status">${statusLabel}</span></div><p>${body}</p>${actionHtml}</div></article>`;
 }
 
-const PROGRAM_TIMELINE_STAGES=['approved','inviteSent','activeTesting'];
+const PROGRAM_TIMELINE_STAGES=['approved','setupComplete','inviteSent','activeTesting'];
 function normalizeProgramTimelineStage(value){
-  // Build 55 briefly used two extra intermediate values. Map them into the
-  // simplified three-stage workflow so existing tester records keep working.
-  if(value==='deviceReady')return 'approved';
+  if(value==='deviceReady')return 'setupComplete';
   if(value==='installed')return 'activeTesting';
   return PROGRAM_TIMELINE_STAGES.includes(value)?value:'approved';
 }
+
 
 function testFlightActionHtml(){
   return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Open TestFlight</span></button><small><strong>Shortcut only —</strong> opens TestFlight if installed or its App Store page if needed. It does not complete this step or advance your Beta Program status.</small></div>`;
@@ -311,49 +341,22 @@ function bindTestFlightButtons(scope=document){
 }
 
 function renderProgramTimeline(profile){
-  const timeline=document.getElementById('portalProgramTimeline');
-  const footnote=document.getElementById('portalTimelineFootnote');
-  if(!timeline)return;
-  const ios=profile.platform==='iOS';
-  const stage=normalizeProgramTimelineStage(profile.timelineStage);
-
-  let content;
-  if(ios){
-    const accessCopy=stage==='inviteSent'
-      ? 'Your <strong>TestFlight invitation has been sent</strong> to your approved beta email. Open that invitation on your iPhone and accept it in TestFlight. If you do not already have TestFlight, use the shortcut below. <strong>Opening TestFlight does not advance this timeline.</strong>'
-      : 'Install or open Apple’s <strong>TestFlight</strong> app on your iPhone now. Then watch your approved beta email for the Rebatify TestFlight invitation. When it arrives, open the invitation on your iPhone and accept it in TestFlight. <strong>Your timeline will be advanced by the Rebatify team when testing access is released to you.</strong>';
-    content=[
-      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.',''],
-      ['Prepare your iPhone & watch for your TestFlight invitation',accessCopy,testFlightActionHtml()],
-      ['Install Rebatify, create your account & begin testing','After accepting the TestFlight invitation, install Rebatify and create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Then use Rebatify with real rebate activity when possible, complete required Beta Program tasks, test core workflows, and send meaningful feedback through this portal.','']
-    ];
-  }else{
-    const accessCopy=stage==='inviteSent'
-      ? 'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone while Google Play is signed into the Google Account that matches your approved beta email, then opt in as a tester. <strong>Opening the testing link does not advance this timeline.</strong>'
-      : 'Make sure Google Play is signed into the <strong>Google Account that matches your approved beta email</strong>. Then watch that email for the Rebatify Google Play closed-testing link. When it arrives, open it on your Android phone and opt in as a tester. <strong>Your timeline will be advanced by the Rebatify team when testing access is released to you.</strong>';
-    content=[
-      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active. Sign in with your approved email and the 6-digit code we send — there is no separate portal password.',''],
-      ['Prepare your Android phone & watch for your testing link',accessCopy,''],
-      ['Install Rebatify, create your account & begin testing','After opting in, install Rebatify from Google Play and create your Rebatify app account inside the app — this is the only Rebatify password/account you need to remember. Then use Rebatify with real rebate activity when possible, complete required Beta Program tasks, test core workflows, and send meaningful feedback through this portal.','']
-    ];
-  }
-
-  const visuals=stage==='activeTesting'
-    ? ['complete','complete','ongoing']
-    : stage==='inviteSent'
-      ? ['complete','now','next']
-      : ['complete','now','waiting'];
+  const timeline=document.getElementById('portalProgramTimeline');const footnote=document.getElementById('portalTimelineFootnote');if(!timeline)return;
+  const ios=profile.platform==='iOS';const stage=normalizeProgramTimelineStage(profile.timelineStage);const rank=PROGRAM_TIMELINE_STAGES.indexOf(stage);
+  const accessCopy=ios
+    ? (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>TestFlight invitation has been sent</strong> to your approved beta email. Open it on your iPhone, accept it in TestFlight, and install Rebatify.':'Prepare your iPhone for TestFlight and watch your approved beta email for the Rebatify invitation. Rebatify will advance this stage when testing access is released.')
+    : (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone, opt in, and install Rebatify.':'Make sure Google Play uses the Google Account that matches your approved beta email, then watch for the closed-testing link. Rebatify will advance this stage when testing access is released.');
+  const content=[
+    ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+    ['Complete Testing Setup','Save the phone model and operating-system version you will use for beta testing. Your screen size is detected automatically. Completing this step advances your timeline automatically.',`<div class="portal-timeline-actions"><button class="portal-testflight-button portal-setup-button" data-open-testing-setup type="button"><span>Complete Testing Setup</span></button><small>You can edit these details later from <strong>Settings</strong>.</small></div>`],
+    [ios?'Prepare your iPhone & watch for TestFlight':'Prepare your Android phone & watch for testing access',accessCopy,ios?testFlightActionHtml():''],
+    ['Install Rebatify, create your account & begin testing',ios?'After accepting the TestFlight invitation, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.':'After opting in through Google Play, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
+  ];
+  const visuals=content.map((_,i)=>{if(i<rank)return 'complete';if(i===rank)return stage==='activeTesting'?'ongoing':'now';return 'waiting';});
   timeline.innerHTML=content.map((item,index)=>timelineStep(index+1,visuals[index],item[0],item[1],item[2])).join('');
   bindTestFlightButtons(timeline);
-
-  if(footnote){
-    const currentLabel={
-      approved:'Approved / Portal Ready',
-      inviteSent:ios?'TestFlight Invitation Sent':'Google Play Testing Link Sent',
-      activeTesting:'Active Beta Testing'
-    }[stage];
-    footnote.innerHTML='<strong>How progress works:</strong> This is a program-status timeline, not a checklist. The Rebatify team controls progression and will update your stage as testing access is released and you move into active testing. Opening an app or link does not mark a step complete.'+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
-  }
+  timeline.querySelectorAll('[data-open-testing-setup]').forEach(btn=>btn.addEventListener('click',openTestingSetup));
+  if(footnote){const currentLabel={approved:'Testing Setup Required',setupComplete:'Testing Setup Complete',inviteSent:ios?'TestFlight Invitation Sent':'Google Play Testing Link Sent',activeTesting:'Active Beta Testing'}[stage];footnote.innerHTML='<strong>How progress works:</strong> Completing Testing Setup advances your first portal milestone automatically. Rebatify controls the later testing-access stages. Opening TestFlight, Google Play, or Rebatify by itself does not advance your program status.'+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;}
 }
 
 async function loadProfile(user) {
@@ -393,12 +396,12 @@ function renderProfile(profile) {
   const stage=normalizeProgramTimelineStage(profile.timelineStage);
   const installCopy=document.getElementById('platformInstallCopy');const installMeta=document.getElementById('platformInstallMeta');const installAction=document.getElementById('platformInstallAction');
   if (profile.platform === 'iOS') {
-    const copy={approved:'Install or open TestFlight now, then watch your approved beta email for your Rebatify invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'}[stage];
-    const meta={approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Your timeline is updated by the Rebatify team.',inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage];
+    const copy={approved:'Complete Testing Setup first, then prepare for your TestFlight invitation.',setupComplete:'Testing Setup is complete. Install or open TestFlight and watch your approved beta email for your Rebatify invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'}[stage];
+    const meta={approved:'Complete the required Testing Setup from your timeline.',setupComplete:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage];
     if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction){installAction.innerHTML='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>';bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
-    const copy={approved:'Confirm the correct Google Play account now, then watch your approved beta email for the closed-testing link.',inviteSent:'Your Google Play testing link has been sent. Open it on your Android phone, opt in, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage];
-    const meta={approved:'Google Play must be signed into the Google Account that matches your approved beta email.',inviteSent:'After opting in, install Rebatify, create your app account, and begin testing.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage];
+    const copy={approved:'Complete Testing Setup first, then prepare the correct Google Play account.',setupComplete:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the closed-testing link.',inviteSent:'Your Google Play testing link has been sent. Open it on your Android phone, opt in, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage];
+    const meta={approved:'Complete the required Testing Setup from your timeline.',setupComplete:'Google Play must be signed into the Google Account that matches your approved beta email.',inviteSent:'After opting in, install Rebatify, create your app account, and begin testing.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage];
     if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction)installAction.innerHTML='';
   }
   renderProgramTimeline(profile);
@@ -446,20 +449,31 @@ if (logout) {
 if(taskSubmit)taskSubmit.addEventListener('click',completeRequiredTask);
 
 
+const setupBackdrop=document.getElementById('portalSetupBackdrop');
+function openTestingSetup(){if(!setupBackdrop)return;renderDeviceProfile(currentProfile||{});setupBackdrop.hidden=false;document.body.classList.add('portal-setup-open');}
+function closeTestingSetup(){if(!setupBackdrop)return;setupBackdrop.hidden=true;document.body.classList.remove('portal-setup-open');}
+const setupClose=document.getElementById('portalSetupClose');if(setupClose)setupClose.addEventListener('click',closeTestingSetup);
+if(setupBackdrop)setupBackdrop.addEventListener('click',e=>{if(e.target===setupBackdrop)closeTestingSetup();});
 const deviceForm=document.getElementById('portalDeviceForm');
 if(deviceForm){deviceForm.addEventListener('submit',async event=>{
-  event.preventDefault();if(!auth.currentUser||!currentProfile){fail('session');return;}
+  event.preventDefault();if(!auth.currentUser||!currentProfile){fail('session');return;}if(!deviceForm.checkValidity()){deviceForm.reportValidity();return;}
   const button=deviceForm.querySelector('button[type="submit"]');const original=button.innerHTML;button.disabled=true;button.innerHTML='Saving…';setDeviceMessage('');
-  const deviceModel=String(document.getElementById('testerDeviceModel').value||'').trim();const osVersion=String(document.getElementById('testerOsVersion').value||'').trim();const currentBuild=String(document.getElementById('testerCurrentBuild').value||'').trim();const screenSize=String(document.getElementById('testerScreenSize').value||'').trim();
+  const deviceModel=String(document.getElementById('testerDeviceModel').value||'').trim();const osVersion=String(document.getElementById('testerOsVersion').value||'').trim();const screenSize=detectedScreenSize()||String(document.getElementById('testerScreenSize').value||'').trim();
+  const stage=normalizeProgramTimelineStage(currentProfile.timelineStage);const firstSetup=stage==='approved';
   try{
-    await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{deviceModel,osVersion,currentBuild,screenSize,deviceUpdatedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()});
-    Object.assign(currentProfile,{deviceModel,osVersion,currentBuild,screenSize,deviceUpdatedAt:new Date(),lastPortalActivity:new Date()});renderDeviceProfile(currentProfile);setDeviceMessage('Testing setup saved.','success');
+    const update={deviceModel,osVersion,screenSize,deviceUpdatedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()};
+    if(firstSetup){update.timelineStage='setupComplete';update.timelineUpdatedAt=serverTimestamp();update.deviceSetupCompletedAt=serverTimestamp();}
+    await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),update);
+    Object.assign(currentProfile,{deviceModel,osVersion,screenSize,deviceUpdatedAt:new Date(),lastPortalActivity:new Date()});if(firstSetup){currentProfile.timelineStage='setupComplete';currentProfile.timelineUpdatedAt=new Date();currentProfile.deviceSetupCompletedAt=new Date();}
+    renderDeviceProfile(currentProfile);renderProfile(currentProfile);setDeviceMessage(firstSetup?'Testing Setup saved. Your timeline has advanced.':'Testing Setup saved.','success');setTimeout(closeTestingSetup,450);
   }catch(error){setDeviceMessage('We could not save your testing setup. '+friendlyFirebaseError(error),'error');}
   finally{button.disabled=false;button.innerHTML=original;}
 });}
 
 document.addEventListener('click',event=>{
   const ack=event.target.closest('[data-ack-announcement]');if(ack){acknowledgeAnnouncement(ack.dataset.ackAnnouncement,ack);return;}
+  const setup=event.target.closest('[data-open-testing-setup]');if(setup){openTestingSetup();return;}
+  const req=event.target.closest('[data-open-required-task]');if(req){const found=requiredTasks.find(t=>t.id===req.dataset.openRequiredTask);if(found){requiredTasks=[found,...requiredTasks.filter(t=>t.id!==found.id)];renderRequiredTask();}return;}
   const retest=event.target.closest('[data-retest-feedback]');if(retest){openRetestFeedback(retest.dataset.retestFeedback);return;}
 });
 const retestClose=document.getElementById('portalRetestClose');if(retestClose)retestClose.addEventListener('click',closeRetestFeedback);
@@ -474,8 +488,10 @@ if (feedbackForm) {
 
     const button = feedbackForm.querySelector('button[type="submit"]');
     const original = button.innerHTML;button.disabled = true;button.innerHTML = 'Submitting…';setFeedbackMessage('');
+    if(!String(currentProfile.deviceModel||'').trim()||!String(currentProfile.osVersion||'').trim()||!String(currentProfile.screenSize||'').trim()){setFeedbackMessage('Complete Testing Setup before submitting feedback so your device details can be attached to the report.','error');openTestingSetup();button.disabled=false;button.innerHTML=original;return;}
     const data = new FormData(feedbackForm);
-    const appVersion=String(data.get('appVersion') || currentProfile.currentBuild || '').trim();
+    const appVersion=String(data.get('appVersion') || '').trim();
+    if(!/^Build [0-9]+$/.test(appVersion)){setFeedbackMessage('Enter the Build number in the format “Build 228”.','error');button.disabled=false;button.innerHTML=original;return;}
     const deviceDetails=String(data.get('deviceDetails') || profileDeviceDetails(currentProfile) || '').trim();
     const payload = {
       ownerUid: auth.currentUser.uid,name: currentProfile.name || '',email: currentProfile.email || auth.currentUser.email || '',platform: currentProfile.platform || '',
@@ -489,7 +505,7 @@ if (feedbackForm) {
       const local={id:ref.id,...payload,submittedAt:new Date(),updatedAt:new Date()};feedbackHistory.unshift(local);renderFeedbackHistory();
       if(appVersion)currentProfile.currentBuild=appVersion;
       await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastFeedbackSubmittedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),...(appVersion?{currentBuild:appVersion}:{}),updatedAt:serverTimestamp()}).catch(()=>{});
-      feedbackForm.reset();renderDeviceProfile(currentProfile);setFeedbackMessage('Thank you — your feedback was submitted.', 'success');
+      feedbackForm.reset();renderDeviceProfile(currentProfile);setFeedbackMessage('Thank you — your feedback was submitted.', 'success');workerPostAuthorized('feedback-submitted',{feedbackId:ref.id}).catch(err=>console.warn('Feedback email notification failed:',err));
     } catch (error) {
       setFeedbackMessage('We could not submit your feedback right now. ' + friendlyFirebaseError(error), 'error');
     } finally {button.disabled = false;button.innerHTML = original;}
