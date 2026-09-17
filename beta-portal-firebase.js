@@ -1,3 +1,4 @@
+// Rebatify Beta Tester Portal - Website Build 65
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -23,6 +24,11 @@ let initialized = false;
 let requiredTasks = [];
 let allTaskAssignments = [];
 let activeTask = null;
+let portalAnnouncements = [];
+let feedbackHistory = [];
+let activeRetestFeedback = null;
+let lastFirestoreActivityWrite = 0;
+const PORTAL_ACTIVITY_WRITE_MS = 5 * 60 * 1000;
 const taskBackdrop = document.getElementById('portalTaskBackdrop');
 const taskSubmit = document.getElementById('portalTaskSubmit');
 
@@ -32,6 +38,48 @@ let inactivityTimer = null;
 let inactivityStarted = false;
 let sessionEnding = false;
 let lastActivityWrite = 0;
+
+
+function detectedScreenSize(){
+  try{return `${window.screen.width}×${window.screen.height} @ ${window.devicePixelRatio||1}x`;}catch(_){return '';}
+}
+function detectedOsVersion(){
+  const ua=navigator.userAgent||'';
+  const ios=ua.match(/OS ([0-9_]+) like Mac OS X/i);if(ios)return 'iOS '+ios[1].replaceAll('_','.');
+  const android=ua.match(/Android\s+([^;\)]+)/i);if(android)return 'Android '+android[1].trim();
+  return '';
+}
+function profileDeviceDetails(profile=currentProfile){
+  if(!profile)return '';
+  const parts=[profile.deviceModel,profile.osVersion].map(v=>String(v||'').trim()).filter(Boolean);
+  return parts.join(' · ');
+}
+async function writePortalActivity(force=false){
+  if(!auth.currentUser||!currentProfile||sessionEnding)return;
+  const now=Date.now();if(!force&&now-lastFirestoreActivityWrite<PORTAL_ACTIVITY_WRITE_MS)return;
+  lastFirestoreActivityWrite=now;
+  try{await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()});currentProfile.lastPortalActivity=new Date();}catch(_){/* Activity tracking is best-effort and must never end a valid session. */}
+}
+function setDeviceMessage(text,type=''){
+  const el=document.getElementById('portalDeviceMessage');if(!el)return;el.textContent=text||'';el.className='portal-device-message'+(type?' '+type:'');
+}
+function renderDeviceProfile(profile){
+  const model=document.getElementById('testerDeviceModel');const os=document.getElementById('testerOsVersion');const build=document.getElementById('testerCurrentBuild');const screen=document.getElementById('testerScreenSize');
+  if(model)model.value=profile.deviceModel||'';
+  if(os)os.value=profile.osVersion||detectedOsVersion();
+  if(build)build.value=profile.currentBuild||'';
+  if(screen)screen.value=profile.screenSize||detectedScreenSize();
+  const appVersion=document.getElementById('appVersion');if(appVersion&&!appVersion.value)appVersion.value=profile.currentBuild||'';
+  const deviceDetails=document.getElementById('deviceDetails');if(deviceDetails&&!deviceDetails.value)deviceDetails.value=profileDeviceDetails(profile);
+}
+function feedbackPublicStatus(f){
+  const raw=String(f.status||'New');const status=raw==='Planned'?'Confirmed':raw==='Declined'?'Closed':raw;
+  if(status==='Closed')return {label:'Resolved',className:'resolved'};
+  if(status==='Needs Retest'&&f.retestedAt)return {label:'Retest submitted',className:'testing'};
+  if(status==='Fixed'||status==='Needs Retest')return {label:'Fix in testing',className:'testing'};
+  return {label:'Received',className:'received'};
+}
+function formatPortalDate(value){const d=timestampToDate(value);return d?d.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'}):'';}
 
 function scheduleInactivityLogout() {
   clearTimeout(inactivityTimer);
@@ -50,6 +98,7 @@ function recordPortalActivity() {
   lastActivityWrite = now;
   sessionStorage.setItem(PORTAL_ACTIVITY_KEY, String(now));
   scheduleInactivityLogout();
+  writePortalActivity(false).catch(()=>{});
 }
 async function endInactiveSession() {
   if (sessionEnding) return;
@@ -63,6 +112,7 @@ function startInactivityWatcher() {
   if (inactivityStarted) return;
   inactivityStarted = true;
   sessionStorage.setItem(PORTAL_ACTIVITY_KEY, String(Date.now()));
+  writePortalActivity(true).catch(()=>{});
   ['pointerdown','keydown','touchstart','scroll'].forEach(eventName => {
     window.addEventListener(eventName, recordPortalActivity, { passive: true });
   });
@@ -135,12 +185,60 @@ function renderRequiredTask(){
 async function loadRequiredTasks(uid){
   const snap=await getDocs(query(collection(db,'betaTaskAssignments'),where('testerUid','==',uid)));
   allTaskAssignments=snap.docs.map(d=>({id:d.id,...d.data()}));
-  requiredTasks=allTaskAssignments.filter(t=>t.status==='Pending').sort((a,b)=>{
+  portalAnnouncements=allTaskAssignments.filter(t=>t.recordType==='Announcement'&&!t.announcementArchived).sort((a,b)=>(timestampToDate(b.publishedAt)?.getTime()||0)-(timestampToDate(a.publishedAt)?.getTime()||0));
+  requiredTasks=allTaskAssignments.filter(t=>t.recordType!=='Announcement'&&t.status==='Pending').sort((a,b)=>{
     const ad=timestampToDate(a.dueAt),bd=timestampToDate(b.dueAt);return (ad?ad.getTime():0)-(bd?bd.getTime():0);
   });
+  renderPortalAnnouncements();
   renderPortalTaskSummary();
   renderRequiredTask();
 }
+
+function renderPortalAnnouncements(){
+  const section=document.getElementById('portalAnnouncements');const list=document.getElementById('portalAnnouncementList');if(!section||!list)return;
+  if(!portalAnnouncements.length){section.hidden=true;list.innerHTML='';return;}
+  section.hidden=false;
+  list.innerHTML=portalAnnouncements.map(a=>{
+    const requires=!!a.requiresAcknowledgement;const acknowledged=a.status==='Acknowledged'&&!!a.acknowledgedAt;
+    const action=requires?(acknowledged?`<span class="portal-announcement-acknowledged">✓ Acknowledged ${escapeHtml(formatPortalDate(a.acknowledgedAt))}</span>`:`<button class="portal-announcement-ack" data-ack-announcement="${escapeHtml(a.id)}" type="button">Acknowledge</button>`):'<span class="portal-announcement-info">For your information</span>';
+    return `<article class="portal-announcement-card${a.announcementImportant?' is-important':''}"><div class="portal-announcement-meta"><span>${a.announcementImportant?'Important Beta Update':'Beta Update'}</span><time>${escapeHtml(formatPortalDate(a.publishedAt||a.assignedAt))}</time></div><h3>${escapeHtml(a.announcementTitle||'Rebatify Beta Update')}</h3><p>${escapeHtml(a.announcementMessage||'')}</p><div class="portal-announcement-footer">${requires?'<small>Rebatify asks you to confirm that you have read this update.</small>':'<small>No acknowledgement is required.</small>'}${action}</div></article>`;
+  }).join('');
+}
+async function acknowledgeAnnouncement(id,button){
+  const row=portalAnnouncements.find(a=>a.id===id);if(!row||row.status==='Acknowledged')return;
+  if(button){button.disabled=true;button.textContent='Saving…';}
+  try{
+    await updateDoc(doc(db,'betaTaskAssignments',row.id),{status:'Acknowledged',response:'Acknowledged',acknowledgedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    row.status='Acknowledged';row.response='Acknowledged';row.acknowledgedAt=new Date();renderPortalAnnouncements();
+  }catch(error){if(button){button.disabled=false;button.textContent='Acknowledge';}setFeedbackMessage('We could not save that acknowledgement. '+friendlyFirebaseError(error),'error');}
+}
+async function loadFeedbackHistory(uid){
+  const snap=await getDocs(query(collection(db,'betaFeedback'),where('ownerUid','==',uid),where('adminNotes','==','')));
+  feedbackHistory=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(timestampToDate(b.submittedAt)?.getTime()||0)-(timestampToDate(a.submittedAt)?.getTime()||0));
+  renderFeedbackHistory();
+}
+function renderFeedbackHistory(){
+  const list=document.getElementById('portalFeedbackHistory');if(!list)return;
+  if(!feedbackHistory.length){list.innerHTML='<div class="portal-feedback-history-empty">No feedback submitted yet.</div>';return;}
+  list.innerHTML=feedbackHistory.slice(0,30).map(f=>{const publicStatus=feedbackPublicStatus(f);const needsRetest=String(f.status||'')==='Needs Retest'&&!f.retestedAt;const action=needsRetest?`<button class="portal-retest-button" data-retest-feedback="${escapeHtml(f.id)}" type="button">Retest This Fix</button>`:'';return `<article class="portal-feedback-history-card"><div class="portal-feedback-history-top"><div><span>${escapeHtml(f.type||'Feedback')}</span><h3>${escapeHtml(f.subject||'Feedback')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}${action}</article>`;}).join('');
+}
+function openRetestFeedback(id){
+  const f=feedbackHistory.find(x=>x.id===id);if(!f)return;activeRetestFeedback=f;
+  document.getElementById('portalRetestSubject').textContent=f.subject||'Feedback';document.getElementById('portalRetestResult').value='';document.getElementById('portalRetestNotes').value='';document.getElementById('portalRetestMessage').textContent='';document.getElementById('portalRetestBackdrop').hidden=false;document.body.classList.add('portal-retest-open');
+}
+function closeRetestFeedback(){activeRetestFeedback=null;const back=document.getElementById('portalRetestBackdrop');if(back)back.hidden=true;document.body.classList.remove('portal-retest-open');}
+async function submitRetest(){
+  if(!activeRetestFeedback||!auth.currentUser)return;const result=String(document.getElementById('portalRetestResult').value||'').trim();const notes=String(document.getElementById('portalRetestNotes').value||'').trim();const message=document.getElementById('portalRetestMessage');
+  if(!result){message.textContent='Choose what happened when you retested.';message.className='portal-task-message error';return;}
+  const btn=document.getElementById('portalRetestSubmit');const original=btn.innerHTML;btn.disabled=true;btn.innerHTML='Submitting…';message.textContent='';
+  try{
+    const retestCount=(Number(activeRetestFeedback.retestCount)||0)+1;
+    await updateDoc(doc(db,'betaFeedback',activeRetestFeedback.id),{retestResult:result,retestNotes:notes,retestedAt:serverTimestamp(),retestCount,updatedAt:serverTimestamp()});
+    activeRetestFeedback.retestResult=result;activeRetestFeedback.retestNotes=notes;activeRetestFeedback.retestedAt=new Date();activeRetestFeedback.retestCount=retestCount;renderFeedbackHistory();closeRetestFeedback();setFeedbackMessage('Retest submitted. Thank you for checking the fix.','success');
+  }catch(error){message.textContent='We could not submit your retest. '+friendlyFirebaseError(error);message.className='portal-task-message error';}
+  finally{btn.disabled=false;btn.innerHTML=original;}
+}
+
 function collectTaskResponse(task){
   if(task.responseType==='Short Answer')return String(document.getElementById('portalTaskShortAnswer')?.value||'').trim();
   if(task.responseType==='Long Answer')return String(document.getElementById('portalTaskLongAnswer')?.value||'').trim();
@@ -290,46 +388,21 @@ function renderProfile(profile) {
   document.getElementById('portalFirstName').textContent = firstName(profile.name);
   document.getElementById('portalEmail').textContent = profile.email || '';
   document.getElementById('portalPlatform').textContent = profile.platform || '';
+  renderDeviceProfile(profile);
 
   const stage=normalizeProgramTimelineStage(profile.timelineStage);
-  const installCopy=document.getElementById('platformInstallCopy');
-  const installMeta=document.getElementById('platformInstallMeta');
-  const installAction=document.getElementById('platformInstallAction');
+  const installCopy=document.getElementById('platformInstallCopy');const installMeta=document.getElementById('platformInstallMeta');const installAction=document.getElementById('platformInstallAction');
   if (profile.platform === 'iOS') {
-    const copy={
-      approved:'Install or open TestFlight now, then watch your approved beta email for your Rebatify invitation.',
-      inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',
-      activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'
-    }[stage];
-    const meta={
-      approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Your timeline is updated by the Rebatify team.',
-      inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',
-      activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'
-    }[stage];
-    if(installCopy)installCopy.textContent=copy;
-    if(installMeta)installMeta.textContent=meta;
-    if(installAction){installAction.innerHTML='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>';bindTestFlightButtons(installAction);}
+    const copy={approved:'Install or open TestFlight now, then watch your approved beta email for your Rebatify invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'}[stage];
+    const meta={approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Your timeline is updated by the Rebatify team.',inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage];
+    if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction){installAction.innerHTML='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>';bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
-    const copy={
-      approved:'Confirm the correct Google Play account now, then watch your approved beta email for the closed-testing link.',
-      inviteSent:'Your Google Play testing link has been sent. Open it on your Android phone, opt in, and install Rebatify.',
-      activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'
-    }[stage];
-    const meta={
-      approved:'Google Play must be signed into the Google Account that matches your approved beta email.',
-      inviteSent:'After opting in, install Rebatify, create your app account, and begin testing.',
-      activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'
-    }[stage];
-    if(installCopy)installCopy.textContent=copy;
-    if(installMeta)installMeta.textContent=meta;
-    if(installAction)installAction.innerHTML='';
+    const copy={approved:'Confirm the correct Google Play account now, then watch your approved beta email for the closed-testing link.',inviteSent:'Your Google Play testing link has been sent. Open it on your Android phone, opt in, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage];
+    const meta={approved:'Google Play must be signed into the Google Account that matches your approved beta email.',inviteSent:'After opting in, install Rebatify, create your app account, and begin testing.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage];
+    if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction)installAction.innerHTML='';
   }
-
   renderProgramTimeline(profile);
-
-  loading.hidden = true;
-  app.hidden = false;
-  if (content) content.classList.remove('portal-locked-content');
+  loading.hidden = true;app.hidden = false;if (content) content.classList.remove('portal-locked-content');
 }
 
 if (!firebaseConfigured) {
@@ -347,16 +420,16 @@ if (!firebaseConfigured) {
       fail(error && error.message === 'access' ? 'access' : 'session');
       return;
     }
-    // Required tasks should never be able to invalidate an otherwise valid portal
-    // session. If task loading fails, keep the tester signed in and surface a
-    // non-blocking message instead of bouncing them back to login.
+    // Portal add-ons must never invalidate an otherwise valid authenticated session.
     try {
       await loadRequiredTasks(user.uid);
     } catch (error) {
-      console.error('Could not load required beta tasks:', error);
+      console.error('Could not load beta assignments:', error);
       const summaryText = document.getElementById('portalTaskSummaryText');
-      if (summaryText) summaryText.textContent = 'Required tasks could not be loaded right now. Refresh the portal in a moment or contact Rebatify Support if this continues.';
+      if (summaryText) summaryText.textContent = 'Required tasks and Beta News could not be loaded right now. Refresh the portal in a moment or contact Rebatify Support if this continues.';
     }
+    try { await loadFeedbackHistory(user.uid); }
+    catch (error) { console.error('Could not load tester feedback history:', error); const history=document.getElementById('portalFeedbackHistory');if(history)history.innerHTML='<div class="portal-feedback-history-empty">Your feedback history could not be loaded right now. You can still submit new feedback below.</div>'; }
   });
 }
 
@@ -372,6 +445,27 @@ if (logout) {
 
 if(taskSubmit)taskSubmit.addEventListener('click',completeRequiredTask);
 
+
+const deviceForm=document.getElementById('portalDeviceForm');
+if(deviceForm){deviceForm.addEventListener('submit',async event=>{
+  event.preventDefault();if(!auth.currentUser||!currentProfile){fail('session');return;}
+  const button=deviceForm.querySelector('button[type="submit"]');const original=button.innerHTML;button.disabled=true;button.innerHTML='Saving…';setDeviceMessage('');
+  const deviceModel=String(document.getElementById('testerDeviceModel').value||'').trim();const osVersion=String(document.getElementById('testerOsVersion').value||'').trim();const currentBuild=String(document.getElementById('testerCurrentBuild').value||'').trim();const screenSize=String(document.getElementById('testerScreenSize').value||'').trim();
+  try{
+    await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{deviceModel,osVersion,currentBuild,screenSize,deviceUpdatedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()});
+    Object.assign(currentProfile,{deviceModel,osVersion,currentBuild,screenSize,deviceUpdatedAt:new Date(),lastPortalActivity:new Date()});renderDeviceProfile(currentProfile);setDeviceMessage('Testing setup saved.','success');
+  }catch(error){setDeviceMessage('We could not save your testing setup. '+friendlyFirebaseError(error),'error');}
+  finally{button.disabled=false;button.innerHTML=original;}
+});}
+
+document.addEventListener('click',event=>{
+  const ack=event.target.closest('[data-ack-announcement]');if(ack){acknowledgeAnnouncement(ack.dataset.ackAnnouncement,ack);return;}
+  const retest=event.target.closest('[data-retest-feedback]');if(retest){openRetestFeedback(retest.dataset.retestFeedback);return;}
+});
+const retestClose=document.getElementById('portalRetestClose');if(retestClose)retestClose.addEventListener('click',closeRetestFeedback);
+const retestBackdrop=document.getElementById('portalRetestBackdrop');if(retestBackdrop)retestBackdrop.addEventListener('click',event=>{if(event.target===retestBackdrop)closeRetestFeedback();});
+const retestSubmit=document.getElementById('portalRetestSubmit');if(retestSubmit)retestSubmit.addEventListener('click',submitRetest);
+
 if (feedbackForm) {
   feedbackForm.addEventListener('submit', async event => {
     event.preventDefault();
@@ -379,38 +473,25 @@ if (feedbackForm) {
     if (!auth.currentUser || !currentProfile) { fail('session'); return; }
 
     const button = feedbackForm.querySelector('button[type="submit"]');
-    const original = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = 'Submitting…';
-    setFeedbackMessage('');
-
+    const original = button.innerHTML;button.disabled = true;button.innerHTML = 'Submitting…';setFeedbackMessage('');
     const data = new FormData(feedbackForm);
+    const appVersion=String(data.get('appVersion') || currentProfile.currentBuild || '').trim();
+    const deviceDetails=String(data.get('deviceDetails') || profileDeviceDetails(currentProfile) || '').trim();
     const payload = {
-      ownerUid: auth.currentUser.uid,
-      name: currentProfile.name || '',
-      email: currentProfile.email || auth.currentUser.email || '',
-      platform: currentProfile.platform || '',
-      type: String(data.get('feedbackType') || '').trim(),
-      subject: String(data.get('subject') || '').trim(),
-      details: String(data.get('details') || '').trim(),
-      appVersion: String(data.get('appVersion') || '').trim(),
-      deviceDetails: String(data.get('deviceDetails') || '').trim(),
-      pageFeature: String(data.get('pageFeature') || '').trim(),
-      status: 'New',
-      adminNotes: '',
-      submittedAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      ownerUid: auth.currentUser.uid,name: currentProfile.name || '',email: currentProfile.email || auth.currentUser.email || '',platform: currentProfile.platform || '',
+      type: String(data.get('feedbackType') || '').trim(),subject: String(data.get('subject') || '').trim(),details: String(data.get('details') || '').trim(),appVersion,deviceDetails,
+      deviceModel:String(currentProfile.deviceModel||'').trim(),osVersion:String(currentProfile.osVersion||'').trim(),screenSize:String(currentProfile.screenSize||'').trim(),pageFeature: String(data.get('pageFeature') || '').trim(),
+      status: 'New',adminNotes: '',submittedAt: serverTimestamp(),updatedAt: serverTimestamp()
     };
 
     try {
-      await addDoc(collection(db, 'betaFeedback'), payload);
-      feedbackForm.reset();
-      setFeedbackMessage('Thank you — your feedback was submitted.', 'success');
+      const ref=await addDoc(collection(db, 'betaFeedback'), payload);
+      const local={id:ref.id,...payload,submittedAt:new Date(),updatedAt:new Date()};feedbackHistory.unshift(local);renderFeedbackHistory();
+      if(appVersion)currentProfile.currentBuild=appVersion;
+      await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastFeedbackSubmittedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),...(appVersion?{currentBuild:appVersion}:{}),updatedAt:serverTimestamp()}).catch(()=>{});
+      feedbackForm.reset();renderDeviceProfile(currentProfile);setFeedbackMessage('Thank you — your feedback was submitted.', 'success');
     } catch (error) {
       setFeedbackMessage('We could not submit your feedback right now. ' + friendlyFirebaseError(error), 'error');
-    } finally {
-      button.disabled = false;
-      button.innerHTML = original;
-    }
+    } finally {button.disabled = false;button.innerHTML = original;}
   });
 }

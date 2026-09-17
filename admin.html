@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=59" rel="stylesheet"/>
+<link href="styles.css?v=65" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -29,6 +29,7 @@
 <button class="admin-nav-item" data-admin-view="applications" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Applications</span><span class="admin-nav-badge" id="navPendingCount" hidden>0</span></button>
 <button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 19c.5-3.5 2.4-5.2 5.5-5.2s5 1.7 5.5 5.2M15.5 6.3a3 3 0 0 1 0 5.4M16.5 13.9c2.3.5 3.7 2.2 4 5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Testers</span></button>
 <button class="admin-nav-item" data-admin-view="tasks" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="m8 9 1.6 1.6L12.5 7.7M14 9h3M8 15l1.6 1.6 2.9-2.9M14 15h3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Tasks</span><span class="admin-nav-badge" id="navTaskCount" hidden>0</span></button>
+<button class="admin-nav-item" data-admin-view="announcements" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11.5h3l8-4.2v9.4l-8-4.2h-3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M15.5 9.3c1.7.6 3 2.2 3 4.2s-1.3 3.6-3 4.2M7.5 12.5l1.2 5h3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Announcements</span></button>
 <button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span><span>Feedback</span><span class="admin-nav-badge" id="navFeedbackCount" hidden>0</span></button>
 </nav>
 <div class="admin-sidebar-footer">
@@ -104,7 +105,14 @@
 <div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Applicant</th><th>Platform</th><th>Applied</th><th>Status</th><th>Portal</th><th>Invite Email</th><th></th></tr></thead><tbody id="applicationsTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="applicationsEmpty">No applications match these filters.</div></div>
 </section>
 <section class="admin-view" data-admin-panel="testers">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>Manage tester access, required tasks, sign-ins, and each tester’s Beta Program timeline.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Access Management</div><h2>Beta testers</h2><p>Monitor tester activity, participation, device/build details, access, required tasks, and each tester’s Beta Program timeline.</p></div></div>
+<div class="admin-activity-metrics">
+<article><span>Active</span><strong id="testerActivityActive">0</strong><small>Active within the last 7 days</small></article>
+<article><span>Needs Attention</span><strong id="testerActivityAttention">0</strong><small>7–13 days without portal activity</small></article>
+<article><span>Inactive Review</span><strong id="testerActivityInactive">0</strong><small>14+ days; review access manually</small></article>
+<article><span>Enabled Testers</span><strong id="testerActivityEnabled">0</strong><small>Access currently enabled</small></article>
+</div>
+<div class="admin-activity-policy"><strong>Automatic inactivity flagging:</strong> testers are marked <b>Needs Attention</b> after 7 days and <b>Inactive</b> after 14 days without portal activity. Access is never disabled automatically by these activity flags.</div>
 <article class="admin-panel admin-timeline-bulk-panel">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Program Timeline</span><h3>Progress tester timelines</h3><p>Move one tester or a selected group to the milestone they have reached. The tester portal will show all earlier milestones as complete and the next action as current.</p></div><span class="admin-subtle-chip" id="timelineSelectionCount">0 selected</span></div>
 <div class="admin-timeline-bulk-controls">
@@ -114,8 +122,8 @@
 </div>
 <div class="admin-timeline-stage-guide"><strong>Timeline stages:</strong><span><b>Approved</b> → prepare device and wait for access</span><span><b>Testing Access Sent</b> → accept invitation/link, install Rebatify, create app account</span><span><b>Active Testing</b> → ongoing workflows, required tasks, and feedback</span></div>
 </article>
-<div class="admin-toolbar"><div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
-<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table admin-testers-table"><thead><tr><th class="admin-select-col"><span class="sr-only">Select</span></th><th>Tester</th><th>Platform</th><th>Access</th><th>Timeline</th><th>Required Tasks</th><th>Last Login</th><th>Authentication</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
+<div class="admin-toolbar"><div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="testerSearch" placeholder="Search tester" type="search"/></div><select class="admin-filter" id="testerActivityFilter"><option value="">All activity</option><option>Active</option><option>Needs Attention</option><option>Inactive</option></select><select class="admin-filter" id="testerAccessFilter"><option value="">All access</option><option>Enabled</option><option>Disabled</option></select></div>
+<div class="admin-table-card"><div class="admin-table-scroll"><table class="admin-table admin-testers-table"><thead><tr><th class="admin-select-col"><span class="sr-only">Select</span></th><th>Tester</th><th>Platform</th><th>Activity</th><th>Last Active</th><th>Scorecard</th><th>Build / Device</th><th>Access</th><th>Timeline</th><th></th></tr></thead><tbody id="testersTableBody"></tbody></table></div><div class="admin-empty" hidden="" id="testersEmpty">No testers match these filters.</div></div>
 </section>
 
 <section class="admin-view" data-admin-panel="tasks">
@@ -173,11 +181,30 @@
 </article>
 </div>
 </section>
+<section class="admin-view" data-admin-panel="announcements">
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Beta News</div><h2>Announcements</h2><p>Publish dated updates to active testers, target a platform, and optionally require acknowledgement.</p></div></div>
+<div class="admin-announcement-layout">
+<article class="admin-panel admin-announcement-composer">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Publish Update</span><h3>New beta announcement</h3></div></div>
+<div class="admin-task-form-grid">
+<div class="beta-field admin-task-span"><label for="announcementTitle">Headline</label><input id="announcementTitle" maxlength="140" placeholder="Example: Build 228 is available" type="text"/></div>
+<div class="beta-field admin-task-span"><label for="announcementMessage">Announcement</label><textarea id="announcementMessage" maxlength="3000" placeholder="Tell testers what changed, what to focus on, or anything they need to know."></textarea></div>
+<div class="beta-field"><label for="announcementAudience">Audience</label><select id="announcementAudience"><option>All</option><option>iOS</option><option>Android</option></select></div>
+<div class="beta-field"><label>Options</label><div class="admin-announcement-options"><label><input id="announcementImportant" type="checkbox"/><span><strong>Important</strong><small>Highlights the announcement in the tester portal.</small></span></label><label><input id="announcementAckRequired" type="checkbox"/><span><strong>Require acknowledgement</strong><small>Tester must confirm they have read it.</small></span></label></div></div>
+</div>
+<button class="admin-primary-button admin-announcement-publish" id="announcementPublishButton" type="button">Publish Announcement <span>→</span></button>
+</article>
+<article class="admin-panel admin-announcement-history">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">History</span><h3>Published beta news</h3></div></div>
+<div class="admin-announcement-list" id="announcementList"><div class="admin-empty-inline">No announcements have been published yet.</div></div>
+</article>
+</div>
+</section>
 <section class="admin-view" data-admin-panel="feedback">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Review bugs, feature requests, confusing experiences, and general feedback.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Move reports through New → Reviewing → Confirmed → Fixed → Needs Retest → Closed. Testers see a simplified status in their portal.</p></div></div>
 <div class="admin-toolbar">
 <div class="admin-search"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><input id="feedbackSearch" placeholder="Search feedback" type="search"/></div>
-<select class="admin-filter" id="feedbackStatusFilter"><option value="">All statuses</option><option>New</option><option>Reviewing</option><option>Planned</option><option>Fixed</option><option>Closed</option><option>Declined</option></select>
+<select class="admin-filter" id="feedbackStatusFilter"><option value="">All statuses</option><option>New</option><option>Reviewing</option><option>Confirmed</option><option>Fixed</option><option>Needs Retest</option><option>Closed</option></select>
 <select class="admin-filter" id="feedbackTypeFilter"><option value="">All types</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select>
 </div>
 <div class="admin-feedback-list" id="feedbackList"></div><div class="admin-empty admin-empty-card" hidden="" id="feedbackEmpty">No feedback matches these filters.</div>
@@ -214,5 +241,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=59"></script><script src="admin-firebase.js?v=59" type="module"></script></body>
+<script src="firebase-config.js?v=65"></script><script src="admin-firebase.js?v=65" type="module"></script></body>
 </html>

@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=59" rel="stylesheet"/>
+<link href="styles.css?v=65" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <header class="portal-header">
@@ -35,6 +35,7 @@
 </div>
 </section>
 <div id="portalContent">
+<section class="portal-announcements" hidden id="portalAnnouncements"><div class="wrap"><div class="portal-announcements-heading"><div><div class="kicker">Beta News</div><h2>Latest from the Rebatify team.</h2></div></div><div class="portal-announcement-list" id="portalAnnouncementList"></div></div></section>
 <section class="portal-required-summary" hidden="" id="portalTaskSummary"><div class="wrap"><div class="portal-required-summary-card"><div><span class="portal-required-summary-kicker">Required Tasks</span><strong id="portalTaskSummaryTitle">You have required Beta Program tasks to complete.</strong><p id="portalTaskSummaryText"></p></div><div class="portal-required-summary-count" id="portalTaskSummaryCount">0</div></div><div class="portal-required-summary-list" id="portalTaskSummaryList"></div></div></section>
 <section class="section portal-timeline-section" id="program-timeline"><div class="wrap">
 <div class="portal-section-heading portal-timeline-heading"><div><div class="kicker">Beta Program Progress</div><h2>Know exactly what happens next.</h2><p class="lead">Your next steps are tailored to the testing platform you selected when you applied.</p></div></div>
@@ -51,7 +52,17 @@
 <article class="portal-tile"><div class="portal-tile-icon teal"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M19.5 8.5V4.8l-2.2 2.1A8 8 0 1 0 20 14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div><h3>Keep Rebatify current</h3><p>Please update to the latest beta build when a new version becomes available so your testing reflects the current app.</p></article>
 </div>
 </div></section>
-<section class="section alt" id="submit-feedback"><div class="wrap portal-feedback-layout">
+<section class="section portal-device-section" id="testing-setup"><div class="wrap portal-device-layout">
+<div class="portal-device-copy"><div class="kicker">Testing Setup</div><h2>Keep your device and build details current.</h2><p class="lead">These details are attached to your beta profile so the Rebatify team can understand which device, operating system, and build you are testing when reviewing feedback.</p><div class="portal-device-note"><strong>Why this helps</strong><span>“Button overlaps on iPhone SE / iOS 26” is much more actionable than “the button looks weird.”</span></div></div>
+<form class="portal-device-form" id="portalDeviceForm">
+<div class="portal-two-fields"><div class="beta-field"><label for="testerDeviceModel">Device model</label><input id="testerDeviceModel" maxlength="120" placeholder="Example: iPhone 16 Pro or Pixel 10" type="text"/></div><div class="beta-field"><label for="testerOsVersion">OS version</label><input id="testerOsVersion" maxlength="120" placeholder="Example: iOS 26 or Android 16" type="text"/></div></div>
+<div class="portal-two-fields"><div class="beta-field"><label for="testerCurrentBuild">Current Rebatify build</label><input id="testerCurrentBuild" maxlength="100" placeholder="Example: 1.0.0 (Build 228)" type="text"/></div><div class="beta-field"><label for="testerScreenSize">Screen size <span>(optional)</span></label><input id="testerScreenSize" maxlength="100" placeholder="Detected automatically when possible" type="text"/></div></div>
+<div aria-live="polite" class="portal-device-message" id="portalDeviceMessage" role="status"></div>
+<button class="beta-submit" type="submit">Save Testing Setup <span aria-hidden="true">→</span></button>
+</form>
+</div></section>
+<section class="section alt portal-feedback-history-section" id="your-feedback"><div class="wrap"><div class="portal-section-heading"><div><div class="kicker">Your Feedback</div><h2>Track what you have reported.</h2><p class="lead">We show a simplified status here so you can see whether your report has been received, is being tested, or is resolved.</p></div></div><div class="portal-feedback-history" id="portalFeedbackHistory"><div class="portal-feedback-history-empty">No feedback submitted yet.</div></div></div></section>
+<section class="section" id="submit-feedback"><div class="wrap portal-feedback-layout">
 <div class="portal-feedback-copy">
 <div class="kicker">Feedback</div>
 <h2>Tell us what happened.</h2>
@@ -116,6 +127,7 @@
 <p class="portal-task-policy">Required Beta Program tasks must be completed by the stated deadline to keep beta access active.</p>
 </div>
 </div>
+<div class="portal-retest-backdrop" hidden id="portalRetestBackdrop"><div aria-labelledby="portalRetestTitle" aria-modal="true" class="portal-retest-modal" role="dialog"><div class="portal-retest-top"><div><span>Feedback Retest</span><h2 id="portalRetestTitle">Retest this fix</h2></div><button aria-label="Close retest" class="portal-retest-close" id="portalRetestClose" type="button">×</button></div><p id="portalRetestSubject"></p><div class="beta-field"><label for="portalRetestResult">What happened when you retested?</label><select id="portalRetestResult"><option value="">Choose one</option><option value="Fixed for me">Fixed for me</option><option value="Still happening">Still happening</option></select></div><div class="beta-field"><label for="portalRetestNotes">Retest notes <span>(optional)</span></label><textarea id="portalRetestNotes" maxlength="2000" placeholder="Tell us what you tested and anything you noticed."></textarea></div><div aria-live="polite" class="portal-task-message" id="portalRetestMessage" role="status"></div><button class="beta-submit" id="portalRetestSubmit" type="button">Submit Retest <span aria-hidden="true">→</span></button></div></div>
 <div class="portal-shortcut-toast" id="portalShortcutToast" hidden role="status" aria-live="polite"></div>
-<script src="firebase-config.js?v=59"></script><script src="beta-portal-firebase.js?v=59" type="module"></script></body>
+<script src="firebase-config.js?v=65"></script><script src="beta-portal-firebase.js?v=65" type="module"></script></body>
 </html>
