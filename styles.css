@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 67 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 68 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
