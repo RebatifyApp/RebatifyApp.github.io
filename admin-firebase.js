@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 66
+// Rebatify Beta Admin — Website Build 67
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -374,7 +374,7 @@ async function loadFeedback(force=false){
   const privateNotes=new Map(notesSnap.docs.map(d=>[d.id,String(d.data().adminNotes||'')]));
   const raw=snap.docs.map(normalizeDoc);
 
-  // Build 66 privacy migration: legacy private notes are copied to the admin-only
+  // Build 67 privacy migration: legacy private notes are copied to the admin-only
   // collection and the tester-readable betaFeedback.adminNotes field is cleared.
   const legacy=raw.filter(f=>String(f.adminNotes||'').length>0);
   if(legacy.length){
@@ -958,144 +958,39 @@ async function callWorkerAdminAction(type,payload={}){
     return result;
   }finally{clearTimeout(timer);}
 }
-async function provisionTesterAccess(a){
-  const result = await callWorkerAdminAction('admin-provision-beta-user', {
-    email: String(a.email || '').toLowerCase(),
-    name: a.fullName || '',
-    platform: a.platform || ''
-  });
-  const uid = String(result.uid || '').trim();
-  if (!uid) throw new Error('The Rebatify admin service did not return a tester account ID.');
-
-  const userRef = doc(db, 'betaUsers', uid);
-  const existing = await getDoc(userRef);
-  const existingData = existing.exists() ? existing.data() : {};
-  await setDoc(userRef, {
-    name: a.fullName || '',
-    email: String(a.email || '').toLowerCase(),
-    platform: a.platform || '',
-    status: 'Approved',
-    accessStatus: 'Enabled',
-    applicationId: a.id,
-    authMethod: 'Email verification code',
-    timelineStage: existingData.timelineStage || 'approved',
-    timelineUpdatedAt: existingData.timelineUpdatedAt || serverTimestamp(),
-    createdAt: existingData.createdAt || serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    lastLogin: existingData.lastLogin || null
-  }, { merge: true });
-
-  if (a.inviteId) await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
-  await updateDoc(doc(db,'betaApplications',a.id),{
-    status:'Approved',
-    portalAccess:'Enabled',
-    testerUid:uid,
-    inviteId:deleteField(),
-    inviteEmailStatus:'Sending',
-    lastUpdated:serverTimestamp()
-  });
-  a.status='Approved';
-  a.portalAccess='Enabled';
-  a.testerUid=uid;
-  a.inviteId='';
-  a.inviteEmailStatus='Sending';
-  a.lastUpdated=new Date();
-  return uid;
-}
-async function queueDecisionEmail(a,status){
-  if(!emailAutomationEnabled||!emailWorkerEndpoint)return false;
-  const map={Waitlist:'waitlist',Declined:'declined',Inactive:'inactive'};
-  const type=map[status];if(!type)return false;
-  await sendWorkerEmail(type,a);return true;
-}
-
-async function approveApplicant(a){
-  const old=a.status;
-  await provisionTesterAccess(a);
-  if(old!=='Approved')updateMetricTransition(old,'Approved',a.platform);
-  try{
-    await sendWorkerEmail('invite',a);
-    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Sent',inviteEmailSentAt:serverTimestamp(),lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
-    a.inviteEmailStatus='Sent';a.inviteEmailSentAt=new Date();a.lastDecisionEmail=new Date();
-  }catch(error){
-    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Error',lastUpdated:serverTimestamp()}).catch(()=>{});
-    a.inviteEmailStatus='Error';
-    error.rebatifyApprovalCompleted=true;
-    throw error;
-  }
-}
-
-async function statusAction(a,newStatus,portalAccess){
-  const old=a.status;const changes={status:newStatus,portalAccess,lastUpdated:serverTimestamp()};
-  if(['Waitlist','Declined','Inactive'].includes(newStatus))changes.lastDecisionEmail=serverTimestamp();
-  await updateDoc(doc(db,'betaApplications',a.id),changes);
-  if(a.testerUid){
-    const accessStatus=portalAccess==='Enabled'?'Enabled':'Disabled';
-    await updateDoc(doc(db,'betaUsers',a.testerUid),{status:newStatus,accessStatus,updatedAt:serverTimestamp()});
-    if(state.loaded.testers){const t=state.testers.find(x=>x.uid===a.testerUid);if(t){t.status=newStatus;t.accessStatus=accessStatus;renderTesters();}}
-  }
-  if(['Waitlist','Declined','Inactive'].includes(newStatus))await queueDecisionEmail(a,newStatus).catch(()=>{});
-  a.status=newStatus;a.portalAccess=portalAccess;a.lastUpdated=new Date();updateMetricTransition(old,newStatus,a.platform);
-}
-async function resendInvite(a){
-  if(!a.testerUid || a.portalAccess!=='Enabled') await provisionTesterAccess(a);
-  try{
-    await sendWorkerEmail('invite',a);
-    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Sent',inviteEmailSentAt:serverTimestamp(),lastDecisionEmail:serverTimestamp(),lastUpdated:serverTimestamp()});
-    a.inviteEmailStatus='Sent';a.inviteEmailSentAt=new Date();a.lastDecisionEmail=new Date();
-  }catch(error){
-    await updateDoc(doc(db,'betaApplications',a.id),{inviteEmailStatus:'Error',lastUpdated:serverTimestamp()}).catch(()=>{});
-    a.inviteEmailStatus='Error';
-    throw error;
-  }
-}
-async function deleteTesterRecordsByEmail(email){
-  const normalizedEmail=String(email||'').trim().toLowerCase();
-  if(!normalizedEmail)return 0;
-  const snap=await getDocs(query(collection(db,'betaUsers'),where('email','==',normalizedEmail)));
-  await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
-  if(state.loaded.testers){
-    const removedIds=new Set(snap.docs.map(d=>d.id));
-    state.testers=state.testers.filter(t=>!removedIds.has(t.uid)&&String(t.email||'').trim().toLowerCase()!==normalizedEmail);
-    renderTesters();
-  }
-  return snap.size;
-}
-async function deleteTaskAssignmentsForTester(email,uid=''){
-  const normalizedEmail=String(email||'').trim().toLowerCase();
-  const docs=new Map();
-  if(normalizedEmail){const snap=await getDocs(query(collection(db,'betaTaskAssignments'),where('email','==',normalizedEmail)));snap.docs.forEach(d=>docs.set(d.id,d.ref));}
-  if(uid){const snap=await getDocs(query(collection(db,'betaTaskAssignments'),where('testerUid','==',uid)));snap.docs.forEach(d=>docs.set(d.id,d.ref));}
-  await Promise.all([...docs.values()].map(ref=>deleteDoc(ref)));
-  if(state.loaded.tasks){const ids=new Set(docs.keys());state.taskAssignments=state.taskAssignments.filter(a=>!ids.has(a.id));renderTasks();}
-  return docs.size;
-}
-async function deleteTesterOnly(t){
-  const email=String(t.email||'').trim().toLowerCase();
-  await callWorkerAdminAction('admin-delete-auth-user',{email});
-  await deleteTaskAssignmentsForTester(email,t.uid);
-  await deleteTesterRecordsByEmail(email);
-}
-async function deleteApplication(a){
-  // A deleted application must leave no stale portal identity behind. Clean up
-  // the Auth user plus every betaUsers document for this email, including
-  // duplicate records left by earlier beta builds/tests.
-  const email=String(a.email||'').trim().toLowerCase();
-  await callWorkerAdminAction('admin-delete-auth-user',{email});
-  await deleteTaskAssignmentsForTester(email,a.testerUid||'');
-  await deleteTesterRecordsByEmail(email);
-  if(a.testerUid){
-    await deleteDoc(doc(db,'betaUsers',a.testerUid)).catch(()=>{});
-  }
-  if(a.inviteId)await deleteDoc(doc(db,'betaInvites',a.inviteId)).catch(()=>{});
-  await deleteDoc(doc(db,'betaApplications',a.id));
-  state.applications=state.applications.filter(x=>x.id!==a.id);
-  state.recentApplications=state.recentApplications.filter(x=>x.id!==a.id);
+async function refreshApplicationAdminData(){
   state.loaded.applications=false;
+  state.loaded.testers=false;
+  state.loaded.tasks=false;
+  await Promise.all([loadApplications(true),loadTesters(true),loadTasks(true)]);
   await loadOverview();
-  if(activeView==='applications')await loadApplications(true);
-  if(activeView==='testers'){await loadTesters(true);await loadTasks(true);renderTesters();}
+  if(activeView==='applications')renderApplications();
+  if(activeView==='testers')renderTesters();
+  if(activeView==='tasks')renderTasks();
+  if(activeView==='announcements')renderAnnouncements();
 }
+
+async function runApplicationAdminAction(a,action){
+  const result=await callWorkerAdminAction('admin-application-action',{applicationId:a.id,action});
+  await refreshApplicationAdminData();
+  return result;
+}
+
+async function approveApplicant(a){return runApplicationAdminAction(a,'approve');}
+async function statusAction(a,newStatus,portalAccess){
+  const action=String(newStatus||'').toLowerCase()==='waitlist'?'waitlist':String(newStatus||'').toLowerCase()==='declined'?'decline':String(newStatus||'').toLowerCase()==='inactive'?'inactive':'active';
+  return runApplicationAdminAction(a,action);
+}
+async function resendInvite(a){return runApplicationAdminAction(a,'resend');}
+async function deleteTesterOnly(t){
+  const result=await callWorkerAdminAction('admin-delete-tester',{email:String(t.email||'').trim().toLowerCase(),uid:t.uid||''});
+  state.loaded.testers=false;state.loaded.tasks=false;
+  await Promise.all([loadTesters(true),loadTasks(true)]);
+  await loadOverview();
+  if(activeView==='testers')renderTesters();
+  return result;
+}
+async function deleteApplication(a){return runApplicationAdminAction(a,'delete');}
 
 
 async function refreshActiveView(){
@@ -1285,23 +1180,20 @@ document.addEventListener('click',async e=>{
     if(confirmation&&!(await confirmAction(confirmation,['decline','inactive','delete'].includes(task)?'danger':'')))return;
     actionBtn.disabled=true;
     try{
-      if(task==='approve')await approveApplicant(a);
-      if(task==='waitlist')await statusAction(a,'Waitlist','Disabled');
-      if(task==='decline')await statusAction(a,'Declined','Disabled');
-      if(task==='inactive')await statusAction(a,'Inactive','Disabled');
-      if(task==='active')await statusAction(a,'Active','Enabled');
-      if(task==='resend')await resendInvite(a);
-      if(task==='delete')await deleteApplication(a);
-      if(task!=='delete'){if(state.loaded.applications)renderApplications();renderOverview();}
-      const messages={approve:'Tester approved, passwordless portal access enabled, and the branded invitation was sent.',resend:'Branded Rebatify Beta Program Portal invitation sent.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester marked active.',delete:'Application, all matching tester profiles, and login deleted.'};
-      showToast(messages[task]||'Tester record updated.');closeDrawer();
+      let result={};
+      if(task==='approve')result=await approveApplicant(a);
+      if(task==='waitlist')result=await statusAction(a,'Waitlist','Disabled');
+      if(task==='decline')result=await statusAction(a,'Declined','Disabled');
+      if(task==='inactive')result=await statusAction(a,'Inactive','Disabled');
+      if(task==='active')result=await statusAction(a,'Active','Enabled');
+      if(task==='resend')result=await resendInvite(a);
+      if(task==='delete')result=await deleteApplication(a);
+      const messages={approve:'Tester approved and portal access enabled.',resend:'Rebatify Beta Program Portal invitation processed.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester access restored and marked active.',delete:'Application, matching tester profiles, task assignments, and login deleted.'};
+      const emailNote=result&&result.emailError?' The record was updated, but the email notification could not be sent.':'';
+      showToast((messages[task]||'Tester record updated.')+emailNote,result&&result.emailError?'error':'success');closeDrawer();
     }catch(err){
-      if(task==='approve'&&err&&err.rebatifyApprovalCompleted){
-        showToast('Tester approved, but the branded invitation email could not be sent. Use Resend Invitation after the email service is connected. '+friendlyFirebaseError(err),'error');
-        if(state.loaded.applications)renderApplications();renderOverview();openApplicationRecord(a);
-      }else{
-        showToast(friendlyFirebaseError(err),'error');
-      }
+      console.error('Beta Admin application action failed:',task,err);
+      showToast('This admin action could not be completed. '+friendlyFirebaseError(err),'error');
     }
     finally{actionBtn.disabled=false;}
     return;
