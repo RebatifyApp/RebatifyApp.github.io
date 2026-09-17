@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 67
+// Rebatify Beta Admin — Website Build 68
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -948,12 +948,20 @@ async function sendWorkerEmail(type,a){
 async function callWorkerAdminAction(type,payload={}){
   if(!emailWorkerEndpoint){const err=new Error('Connect the Cloudflare service in Admin Overview before using this action.');err.code='rebatify/service-not-configured';throw err;}
   if(!auth.currentUser){const err=new Error('Administrator session expired.');err.code='auth/invalid-credential';throw err;}
-  const token=await auth.currentUser.getIdToken();
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),20000);
-  try{
+  const perform=async(forceRefresh)=>{
+    const token=await auth.currentUser.getIdToken(forceRefresh);
     const response=await fetch(emailWorkerEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,...payload}),signal:controller.signal});
     let result={};try{result=await response.json();}catch(_){ }
+    return {response,result};
+  };
+  try{
+    let attempt=await perform(true);
+    if(attempt.response.status===401&&auth.currentUser){
+      attempt=await perform(true);
+    }
+    const {response,result}=attempt;
     if(!response.ok||result.ok!==true){const err=new Error(result.error||'The Rebatify admin service could not complete this action.');err.code='rebatify/admin-action-failed';throw err;}
     return result;
   }finally{clearTimeout(timer);}
