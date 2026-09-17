@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 70
+// Rebatify Beta Admin — Website Build 71
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -30,7 +30,8 @@ import {
   serverTimestamp,
   deleteField,
   writeBatch,
-  Timestamp
+  Timestamp,
+  addDoc
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 'use strict';
@@ -242,19 +243,28 @@ function iconSvg(name){
   };
   return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(paths[name]||paths.bug)+'</svg>';
 }
-function typeIcon(type){if(type==='Feature Request')return iconSvg('feature');if(type==='Crash / Performance')return iconSvg('crash');if(type==='Confusing Experience')return iconSvg('confusing');if(type==='General Feedback')return iconSvg('general');return iconSvg('bug');}
+function typeIcon(type){if(type==='Account / Access Problem')return iconSvg('general');if(type==='Feature Request')return iconSvg('feature');if(type==='Crash / Performance')return iconSvg('crash');if(type==='Confusing Experience')return iconSvg('confusing');if(type==='General Feedback')return iconSvg('general');return iconSvg('bug');}
 function normalizeDoc(snap){return { id:snap.id, row:snap.id, ...snap.data() };}
 function isEnabledStatus(status){return ['Approved','Active'].includes(status);}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FEEDBACK_WORKFLOW = ['New','Reviewing','Confirmed','Fixed','Needs Retest','Closed'];
+const SUPPORT_WORKFLOW = ['Waiting for Rebatify','Waiting for Tester','Resolved'];
+function isSupportConversation(f){return String(f&&f.workflowType||'Feedback')==='Support'||String(f&&f.type||'')==='Account / Access Problem';}
 function canonicalFeedbackStatus(value){
   const raw=String(value||'New');
   if(raw==='Planned')return 'Confirmed';
   if(raw==='Declined')return 'Closed';
+  if(SUPPORT_WORKFLOW.includes(raw))return raw;
   return FEEDBACK_WORKFLOW.includes(raw)?raw:'New';
 }
 function testerFacingFeedbackStatus(f){
+  if(isSupportConversation(f)){
+    const status=String(f&&f.status||'Waiting for Rebatify');
+    if(status==='Resolved')return 'Resolved';
+    if(status==='Waiting for Tester')return 'Waiting for you';
+    return 'Waiting for Rebatify';
+  }
   const status=canonicalFeedbackStatus(f&&f.status);
   if(status==='Closed')return 'Resolved';
   if(status==='Needs Retest')return f&&f.retestedAt?'Retest submitted':'Needs retest';
@@ -290,7 +300,8 @@ function testerActivityInfo(t){
 }
 function testerScore(t){
   const tasks=testerTaskRows(t);
-  const feedback=testerFeedbackRows(t);
+  const conversations=testerFeedbackRows(t);
+  const feedback=conversations.filter(f=>!isSupportConversation(f));
   const lastFeedback=mostRecentBy(feedback,'submittedAt');
   const completed=tasks.filter(a=>a.status==='Completed').length;
   const pending=tasks.filter(a=>a.status==='Pending').length;
@@ -340,7 +351,7 @@ async function loadMetrics(){
     countQuery(query(apps,where('status','==','Inactive'))),
     countQuery(query(apps,where('platform','==','iOS'))),
     countQuery(query(apps,where('platform','==','Android'))),
-    countQuery(query(feedback,where('status','==','New'))),
+    Promise.all([countQuery(query(feedback,where('status','==','New'))),countQuery(query(feedback,where('status','==','Waiting for Rebatify')))]).then(([a,b])=>a+b),
     getDocs(query(collection(db,'betaTaskAssignments'),where('status','==','Pending'),limit(500)))
   ]);
   const activeTasks=pendingAssignmentsSnap.docs.filter(d=>d.data().recordType!=='Announcement').length;
@@ -561,13 +572,13 @@ function feedbackFiltered(){
   const q=document.getElementById('feedbackSearch').value.trim().toLowerCase();const status=document.getElementById('feedbackStatusFilter').value;const type=document.getElementById('feedbackTypeFilter').value;
   return state.feedback.filter(f=>{
     const canonical=canonicalFeedbackStatus(f.status);
-    const hay=((f.subject||'')+' '+(f.name||'')+' '+(f.email||'')+' '+(f.details||'')+' '+(f.retestNotes||'')+' '+(f.retestResult||'')).toLowerCase();
+    const hay=((f.subject||'')+' '+(f.name||'')+' '+(f.email||'')+' '+(f.details||'')+' '+(f.retestNotes||'')+' '+(f.retestResult||'')+' '+(f.supportAccountEmail||'')).toLowerCase();
     return (!q||hay.includes(q))&&(!status||canonical===status)&&(!type||f.type===type);
   });
 }
 function renderFeedback(){
   const data=feedbackFiltered();const list=document.getElementById('feedbackList');
-  list.innerHTML=data.map(f=>{const status=canonicalFeedbackStatus(f.status);const publicStatus=testerFacingFeedbackStatus(f);return `<button class="admin-feedback-card" type="button" data-open-feedback="${esc(f.id)}"><span class="admin-feedback-icon">${typeIcon(f.type)}</span><span class="admin-feedback-card-main"><span class="admin-feedback-card-top"><strong>${esc(f.subject)}</strong><span class="admin-status-pill ${statusClass(status)}">${esc(status)}</span></span><span class="admin-feedback-card-meta">${esc(f.name)} · ${esc(f.platform)} · ${relativeDate(f.submittedAt)} · Tester sees: ${esc(publicStatus)}</span><span class="admin-feedback-card-preview">${esc(f.details)}</span></span><span class="admin-feedback-chevron">›</span></button>`;}).join('');
+  list.innerHTML=data.map(f=>{const status=canonicalFeedbackStatus(f.status);const publicStatus=testerFacingFeedbackStatus(f);const workflow=isSupportConversation(f)?'Support':'Beta Feedback';return `<button class="admin-feedback-card" type="button" data-open-feedback="${esc(f.id)}"><span class="admin-feedback-icon">${typeIcon(f.type)}</span><span class="admin-feedback-card-main"><span class="admin-feedback-card-top"><strong>${esc(f.subject)}</strong><span class="admin-status-pill ${statusClass(status)}">${esc(status)}</span></span><span class="admin-feedback-card-meta">${esc(workflow)} · ${esc(f.name)} · ${esc(f.platform)} · ${relativeDate(f.lastMessageAt||f.updatedAt||f.submittedAt)} · Tester sees: ${esc(publicStatus)}</span><span class="admin-feedback-card-preview">${esc(f.details)}</span></span><span class="admin-feedback-chevron">›</span></button>`;}).join('');
   document.getElementById('feedbackEmpty').hidden=data.length>0;
 }
 
@@ -882,22 +893,28 @@ function openTesterRecord(t){
   const actions=[accessAction,deleteAction].filter(Boolean).join('');
   const nextIndex=Math.min(TIMELINE_STAGES.length-1,timelineStageRank(timelineStage)+1);const canAdvance=timelineStage!=='activeTesting'&&t.accessStatus==='Enabled';
   const lastActive=activity.anchor?formatDate(activity.anchor):'Never';
-  const lastFeedbackText=lastFeedback?`${formatDate(lastFeedback.submittedAt)} · ${lastFeedback.subject||'Feedback'}`:'No feedback submitted yet';
+  const lastFeedbackText=lastFeedback?`${formatDate(lastFeedback.submittedAt)} · ${lastFeedback.subject||'Feedback'}`:'No beta feedback submitted yet';
   openDrawer('Tester Activity',t.name,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-activity-pill ${activity.className}">${esc(activity.label)}</span><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus)}</span><span class="admin-platform-pill">${esc(t.platform)}</span><span class="admin-timeline-chip timeline-${esc(timelineStage)}">${esc(timelineStageLabel(timelineStage,t.platform))}</span></div><div class="admin-scorecard-drawer"><div><span>Tasks Completed</span><strong>${score.tasksCompleted}</strong><small>${score.tasksPending} pending</small></div><div><span>Feedback Submitted</span><strong>${score.feedbackCount}</strong><small>${esc(lastFeedbackText)}</small></div><div><span>Retests Completed</span><strong>${score.retests}</strong><small>Feedback fixes retested</small></div><div><span>Days Inactive</span><strong>${activity.days===999?'—':activity.days}</strong><small>${esc(activity.reason)}</small></div></div><div class="admin-detail-grid"><div><span>Email</span><strong>${esc(t.email)}</strong></div><div><span>Last Portal Activity</span><strong>${esc(lastActive)}</strong></div><div><span>Last Login</span><strong>${esc(t.lastLogin?formatDate(t.lastLogin):'Never')}</strong></div><div><span>Last Feedback</span><strong>${esc(lastFeedback?formatDate(lastFeedback.submittedAt):'Never')}</strong></div><div><span>Last Reported Build</span><strong>${esc(build||'Not provided')}</strong></div><div><span>Device Model</span><strong>${esc(t.deviceModel||device||'Not provided')}</strong></div><div><span>OS Version</span><strong>${esc(t.osVersion||'Not provided')}</strong></div><div><span>Screen Size</span><strong>${esc(t.screenSize||'Not provided')}</strong></div><div><span>Created</span><strong>${esc(formatDate(t.createdAt))}</strong></div><div><span>Authentication</span><strong>Email verification code</strong></div></div><div class="admin-timeline-drawer-card"><div><span class="admin-detail-label">Program timeline stage</span><p>Choose the milestone this tester has reached. Their portal will mark earlier steps complete and highlight what they should do next.</p></div><div class="beta-field"><label for="drawerTimelineStage">Current milestone</label><select id="drawerTimelineStage">${timelineStageOptions(t.platform,timelineStage)}</select></div><div class="admin-timeline-drawer-actions"><button class="admin-secondary-button" data-save-timeline="${esc(t.uid)}" type="button">Set Exact Stage</button><button class="admin-primary-button" data-advance-timeline="${esc(t.uid)}" data-next-stage="${esc(TIMELINE_STAGES[nextIndex])}" type="button"${canAdvance?'':' disabled'}>${canAdvance?'Advance to Next Stage':'Active Testing'}</button></div></div><div><label class="admin-detail-label">Outstanding required tasks</label><div class="admin-task-response-list">${pendingHtml}</div></div><div class="admin-drawer-actions">${actions}</div></div>`);
 }
+function feedbackWorkflowOptions(f){
+  const workflow=isSupportConversation(f)?SUPPORT_WORKFLOW:FEEDBACK_WORKFLOW;const status=canonicalFeedbackStatus(f.status);
+  return workflow.map(x=>`<option${x===status?' selected':''}>${x}</option>`).join('');
+}
+function adminConversationMessageHtml(m){const admin=String(m.authorRole||'').toLowerCase()==='admin';return `<div class="admin-chat-message ${admin?'from-admin':'from-tester'}"><div><strong>${admin?'Rebatify':'Tester'}</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'')}</p></div>`;}
+async function loadAdminConversationMessages(feedbackId){
+  const list=document.getElementById('drawerConversationThread');if(!list)return;
+  try{const snap=await getDocs(query(collection(db,'betaFeedback',feedbackId,'messages'),orderBy('createdAt','asc')));const rows=snap.docs.map(normalizeDoc);list.innerHTML=rows.length?rows.map(adminConversationMessageHtml).join(''):'<div class="admin-empty-inline">No replies yet.</div>';list.scrollTop=list.scrollHeight;}catch(error){list.innerHTML='<div class="admin-empty-inline">Conversation replies could not be loaded.</div>';}
+}
 function openFeedbackRecord(f){
-  const status=canonicalFeedbackStatus(f.status);const publicStatus=testerFacingFeedbackStatus(f);
-  const originalBlock=`<section class="admin-feedback-section admin-feedback-original"><div class="admin-feedback-section-head"><div><span>Original Report</span><strong>Tester feedback</strong></div><time>${esc(formatDate(f.submittedAt))}</time></div><p>${esc(f.details||'No report details provided.')}</p></section>`;
+  const status=canonicalFeedbackStatus(f.status);const publicStatus=testerFacingFeedbackStatus(f);const support=isSupportConversation(f);
+  const originalBlock=`<section class="admin-feedback-section admin-feedback-original"><div class="admin-feedback-section-head"><div><span>Original ${support?'Support Request':'Report'}</span><strong>${support?'Tester request':'Tester feedback'}</strong></div><time>${esc(formatDate(f.submittedAt))}</time></div><p>${esc(f.details||'No details provided.')}</p>${f.supportAccountEmail?`<div class="admin-support-account"><span>Account supplied by tester</span><strong>${esc(f.supportAccountEmail)}</strong></div>`:''}</section>`;
   let retestBlock='';
-  if(status==='Needs Retest'||f.retestedAt){
-    if(f.retestedAt){
-      const resultClass=String(f.retestResult||'').toLowerCase().includes('still')?'is-still-happening':'is-fixed';
-      retestBlock=`<section class="admin-feedback-section admin-feedback-retest"><div class="admin-feedback-section-head"><div><span>Retest Result</span><strong class="admin-retest-result-badge ${resultClass}">${esc(f.retestResult||'Retest submitted')}</strong></div><time>${esc(formatDate(f.retestedAt))}</time></div><p>${f.retestNotes?esc(f.retestNotes):'<em>No additional retest notes were provided.</em>'}</p></section>`;
-    }else{
-      retestBlock=`<section class="admin-feedback-section admin-feedback-retest is-pending"><div class="admin-feedback-section-head"><div><span>Retest Result</span><strong>Waiting for tester</strong></div></div><p>The tester has been asked to retest this issue. Their portal shows the original report and requires a retest response.</p></section>`;
-    }
+  if(!support&&(status==='Needs Retest'||f.retestedAt)){
+    if(f.retestedAt){const resultClass=String(f.retestResult||'').toLowerCase().includes('still')?'is-still-happening':'is-fixed';retestBlock=`<section class="admin-feedback-section admin-feedback-retest"><div class="admin-feedback-section-head"><div><span>Retest Result</span><strong class="admin-retest-result-badge ${resultClass}">${esc(f.retestResult||'Retest submitted')}</strong></div><time>${esc(formatDate(f.retestedAt))}</time></div><p>${f.retestNotes?esc(f.retestNotes):'<em>No additional retest notes were provided.</em>'}</p></section>`;}else{retestBlock=`<section class="admin-feedback-section admin-feedback-retest is-pending"><div class="admin-feedback-section-head"><div><span>Retest Result</span><strong>Waiting for tester</strong></div></div><p>The tester has been asked to retest this issue. Their portal shows the original report and requires a retest response.</p></section>`;}
   }
-  openDrawer('Tester Feedback',f.subject,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-feedback-type-chip">${esc(f.type)}</span><span class="admin-platform-pill">${esc(f.platform)}</span><span class="admin-subtle-chip">Tester sees: ${esc(publicStatus)}</span></div><div class="admin-detail-grid"><div><span>Tester</span><strong>${esc(f.name)}</strong><small>${esc(f.email)}</small></div><div><span>Submitted</span><strong>${esc(formatDate(f.submittedAt))}</strong></div><div><span>Build</span><strong>${esc(f.appVersion||'Not provided')}</strong></div><div><span>Device / OS</span><strong>${esc(f.deviceDetails||[f.deviceModel,f.osVersion].filter(Boolean).join(' · ')||'Not provided')}</strong></div><div><span>Screen Size</span><strong>${esc(f.screenSize||'Not provided')}</strong></div><div><span>Page / Feature</span><strong>${esc(f.pageFeature||'Not provided')}</strong></div></div>${originalBlock}${retestBlock}<div class="beta-field"><label for="drawerFeedbackStatus">Status</label><select id="drawerFeedbackStatus" class="admin-detail-select">${FEEDBACK_WORKFLOW.map(x=>`<option${x===status?' selected':''}>${x}</option>`).join('')}</select></div><div><label class="admin-detail-label" for="drawerFeedbackNotes">Private admin notes</label><textarea id="drawerFeedbackNotes" class="admin-detail-textarea" placeholder="Internal notes, next steps, reproduction details…">${esc(f.adminNotes||'')}</textarea></div><button class="admin-primary-button" data-save-feedback="${esc(f.id)}" type="button">Save Feedback Update</button></div>`);
+  const details=`<div class="admin-detail-grid"><div><span>Tester</span><strong>${esc(f.name)}</strong><small>${esc(f.email)}</small></div><div><span>Submitted</span><strong>${esc(formatDate(f.submittedAt))}</strong></div>${support?`<div><span>Workflow</span><strong>Account / Access Support</strong></div><div><span>Testing Platform</span><strong>${esc(f.platform||'Not provided')}</strong></div>`:`<div><span>Build</span><strong>${esc(f.appVersion||'Not provided')}</strong></div><div><span>Device / OS</span><strong>${esc(f.deviceDetails||[f.deviceModel,f.osVersion].filter(Boolean).join(' · ')||'Not provided')}</strong></div><div><span>Screen Size</span><strong>${esc(f.screenSize||'Not provided')}</strong></div><div><span>Page / Feature</span><strong>${esc(f.pageFeature||'Not provided')}</strong></div>`}</div>`;
+  openDrawer(support?'Support Conversation':'Tester Feedback',f.subject,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-feedback-type-chip">${esc(f.type)}</span><span class="admin-platform-pill">${esc(f.platform)}</span><span class="admin-subtle-chip">Tester sees: ${esc(publicStatus)}</span></div>${details}${originalBlock}${retestBlock}<section class="admin-conversation-section"><div class="admin-feedback-section-head"><div><span>Conversation</span><strong>Replies</strong></div></div><div class="admin-conversation-thread" id="drawerConversationThread"><div class="admin-empty-inline">Loading replies…</div></div><div class="admin-conversation-reply"><label class="admin-detail-label" for="drawerConversationReply">Reply to tester</label><textarea id="drawerConversationReply" class="admin-detail-textarea" maxlength="5000" placeholder="Write a reply…"></textarea><button class="admin-primary-button" data-send-conversation-reply="${esc(f.id)}" type="button">Send Reply</button></div></section><div class="beta-field"><label for="drawerFeedbackStatus">Status</label><select id="drawerFeedbackStatus" class="admin-detail-select">${feedbackWorkflowOptions(f)}</select></div><div><label class="admin-detail-label" for="drawerFeedbackNotes">Private admin notes</label><textarea id="drawerFeedbackNotes" class="admin-detail-textarea" placeholder="Internal notes only administrators can see…">${esc(f.adminNotes||'')}</textarea></div><button class="admin-primary-button" data-save-feedback="${esc(f.id)}" type="button">Save Status &amp; Notes</button></div>`);
+  loadAdminConversationMessages(f.id);
 }
 
 function updateMetricTransition(oldStatus,newStatus,platform){
@@ -1095,7 +1112,8 @@ document.addEventListener('click',async e=>{
   }
 
   const noteBtn=e.target.closest('[data-save-app-notes]');if(noteBtn){const a=await ensureApplicationLoaded(noteBtn.dataset.saveAppNotes);if(!a)return;const notes=document.getElementById('drawerApplicantNotes').value;try{await updateDoc(doc(db,'betaApplications',a.id),{notes,lastUpdated:serverTimestamp()});a.notes=notes;a.lastUpdated=new Date();showToast('Private notes saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
-  const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=canonicalFeedbackStatus(document.getElementById('drawerFeedbackStatus').value);const notes=document.getElementById('drawerFeedbackNotes').value;const oldStatus=canonicalFeedbackStatus(f.status);const oldPublic=testerFacingFeedbackStatus(f);try{const update={status,adminNotes:'',updatedAt:serverTimestamp()};if(status==='Needs Retest'&&oldStatus!=='Needs Retest'&&f.retestedAt){update.retestedAt=null;update.retestResult='';update.retestNotes='';}const batch=writeBatch(db);batch.update(doc(db,'betaFeedback',f.id),update);batch.set(doc(db,'betaFeedbackAdmin',f.id),{feedbackId:f.id,adminNotes:notes,updatedAt:serverTimestamp(),updatedBy:adminEmail},{merge:true});await batch.commit();if(oldStatus==='New'&&status!=='New'&&state.metrics.newFeedback>0)state.metrics.newFeedback--;if(oldStatus!=='New'&&status==='New')state.metrics.newFeedback++;f.status=status;f.adminNotes=notes;f.updatedAt=new Date();if('retestedAt' in update){f.retestedAt=null;f.retestResult='';f.retestNotes='';}const newPublic=testerFacingFeedbackStatus(f);let emailFailed=false;if(newPublic!==oldPublic&&['Reviewing','Fix in progress','Needs retest','Resolved'].includes(newPublic)){try{await callWorkerAdminAction('feedback-status-update',{feedbackId:f.id});}catch(emailErr){emailFailed=true;console.warn('Feedback status email failed:',emailErr);}}renderMetrics();renderFeedback();renderOverview();if(state.loaded.testers)renderTesters();const base=status==='Needs Retest'?'Feedback updated. The tester is now required to retest this issue.':'Feedback updated.';showToast(emailFailed?base+' The status was saved, but the tester email could not be sent.':base,emailFailed?'error':'success');openFeedbackRecord(f);}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
+  const convoReply=e.target.closest('[data-send-conversation-reply]');if(convoReply){const f=await ensureFeedbackLoaded(convoReply.dataset.sendConversationReply);if(!f)return;const input=document.getElementById('drawerConversationReply');const body=String(input?.value||'').trim();if(!body){showToast('Write a reply before sending.','error');return;}convoReply.disabled=true;const original=convoReply.textContent;convoReply.textContent='Sending…';try{const ref=await addDoc(collection(db,'betaFeedback',f.id,'messages'),{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'Rebatify',body,createdAt:serverTimestamp()});const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Admin',updatedAt:serverTimestamp()};if(isSupportConversation(f))update.status='Waiting for Tester';await updateDoc(doc(db,'betaFeedback',f.id),update);f.lastMessageAt=new Date();f.lastMessageBy='Admin';f.updatedAt=new Date();if(isSupportConversation(f))f.status='Waiting for Tester';let emailFailed=false;try{await callWorkerAdminAction('conversation-reply-added',{feedbackId:f.id,messageId:ref.id});}catch(emailErr){emailFailed=true;console.warn('Conversation reply email failed:',emailErr);}renderFeedback();openFeedbackRecord(f);showToast(emailFailed?'Reply saved, but the tester email could not be sent.':'Reply sent to tester.',emailFailed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{convoReply.disabled=false;convoReply.textContent=original;}return;}
+  const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=String(document.getElementById('drawerFeedbackStatus').value||'').trim();const notes=document.getElementById('drawerFeedbackNotes').value;const support=isSupportConversation(f);const oldStatus=canonicalFeedbackStatus(f.status);const oldPublic=testerFacingFeedbackStatus(f);try{if(support&&!SUPPORT_WORKFLOW.includes(status))throw new Error('Choose a valid support status.');if(!support&&!FEEDBACK_WORKFLOW.includes(status))throw new Error('Choose a valid feedback status.');const update={status,adminNotes:'',updatedAt:serverTimestamp()};if(!support&&status==='Needs Retest'&&oldStatus!=='Needs Retest'&&f.retestedAt){update.retestedAt=null;update.retestResult='';update.retestNotes='';}const batch=writeBatch(db);batch.update(doc(db,'betaFeedback',f.id),update);batch.set(doc(db,'betaFeedbackAdmin',f.id),{feedbackId:f.id,adminNotes:notes,updatedAt:serverTimestamp(),updatedBy:adminEmail},{merge:true});await batch.commit();f.status=status;f.adminNotes=notes;f.updatedAt=new Date();if('retestedAt' in update){f.retestedAt=null;f.retestResult='';f.retestNotes='';}const newPublic=testerFacingFeedbackStatus(f);let emailFailed=false;if(newPublic!==oldPublic){const meaningful=support?['Waiting for you','Resolved'].includes(newPublic):['Reviewing','Fix in progress','Needs retest','Resolved'].includes(newPublic);if(meaningful){try{await callWorkerAdminAction('feedback-status-update',{feedbackId:f.id});}catch(emailErr){emailFailed=true;console.warn('Conversation status email failed:',emailErr);}}}state.loaded.feedback=false;await loadFeedback(true);await loadMetrics();renderMetrics();renderOverview();if(state.loaded.testers)renderTesters();const base=!support&&status==='Needs Retest'?'Feedback updated. The tester is now required to retest this issue.':support?'Support conversation updated.':'Feedback updated.';showToast(emailFailed?base+' The status was saved, but the tester email could not be sent.':base,emailFailed?'error':'success');const fresh=state.feedback.find(x=>x.id===f.id)||f;openFeedbackRecord(fresh);}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
   const emailSave=e.target.closest('[data-save-email-worker]');if(emailSave){emailSave.disabled=true;const original=emailSave.textContent;emailSave.textContent='Saving…';try{await saveEmailServiceSettings();showToast('Cloudflare email service connected.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{emailSave.disabled=false;emailSave.textContent=original;}return;}
   const remindAssignmentBtn=e.target.closest('[data-remind-assignment]');if(remindAssignmentBtn){
     const a=state.taskAssignments.find(x=>x.id===remindAssignmentBtn.dataset.remindAssignment);if(!a)return;

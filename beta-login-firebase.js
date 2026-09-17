@@ -15,6 +15,13 @@ const emailInput = document.getElementById('portalEmail');
 const codeInput = document.getElementById('portalCode');
 const codeSent = document.getElementById('portalCodeSent');
 const useDifferent = document.getElementById('portalUseDifferentEmail');
+const supportToggle = document.getElementById('portalSupportToggle');
+const supportPanel = document.getElementById('portalSupportPanel');
+const supportForm = document.getElementById('portalSupportForm');
+const supportEmail = document.getElementById('portalSupportEmail');
+const supportIssue = document.getElementById('portalSupportIssue');
+const supportDetails = document.getElementById('portalSupportDetails');
+const supportMessage = document.getElementById('portalSupportMessage');
 const settings = window.REBATIFY_BETA_SETTINGS || {};
 const workerUrl = String(settings.emailWorkerUrl || '').trim().replace(/\/+$/, '');
 let pendingEmail = '';
@@ -145,5 +152,52 @@ if (useDifferent) {
     codeForm.hidden = true;
     form.hidden = false;
     emailInput.focus();
+  });
+}
+
+
+function setSupportMessage(message='', tone='') {
+  if (!supportMessage) return;
+  supportMessage.textContent = message;
+  supportMessage.className = 'portal-device-message' + (tone ? ` ${tone}` : '');
+}
+
+if (supportToggle && supportPanel) {
+  supportToggle.addEventListener('click', () => {
+    supportPanel.hidden = !supportPanel.hidden;
+    supportToggle.textContent = supportPanel.hidden ? 'Need help signing in?' : 'Hide account & access help';
+    if (!supportPanel.hidden) {
+      if (supportEmail && !supportEmail.value) supportEmail.value = String(emailInput?.value || prefill || '').trim().toLowerCase();
+      setTimeout(() => supportEmail?.focus(), 50);
+    }
+  });
+}
+
+if (supportForm) {
+  supportForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!validWorkerUrl()) return;
+    if (!supportForm.checkValidity()) { supportForm.reportValidity(); return; }
+    const button = document.getElementById('portalSupportSubmit');
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = 'Sending…';
+    setSupportMessage('');
+    try {
+      await workerPost({
+        type: 'public-support-request',
+        email: String(supportEmail?.value || '').trim().toLowerCase(),
+        issue: String(supportIssue?.value || '').trim(),
+        details: String(supportDetails?.value || '').trim()
+      });
+      setSupportMessage('Your request was submitted. If this email matches your Rebatify Beta application or tester account, you will receive a confirmation email and the Rebatify team has been notified.', 'success');
+      supportIssue.value = '';
+      supportDetails.value = '';
+    } catch (error) {
+      setSupportMessage(error.message || 'We could not send your support request right now. Please try again.', 'error');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = original;
+    }
   });
 }

@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Settings - Website Build 70
+// Rebatify Beta Tester Settings - Website Build 71
 import { firebaseConfigured, auth, db, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';

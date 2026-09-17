@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 70
+// Rebatify Beta Tester Portal - Website Build 71
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   query,
   where,
-  getDocs
+  getDocs,
+  orderBy
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const loading = document.getElementById('portalLoading');
@@ -27,6 +28,7 @@ let activeTask = null;
 let portalAnnouncements = [];
 let feedbackHistory = [];
 let activeRetestFeedback = null;
+let activeConversation = null;
 let lastFirestoreActivityWrite = 0;
 const PORTAL_ACTIVITY_WRITE_MS = 5 * 60 * 1000;
 const taskBackdrop = document.getElementById('portalTaskBackdrop');
@@ -102,7 +104,14 @@ function testingSetupComplete(profile=currentProfile||{}){
   return !!String(profile.deviceModel||'').trim() && !!String(profile.osVersion||'').trim() && !!String(profile.screenSize||'').trim() && distributionAccountConfirmed(profile);
 }
 
+function isSupportConversation(f){return String(f&&f.workflowType||'Feedback')==='Support'||String(f&&f.type||'')==='Account / Access Problem';}
 function feedbackPublicStatus(f){
+  if(isSupportConversation(f)){
+    const status=String(f.status||'Waiting for Rebatify');
+    if(status==='Resolved')return {label:'Resolved',className:'resolved'};
+    if(status==='Waiting for Tester')return {label:'Waiting for you',className:'testing'};
+    return {label:'Waiting for Rebatify',className:'reviewing'};
+  }
   const raw=String(f.status||'New');const status=raw==='Planned'?'Confirmed':raw==='Declined'?'Closed':raw;
   if(status==='Closed')return {label:'Resolved',className:'resolved'};
   if(status==='Needs Retest'&&f.retestedAt)return {label:'Retest submitted',className:'testing'};
@@ -261,8 +270,56 @@ async function loadFeedbackHistory(uid){
 }
 function renderFeedbackHistory(){
   const list=document.getElementById('portalFeedbackHistory');if(!list)return;
-  if(!feedbackHistory.length){list.innerHTML='<div class="portal-feedback-history-empty">No feedback submitted yet.</div>';return;}
-  list.innerHTML=feedbackHistory.slice(0,30).map(f=>{const publicStatus=feedbackPublicStatus(f);const needsRetest=String(f.status||'')==='Needs Retest'&&!f.retestedAt;const action=needsRetest?`<button class="portal-retest-button" data-retest-feedback="${escapeHtml(f.id)}" type="button">Retest This Issue</button>`:'';return `<article class="portal-feedback-history-card${needsRetest?' needs-action':''}"><div class="portal-feedback-history-top"><div><span>${escapeHtml(f.type||'Feedback')}</span><h3>${escapeHtml(f.subject||'Feedback')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}${action}</article>`;}).join('');
+  if(!feedbackHistory.length){list.innerHTML='<div class="portal-feedback-history-empty">No conversations yet.</div>';return;}
+  list.innerHTML=feedbackHistory.slice(0,40).map(f=>{
+    const publicStatus=feedbackPublicStatus(f);const support=isSupportConversation(f);const needsRetest=!support&&String(f.status||'')==='Needs Retest'&&!f.retestedAt;const replyNeeded=support&&String(f.status||'')==='Waiting for Tester';
+    const action=needsRetest?`<button class="portal-retest-button" data-retest-feedback="${escapeHtml(f.id)}" type="button">Retest This Issue</button>`:(replyNeeded?`<button class="portal-conversation-open portal-reply-needed-button" data-open-conversation="${escapeHtml(f.id)}" type="button">Reply Needed</button>`:'');
+    const workflow=support?'Support':'Beta Feedback';
+    return `<article class="portal-feedback-history-card${(needsRetest||replyNeeded)?' needs-action':''}"><div class="portal-feedback-history-top"><div><span>${escapeHtml(workflow)} · ${escapeHtml(f.type||'Conversation')}</span><h3>${escapeHtml(f.subject||'Conversation')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}${f.supportAccountEmail?`<span>${escapeHtml(f.supportAccountEmail)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}<div class="portal-conversation-card-actions"><button class="portal-conversation-open" data-open-conversation="${escapeHtml(f.id)}" type="button">Open Conversation</button>${action}</div></article>`;
+  }).join('');
+}
+
+function conversationMessageHtml(message){
+  const admin=String(message.authorRole||'').toLowerCase()==='admin';
+  return `<div class="portal-chat-message ${admin?'from-rebatify':'from-tester'}"><div class="portal-chat-message-head"><strong>${admin?'Rebatify':'You'}</strong><time>${escapeHtml(formatPortalDate(message.createdAt))}</time></div><p>${escapeHtml(message.body||'')}</p></div>`;
+}
+async function loadConversationMessages(feedbackId){
+  const snap=await getDocs(query(collection(db,'betaFeedback',feedbackId,'messages'),orderBy('createdAt','asc')));
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function openConversation(id){
+  const f=feedbackHistory.find(x=>x.id===id);if(!f)return;activeConversation=f;
+  const back=document.getElementById('portalConversationBackdrop');const thread=document.getElementById('portalConversationThread');
+  document.getElementById('portalConversationTitle').textContent=f.subject||'Conversation';
+  document.getElementById('portalConversationKicker').textContent=isSupportConversation(f)?'Support Conversation':'Beta Feedback Conversation';
+  document.getElementById('portalConversationType').textContent=f.type||'';
+  const ps=feedbackPublicStatus(f);const status=document.getElementById('portalConversationStatus');status.textContent=ps.label;status.className='portal-feedback-public-status '+ps.className;
+  document.getElementById('portalConversationReply').value='';document.getElementById('portalConversationMessage').textContent='';
+  thread.innerHTML=`<div class="portal-chat-message from-tester initial"><div class="portal-chat-message-head"><strong>You · Original submission</strong><time>${escapeHtml(formatPortalDate(f.submittedAt))}</time></div><p>${escapeHtml(f.details||'')}</p>${f.supportAccountEmail?`<small>Account supplied: ${escapeHtml(f.supportAccountEmail)}</small>`:''}${f.appVersion?`<small>${escapeHtml(f.appVersion)}${f.pageFeature?' · '+escapeHtml(f.pageFeature):''}</small>`:''}</div><div class="portal-chat-loading">Loading replies…</div>`;
+  back.hidden=false;document.body.classList.add('portal-conversation-open');
+  try{
+    const messages=await loadConversationMessages(id);
+    const loading=thread.querySelector('.portal-chat-loading');if(loading)loading.remove();
+    messages.forEach(m=>thread.insertAdjacentHTML('beforeend',conversationMessageHtml(m)));
+    if(f.retestedAt)thread.insertAdjacentHTML('beforeend',`<div class="portal-chat-system"><strong>Retest submitted: ${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`);
+    thread.scrollTop=thread.scrollHeight;
+  }catch(error){const loading=thread.querySelector('.portal-chat-loading');if(loading)loading.textContent='Replies could not be loaded right now.';}
+}
+function closeConversation(){activeConversation=null;const back=document.getElementById('portalConversationBackdrop');if(back)back.hidden=true;document.body.classList.remove('portal-conversation-open');}
+async function sendConversationReply(){
+  if(!activeConversation||!auth.currentUser)return;const input=document.getElementById('portalConversationReply');const body=String(input.value||'').trim();const message=document.getElementById('portalConversationMessage');
+  if(!body){message.textContent='Write a reply before sending.';message.className='portal-task-message error';return;}
+  const btn=document.getElementById('portalConversationSend');const original=btn.innerHTML;btn.disabled=true;btn.innerHTML='Sending…';message.textContent='';
+  try{
+    const ref=await addDoc(collection(db,'betaFeedback',activeConversation.id,'messages'),{authorUid:auth.currentUser.uid,authorRole:'Tester',authorName:currentProfile?.name||'Tester',body,createdAt:serverTimestamp()});
+    const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',updatedAt:serverTimestamp()};
+    if(isSupportConversation(activeConversation))update.status='Waiting for Rebatify';
+    await updateDoc(doc(db,'betaFeedback',activeConversation.id),update);
+    activeConversation.lastMessageAt=new Date();activeConversation.lastMessageBy='Tester';activeConversation.updatedAt=new Date();if(isSupportConversation(activeConversation))activeConversation.status='Waiting for Rebatify';
+    input.value='';renderFeedbackHistory();await openConversation(activeConversation.id);message.textContent='Reply sent.';message.className='portal-task-message success';
+    workerPostAuthorized('conversation-reply-added',{feedbackId:activeConversation.id,messageId:ref.id}).catch(err=>console.warn('Conversation reply email failed:',err));
+  }catch(error){message.textContent='We could not send your reply. '+friendlyFirebaseError(error);message.className='portal-task-message error';}
+  finally{btn.disabled=false;btn.innerHTML=original;}
 }
 
 function openRetestFeedback(id){
@@ -440,6 +497,25 @@ function renderProfile(profile) {
   loading.hidden = true;app.hidden = false;if (content) content.classList.remove('portal-locked-content');
 }
 
+function updateHelpFormForType(){
+  const type=String(document.getElementById('feedbackType')?.value||'');const support=type==='Account / Access Problem';
+  const supportField=document.getElementById('supportAccountField');const technical=document.getElementById('feedbackTechnicalFields');const appVersion=document.getElementById('appVersion');
+  if(supportField)supportField.hidden=!support;if(technical)technical.hidden=support;if(appVersion)appVersion.required=!support;
+}
+function prefillAccountMismatchHelp(){
+  if(!currentProfile)return;closeTestingSetup();
+  const type=document.getElementById('feedbackType');const subject=document.getElementById('feedbackSubject');const details=document.getElementById('feedbackDetails');const supportEmail=document.getElementById('supportAccountEmail');
+  const ios=currentProfile.platform==='iOS';const approved=String(currentProfile.email||auth.currentUser?.email||'').trim();
+  if(type)type.value='Account / Access Problem';updateHelpFormForType();
+  if(subject)subject.value='Beta account email mismatch';
+  if(details)details.value=`My approved beta email is ${approved}, but this is not the ${ios?'Apple Account used for App Store/TestFlight':'Google Account selected in Google Play'} on my testing device. Please help correct my beta access.`;
+  if(supportEmail)supportEmail.value='';
+  document.getElementById('submit-feedback')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>supportEmail?.focus(),450);
+}
+function handleHelpQuery(){
+  const params=new URLSearchParams(location.search);if(params.get('help')==='account-mismatch')setTimeout(prefillAccountMismatchHelp,350);
+}
+
 if (!firebaseConfigured) {
   loading.innerHTML = '<div class="portal-alert warning">The beta portal is not connected yet. Please check back shortly.</div>';
 } else {
@@ -464,7 +540,8 @@ if (!firebaseConfigured) {
       if (summaryText) summaryText.textContent = 'Required tasks and Beta News could not be loaded right now. Refresh the portal in a moment or contact Rebatify Support if this continues.';
     }
     try { await loadFeedbackHistory(user.uid); }
-    catch (error) { console.error('Could not load tester feedback history:', error); const history=document.getElementById('portalFeedbackHistory');if(history)history.innerHTML='<div class="portal-feedback-history-empty">Your feedback history could not be loaded right now. You can still submit new feedback below.</div>'; }
+    catch (error) { console.error('Could not load tester feedback history:', error); const history=document.getElementById('portalFeedbackHistory');if(history)history.innerHTML='<div class="portal-feedback-history-empty">Your conversations could not be loaded right now. You can still start a new Help & Feedback conversation below.</div>'; }
+    handleHelpQuery();
   });
 }
 
@@ -509,41 +586,48 @@ if(deviceForm){deviceForm.addEventListener('submit',async event=>{
 document.addEventListener('click',event=>{
   const ack=event.target.closest('[data-ack-announcement]');if(ack){acknowledgeAnnouncement(ack.dataset.ackAnnouncement,ack);return;}
   const setup=event.target.closest('[data-open-testing-setup]');if(setup){openTestingSetup();return;}
+  const mismatch=event.target.closest('[data-account-mismatch]');if(mismatch){prefillAccountMismatchHelp();return;}
+  const convo=event.target.closest('[data-open-conversation]');if(convo){openConversation(convo.dataset.openConversation);return;}
   const req=event.target.closest('[data-open-required-task]');if(req){const found=requiredTasks.find(t=>t.id===req.dataset.openRequiredTask);if(found){requiredTasks=[found,...requiredTasks.filter(t=>t.id!==found.id)];renderRequiredTask();}return;}
   const retest=event.target.closest('[data-retest-feedback]');if(retest){openRetestFeedback(retest.dataset.retestFeedback);return;}
 });
 const retestClose=document.getElementById('portalRetestClose');if(retestClose)retestClose.addEventListener('click',closeRetestFeedback);
 const retestBackdrop=document.getElementById('portalRetestBackdrop');if(retestBackdrop)retestBackdrop.addEventListener('click',event=>{if(event.target===retestBackdrop)closeRetestFeedback();});
 const retestSubmit=document.getElementById('portalRetestSubmit');if(retestSubmit)retestSubmit.addEventListener('click',submitRetest);
+const conversationClose=document.getElementById('portalConversationClose');if(conversationClose)conversationClose.addEventListener('click',closeConversation);
+const conversationBackdrop=document.getElementById('portalConversationBackdrop');if(conversationBackdrop)conversationBackdrop.addEventListener('click',event=>{if(event.target===conversationBackdrop)closeConversation();});
+const conversationSend=document.getElementById('portalConversationSend');if(conversationSend)conversationSend.addEventListener('click',sendConversationReply);
+const feedbackTypeSelect=document.getElementById('feedbackType');if(feedbackTypeSelect)feedbackTypeSelect.addEventListener('change',updateHelpFormForType);updateHelpFormForType();
 
 if (feedbackForm) {
   feedbackForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (!feedbackForm.checkValidity()) { feedbackForm.reportValidity(); return; }
     if (!auth.currentUser || !currentProfile) { fail('session'); return; }
-
-    const button = feedbackForm.querySelector('button[type="submit"]');
-    const original = button.innerHTML;button.disabled = true;button.innerHTML = 'Submitting…';setFeedbackMessage('');
-    if(!testingSetupComplete(currentProfile)){setFeedbackMessage('Complete Testing Setup before submitting feedback so your device and beta-distribution account details are confirmed.','error');openTestingSetup();button.disabled=false;button.innerHTML=original;return;}
-    const data = new FormData(feedbackForm);
-    const appVersion=String(data.get('appVersion') || '').trim();
-    if(!/^Build [0-9]+$/.test(appVersion)){setFeedbackMessage('Enter the Build number in the format “Build 228”.','error');button.disabled=false;button.innerHTML=original;return;}
-    const deviceDetails=String(data.get('deviceDetails') || profileDeviceDetails(currentProfile) || '').trim();
-    const payload = {
-      ownerUid: auth.currentUser.uid,name: currentProfile.name || '',email: currentProfile.email || auth.currentUser.email || '',platform: currentProfile.platform || '',
-      type: String(data.get('feedbackType') || '').trim(),subject: String(data.get('subject') || '').trim(),details: String(data.get('details') || '').trim(),appVersion,deviceDetails,
-      deviceModel:String(currentProfile.deviceModel||'').trim(),osVersion:String(currentProfile.osVersion||'').trim(),screenSize:String(currentProfile.screenSize||'').trim(),pageFeature: String(data.get('pageFeature') || '').trim(),
-      status: 'New',adminNotes: '',submittedAt: serverTimestamp(),updatedAt: serverTimestamp()
+    const button=feedbackForm.querySelector('button[type="submit"]');const original=button.innerHTML;button.disabled=true;button.innerHTML='Submitting…';setFeedbackMessage('');
+    const data=new FormData(feedbackForm);const type=String(data.get('feedbackType')||'').trim();const support=type==='Account / Access Problem';
+    if(!support&&!testingSetupComplete(currentProfile)){setFeedbackMessage('Complete Testing Setup before submitting beta feedback so the report includes your confirmed testing account and device information.','error');openTestingSetup();button.disabled=false;button.innerHTML=original;return;}
+    const appVersion=support?'':String(data.get('appVersion')||'').trim();
+    if(!support&&!/^Build [0-9]+$/.test(appVersion)){setFeedbackMessage('Enter the Build number in the format “Build 228”.','error');button.disabled=false;button.innerHTML=original;return;}
+    const deviceDetails=support?String(profileDeviceDetails(currentProfile)||'').trim():String(data.get('deviceDetails')||profileDeviceDetails(currentProfile)||'').trim();
+    const payload={
+      ownerUid:auth.currentUser.uid,name:currentProfile.name||'',email:currentProfile.email||auth.currentUser.email||'',platform:currentProfile.platform||'',
+      workflowType:support?'Support':'Feedback',type,subject:String(data.get('subject')||'').trim(),details:String(data.get('details')||'').trim(),appVersion,deviceDetails,
+      deviceModel:String(currentProfile.deviceModel||'').trim(),osVersion:String(currentProfile.osVersion||'').trim(),screenSize:String(currentProfile.screenSize||detectedScreenSize()||'').trim(),pageFeature:support?'':String(data.get('pageFeature')||'').trim(),
+      supportAccountEmail:support?String(data.get('supportAccountEmail')||'').trim():'',status:support?'Waiting for Rebatify':'New',adminNotes:'',lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',submittedAt:serverTimestamp(),updatedAt:serverTimestamp()
     };
-
-    try {
-      const ref=await addDoc(collection(db, 'betaFeedback'), payload);
-      const local={id:ref.id,...payload,submittedAt:new Date(),updatedAt:new Date()};feedbackHistory.unshift(local);renderFeedbackHistory();
+    try{
+      const ref=await addDoc(collection(db,'betaFeedback'),payload);const local={id:ref.id,...payload,submittedAt:new Date(),updatedAt:new Date(),lastMessageAt:new Date()};feedbackHistory.unshift(local);renderFeedbackHistory();
       if(appVersion)currentProfile.currentBuild=appVersion;
-      await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastFeedbackSubmittedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),...(appVersion?{currentBuild:appVersion}:{}),updatedAt:serverTimestamp()}).catch(()=>{});
-      feedbackForm.reset();renderDeviceProfile(currentProfile);setFeedbackMessage('Thank you — your feedback was submitted.', 'success');workerPostAuthorized('feedback-submitted',{feedbackId:ref.id}).catch(err=>console.warn('Feedback email notification failed:',err));
-    } catch (error) {
-      setFeedbackMessage('We could not submit your feedback right now. ' + friendlyFirebaseError(error), 'error');
-    } finally {button.disabled = false;button.innerHTML = original;}
+      if(support){
+        await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()}).catch(()=>{});
+      }else{
+        await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastFeedbackSubmittedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),currentBuild:appVersion,updatedAt:serverTimestamp()}).catch(()=>{});
+      }
+      feedbackForm.reset();updateHelpFormForType();renderDeviceProfile(currentProfile);setFeedbackMessage(support?'Your support conversation was started. Rebatify has been notified.':'Thank you — your feedback conversation was started.','success');
+      workerPostAuthorized('feedback-submitted',{feedbackId:ref.id}).catch(err=>console.warn('Help & Feedback email notification failed:',err));
+      setTimeout(()=>openConversation(ref.id),300);
+    }catch(error){setFeedbackMessage('We could not start your conversation right now. '+friendlyFirebaseError(error),'error');}
+    finally{button.disabled=false;button.innerHTML=original;}
   });
 }

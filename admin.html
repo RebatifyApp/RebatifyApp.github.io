@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=70" rel="stylesheet"/>
+<link href="styles.css?v=71" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -29,7 +29,7 @@
 <button class="admin-nav-item" data-admin-view="testers" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="9" cy="8" fill="none" r="3" stroke="currentColor" stroke-width="1.9"></circle><path d="M3.5 19c.5-3.5 2.4-5.2 5.5-5.2s5 1.7 5.5 5.2M15.5 6.3a3 3 0 0 1 0 5.4M16.5 13.9c2.3.5 3.7 2.2 4 5.1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Testers</span></button>
 <button class="admin-nav-item" data-admin-view="tasks" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect fill="none" height="16" rx="3" stroke="currentColor" stroke-width="1.9" width="16" x="4" y="4"></rect><path d="m8 9 1.6 1.6L12.5 7.7M14 9h3M8 15l1.6 1.6 2.9-2.9M14 15h3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"></path></svg></span><span>Tasks</span><span class="admin-nav-badge" hidden="" id="navTaskCount">0</span></button>
 <button class="admin-nav-item" data-admin-view="announcements" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4.5 11.5h3l8-4.2v9.4l-8-4.2h-3z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.9"></path><path d="M15.5 9.3c1.7.6 3 2.2 3 4.2s-1.3 3.6-3 4.2M7.5 12.5l1.2 5h3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Announcements</span></button>
-<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.9"></path><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Feedback</span><span class="admin-nav-badge" hidden="" id="navFeedbackCount">0</span></button>
+<button class="admin-nav-item" data-admin-view="feedback" type="button"><span class="admin-nav-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.9"></path><path d="M8 10h8M8 13h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"></path></svg></span><span>Help &amp; Feedback</span><span class="admin-nav-badge" hidden="" id="navFeedbackCount">0</span></button>
 </nav>
 <div class="admin-sidebar-footer">
 <div class="admin-admin-card">
@@ -55,14 +55,14 @@
 <div id="adminPortalContent">
 <section class="admin-view is-active" data-admin-panel="overview">
 <div class="admin-welcome-row">
-<div><div class="admin-section-kicker">Beta Operations</div><h2>Everything in one place.</h2><p>Review applications, manage access, assign required tester tasks, and turn feedback into action.</p></div>
+<div><div class="admin-section-kicker">Beta Operations</div><h2>Everything in one place.</h2><p>Review applications, manage access, assign required tester tasks, and manage Help &amp; Feedback conversations, and turn tester reports into action.</p></div>
 <button class="admin-primary-button" data-jump-view="applications" type="button">Review Applications <span>→</span></button>
 </div>
 <div class="admin-metrics-grid">
 <article class="admin-metric admin-metric-primary"><span>Awaiting Review</span><strong id="metricApplied">0</strong><small>Applications needing a decision</small></article>
 <article class="admin-metric"><span>Approved</span><strong id="metricApproved">0</strong><small>Tester invitations approved</small></article>
 <article class="admin-metric"><span>Active Testers</span><strong id="metricActive">0</strong><small>Currently participating</small></article>
-<article class="admin-metric admin-metric-green"><span>New Feedback</span><strong id="metricFeedback">0</strong><small>Reports waiting for review</small></article>
+<article class="admin-metric admin-metric-green"><span>Open Help Items</span><strong id="metricFeedback">0</strong><small>New feedback or support waiting on Rebatify</small></article>
 </div>
 <div class="admin-overview-grid">
 <article class="admin-panel admin-platform-panel">
@@ -89,7 +89,7 @@
 <small class="admin-email-service-note">Only the Worker URL is saved here. Your Gmail App Password stays encrypted in Cloudflare and is never stored on the website or in Firestore.</small>
 </article>
 <article class="admin-panel admin-feedback-preview-panel">
-<div class="admin-panel-heading"><div><span class="admin-section-kicker">Feedback Inbox</span><h3>Latest tester feedback</h3></div><button class="admin-text-button" data-jump-view="feedback" type="button">Open feedback</button></div>
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Help &amp; Feedback</span><h3>Latest tester conversations</h3></div><button class="admin-text-button" data-jump-view="feedback" type="button">Open inbox</button></div>
 <div class="admin-feedback-preview-list" id="overviewFeedback"></div>
 </article>
 </section>
@@ -198,13 +198,13 @@
 </div>
 </section>
 <section class="admin-view" data-admin-panel="feedback">
-<div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Voice</div><h2>Feedback inbox</h2><p>Move reports through New → Reviewing → Confirmed → Fixed → Needs Retest → Closed. Testers see Received → Reviewing → Fix in progress → Needs retest → Resolved.</p></div></div>
+<div class="admin-page-heading"><div><div class="admin-section-kicker">Tester Conversations</div><h2>Help &amp; Feedback inbox</h2><p>Account/access requests and beta feedback live together here. Support conversations show who is waiting on whom; beta feedback keeps the New → Reviewing → Confirmed → Fixed → Needs Retest → Closed workflow.</p></div></div>
 <div class="admin-toolbar">
-<div class="admin-search"><span><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" fill="none" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></span><input id="feedbackSearch" placeholder="Search feedback" type="search"/></div>
-<select class="admin-filter" id="feedbackStatusFilter"><option value="">All statuses</option><option>New</option><option>Reviewing</option><option>Confirmed</option><option>Fixed</option><option>Needs Retest</option><option>Closed</option></select>
-<select class="admin-filter" id="feedbackTypeFilter"><option value="">All types</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select>
+<div class="admin-search"><span><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="10.5" cy="10.5" fill="none" r="6.5" stroke="currentColor" stroke-width="2"></circle><path d="m15.5 15.5 4 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></span><input id="feedbackSearch" placeholder="Search conversations" type="search"/></div>
+<select class="admin-filter" id="feedbackStatusFilter"><option value="">All statuses</option><optgroup label="Support"><option>Waiting for Rebatify</option><option>Waiting for Tester</option><option>Resolved</option></optgroup><optgroup label="Beta Feedback"><option>New</option><option>Reviewing</option><option>Confirmed</option><option>Fixed</option><option>Needs Retest</option><option>Closed</option></optgroup></select>
+<select class="admin-filter" id="feedbackTypeFilter"><option value="">All types</option><option>Account / Access Problem</option><option>Bug / Issue</option><option>Crash / Performance</option><option>Feature Request</option><option>Confusing Experience</option><option>General Feedback</option></select>
 </div>
-<div class="admin-feedback-list" id="feedbackList"></div><div class="admin-empty admin-empty-card" hidden="" id="feedbackEmpty">No feedback matches these filters.</div>
+<div class="admin-feedback-list" id="feedbackList"></div><div class="admin-empty admin-empty-card" hidden id="feedbackEmpty">No conversations match these filters.</div>
 </section>
 </div>
 </main>
@@ -237,5 +237,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=70"></script><script src="admin-firebase.js?v=70" type="module"></script></body>
+<script src="firebase-config.js?v=71"></script><script src="admin-firebase.js?v=71" type="module"></script></body>
 </html>

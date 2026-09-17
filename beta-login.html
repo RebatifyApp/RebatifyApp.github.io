@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Sign in to the Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=70" rel="stylesheet"/>
+<link href="styles.css?v=71" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <main class="portal-auth-shell">
@@ -36,12 +36,24 @@
 <button class="beta-submit" id="portalVerifyCode" type="submit">Verify &amp; Sign In <span aria-hidden="true">→</span></button>
 <button class="admin-text-button" id="portalUseDifferentEmail" type="button">Use a different email</button>
 </form>
+<div class="portal-login-support">
+<button class="admin-text-button portal-login-support-toggle" id="portalSupportToggle" type="button">Need help signing in?</button>
+<div class="portal-login-support-panel" id="portalSupportPanel" hidden>
+<div class="portal-login-support-heading"><strong>Account &amp; Access Help</strong><span>Use this only for Beta Portal access, verification, invitation, or account-email problems. Bugs and testing feedback belong in Help &amp; Feedback after you sign in.</span></div>
+<form class="portal-login-form" id="portalSupportForm" method="post">
+<div class="beta-field"><label for="portalSupportEmail">Approved beta email</label><input autocomplete="email" id="portalSupportEmail" name="email" placeholder="you@example.com" required type="email"/></div>
+<div class="beta-field"><label for="portalSupportIssue">What do you need help with?</label><select id="portalSupportIssue" name="issue" required><option value="">Choose one</option><option>Can't sign in or receive a code</option><option>My beta account email is wrong</option><option>My beta access is disabled</option><option>Invitation or activation problem</option><option>Other account/access problem</option></select></div>
+<div class="beta-field"><label for="portalSupportDetails">Tell us what is happening</label><textarea id="portalSupportDetails" maxlength="5000" minlength="2" name="details" placeholder="Include enough detail for us to identify and fix the access problem." required></textarea></div>
+<button class="beta-submit" id="portalSupportSubmit" type="submit">Send Support Request <span aria-hidden="true">→</span></button>
+</form>
+<div class="portal-device-message" id="portalSupportMessage" aria-live="polite"></div>
+</div>
+</div>
 <div class="portal-auth-footer">
-<p>Need access help? <a href="mailto:support.rebatifyapp@gmail.com">Contact Rebatify Support</a>.</p>
 <a href="beta.html">← Back to beta information</a>
 </div>
 </section>
 </main>
-<script src="firebase-config.js?v=70"></script><script src="beta-login-firebase.js?v=70" type="module"></script>
+<script src="firebase-config.js?v=71"></script><script src="beta-login-firebase.js?v=71" type="module"></script>
 </body>
 </html>
