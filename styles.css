@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 70 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 71 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1121,3 +1121,26 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
 .portal-account-warning{margin-top:11px;padding:11px 12px;border-left:4px solid #145cf2;border-radius:10px;background:#eef5ff;color:#536b85;font-size:.7rem;line-height:1.55}
 .portal-account-warning a{color:#145cf2;font-weight:900}
 @media(max-width:620px){.portal-distribution-account{padding:14px}.portal-confirm-check{font-size:.72rem}.portal-account-warning{font-size:.68rem}}
+
+/* Build 71 — unified Help & Feedback */
+.beta-thank-you-card{margin-top:24px}
+.portal-support-account-field[hidden],#feedbackTechnicalFields[hidden]{display:none!important}
+.portal-account-warning{display:flex;flex-direction:column;gap:9px}.portal-account-warning strong{color:#243b58}.portal-account-warning span{line-height:1.5}
+.portal-account-help-button{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;border:1px solid rgba(20,92,242,.18);border-radius:12px;padding:9px 12px;background:#fff;color:#145cf2;font:inherit;font-size:.72rem;font-weight:900;text-decoration:none;cursor:pointer}
+.portal-conversation-card-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.portal-conversation-open{border:1px solid rgba(20,92,242,.16);border-radius:12px;padding:9px 12px;background:#fff;color:#145cf2;font:inherit;font-size:.7rem;font-weight:900;cursor:pointer}
+.portal-conversation-backdrop{position:fixed;inset:0;z-index:245;display:grid;place-items:center;padding:18px;background:rgba(7,19,46,.38);backdrop-filter:blur(5px)}.portal-conversation-backdrop[hidden]{display:none!important}.portal-conversation-modal{width:min(650px,100%);max-height:min(820px,92vh);overflow:auto;background:#fff;border:1px solid #dce7f6;border-radius:26px;box-shadow:0 30px 90px rgba(7,19,46,.27);padding:24px}.portal-conversation-status-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:9px 0 18px;color:#718399;font-size:.72rem;font-weight:800}.portal-conversation-thread{display:flex;flex-direction:column;gap:11px;max-height:430px;overflow:auto;padding:4px 2px 8px}.portal-chat-message{max-width:88%;padding:13px 14px;border-radius:17px;border:1px solid #e0e8f3}.portal-chat-message.from-tester{align-self:flex-end;background:#edf4ff;border-color:#d3e2fb}.portal-chat-message.from-rebatify{align-self:flex-start;background:#f4fbf7;border-color:#d8ecdd}.portal-chat-message.initial{align-self:stretch;max-width:100%;background:#f7f9fc}.portal-chat-message-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:6px}.portal-chat-message-head strong{font-size:.72rem;color:#223d5b}.portal-chat-message-head time{font-size:.62rem;color:#8a98aa}.portal-chat-message p{margin:0;color:#40566f;white-space:pre-wrap;line-height:1.55;font-size:.79rem}.portal-chat-message small{display:block;margin-top:8px;color:#718399;font-size:.65rem}.portal-chat-loading,.portal-chat-system{padding:11px 13px;border-radius:14px;background:#f7f9fc;color:#718399;font-size:.72rem}.portal-chat-system{display:flex;flex-direction:column;gap:4px;border:1px dashed #cfdaea}.portal-conversation-reply{margin-top:17px;padding-top:16px;border-top:1px solid #e4ebf4}.portal-conversation-reply label{display:block;margin-bottom:8px;font-size:.75rem;font-weight:900;color:#314963}.portal-conversation-reply textarea{width:100%;min-height:105px;margin-bottom:10px}.portal-conversation-open{overflow:hidden}
+.admin-conversation-section{border:1px solid #dae5f3;border-radius:18px;background:#fff;overflow:hidden}.admin-conversation-thread{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto;padding:15px}.admin-chat-message{max-width:90%;padding:12px 13px;border-radius:15px;border:1px solid #e1e8f2}.admin-chat-message.from-admin{align-self:flex-end;background:#edf4ff;border-color:#d3e2fb}.admin-chat-message.from-tester{align-self:flex-start;background:#f5f8fc}.admin-chat-message>div{display:flex;justify-content:space-between;gap:10px;margin-bottom:5px}.admin-chat-message strong{font-size:.7rem;color:#233d5b}.admin-chat-message time{font-size:.62rem;color:#8795a7}.admin-chat-message p{margin:0;color:#40566f;font-size:.78rem;line-height:1.55;white-space:pre-wrap}.admin-conversation-reply{padding:15px;border-top:1px solid #e3eaf4}.admin-conversation-reply textarea{margin-bottom:10px}.admin-support-account{display:flex;flex-direction:column;gap:3px;margin:0 17px 17px;padding:12px 14px;border-radius:13px;background:#eef5ff;border:1px solid #d6e4fb}.admin-support-account span{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:#75879b;font-weight:900}.admin-support-account strong{font-size:.8rem;color:#24415f}
+@media(max-width:700px){.beta-thank-you-card{margin-top:18px}.portal-conversation-modal{padding:18px;border-radius:22px;max-height:90vh}.portal-chat-message{max-width:94%}.portal-mobile-nav a{padding:8px 11px}}
+
+.admin-status-pill.status-waiting-for-rebatify{background:#edf3ff;color:#1654c7}.admin-status-pill.status-waiting-for-tester{background:#eef7fb;color:#167a85}.admin-status-pill.status-resolved{background:#eaf7ed;color:#2d7d3b}
+
+
+/* Build 71 — unified Help & Feedback sign-in support */
+.portal-login-support{margin-top:18px;padding-top:18px;border-top:1px solid #dbe6f7}
+.portal-login-support-toggle{width:100%;text-align:center;font-weight:800}
+.portal-login-support-panel{margin-top:16px;padding:18px;border:1px solid #d7e4f8;border-radius:20px;background:#f8fbff}
+.portal-login-support-heading{display:grid;gap:6px;margin-bottom:15px;color:#0b1831}
+.portal-login-support-heading strong{font-size:1.05rem}
+.portal-login-support-heading span{color:#64758e;line-height:1.5;font-size:.93rem}
+.portal-login-support-panel textarea{min-height:120px}
+@media(max-width:640px){.portal-login-support-panel{padding:15px;border-radius:17px}}
