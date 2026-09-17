@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 69 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 70 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1109,3 +1109,15 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
   .portal-settings-page{padding-top:34px}.portal-settings-card{padding:18px}.portal-settings-identity{grid-template-columns:1fr}
   .admin-feedback-section-head{align-items:flex-start;flex-direction:column}.admin-feedback-section-head time{margin-top:-3px}
 }
+
+
+/* Build 70 — corrected beta timeline setup flow and distribution-account confirmation */
+.portal-timeline-completed-note{margin-top:14px;padding:11px 13px;border-radius:13px;background:#f3f7fd;border:1px solid #dfe9f7;color:#5e738b;font-size:.72rem;line-height:1.5}
+.portal-distribution-account{margin:18px 0 2px;padding:16px;border-radius:18px;background:#f7faff;border:1px solid #dce8f8}
+.portal-distribution-account .beta-field{margin-bottom:12px}
+.portal-distribution-account input[readonly]{background:#eef3f9;color:#334b66}
+.portal-confirm-check{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;border-radius:14px;background:#fff;border:1px solid #dce6f4;color:#314963;font-size:.76rem;font-weight:800;line-height:1.45;cursor:pointer}
+.portal-confirm-check input{width:18px;height:18px;margin:1px 0 0;accent-color:#145cf2;flex:0 0 auto}
+.portal-account-warning{margin-top:11px;padding:11px 12px;border-left:4px solid #145cf2;border-radius:10px;background:#eef5ff;color:#536b85;font-size:.7rem;line-height:1.55}
+.portal-account-warning a{color:#145cf2;font-weight:900}
+@media(max-width:620px){.portal-distribution-account{padding:14px}.portal-confirm-check{font-size:.72rem}.portal-account-warning{font-size:.68rem}}
