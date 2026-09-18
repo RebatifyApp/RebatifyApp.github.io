@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Sign in to the Rebatify Beta Program Portal</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=72" rel="stylesheet"/>
+<link href="styles.css?v=73" rel="stylesheet"/>
 </head>
 <body class="portal-body">
 <main class="portal-auth-shell">
@@ -40,10 +40,10 @@
 <button class="admin-text-button portal-login-support-toggle" id="portalSupportToggle" type="button">Need help signing in?</button>
 <div class="portal-login-support-panel" id="portalSupportPanel" hidden>
 <div class="portal-login-support-heading"><strong>Account &amp; Access Help</strong><span>Use this only for Beta Portal access, verification, invitation, or account-email problems. Bugs and testing feedback belong in Help &amp; Feedback after you sign in.</span></div>
-<form class="portal-login-form" id="portalSupportForm" method="post">
-<div class="beta-field"><label for="portalSupportEmail">Approved beta email</label><input autocomplete="email" id="portalSupportEmail" name="email" placeholder="you@example.com" required type="email"/></div>
-<div class="beta-field"><label for="portalSupportIssue">What do you need help with?</label><select id="portalSupportIssue" name="issue" required><option value="">Choose one</option><option>Can't sign in or receive a code</option><option>My beta account email is wrong</option><option>My beta access is disabled</option><option>Invitation or activation problem</option><option>Other account/access problem</option></select></div>
-<div class="beta-field"><label for="portalSupportDetails">Tell us what is happening</label><textarea id="portalSupportDetails" maxlength="5000" minlength="2" name="details" placeholder="Include enough detail for us to identify and fix the access problem." required></textarea></div>
+<div class="portal-required-legend" aria-label="Required field legend"><span aria-hidden="true">*</span> Required Field</div><form class="portal-login-form" id="portalSupportForm" method="post">
+<div class="beta-field"><label for="portalSupportEmail">Approved beta email <span class="portal-required-asterisk" aria-hidden="true">*</span></label><input aria-required="true" autocapitalize="none" autocomplete="email" autocorrect="off" id="portalSupportEmail" name="email" placeholder="you@example.com" required spellcheck="false" type="email"/></div>
+<div class="beta-field"><label for="portalSupportIssue">What do you need help with? <span class="portal-required-asterisk" aria-hidden="true">*</span></label><select aria-required="true" id="portalSupportIssue" name="issue" required><option value="">Choose one</option><option>Can't sign in or receive a code</option><option>My beta account email is wrong</option><option>My beta access is disabled</option><option>Invitation or activation problem</option><option>Other account/access problem</option></select></div>
+<div class="beta-field"><label for="portalSupportDetails">Tell us what is happening <span class="portal-required-asterisk" aria-hidden="true">*</span></label><textarea aria-required="true" autocapitalize="sentences" autocorrect="on" id="portalSupportDetails" maxlength="5000" minlength="2" name="details" placeholder="Include enough detail for us to identify and fix the access problem." required spellcheck="true"></textarea></div>
 <button class="beta-submit" id="portalSupportSubmit" type="submit">Send Support Request <span aria-hidden="true">→</span></button>
 </form>
 <div class="portal-device-message" id="portalSupportMessage" aria-live="polite"></div>
@@ -54,6 +54,6 @@
 </div>
 </section>
 </main>
-<script src="firebase-config.js?v=72"></script><script src="beta-login-firebase.js?v=72" type="module"></script>
+<script src="firebase-config.js?v=73"></script><script src="beta-login-firebase.js?v=73" type="module"></script>
 </body>
 </html>

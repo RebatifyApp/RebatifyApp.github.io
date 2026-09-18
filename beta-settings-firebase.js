@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Settings - Website Build 72
+// Rebatify Beta Tester Settings - Website Build 73
 import { firebaseConfigured, auth, db, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -10,8 +10,11 @@ const message=document.getElementById('settingsMessage');
 const PORTAL_ACTIVITY_KEY='rebatifyBetaPortalLastActivity';
 const PORTAL_INACTIVITY_MS=6*60*60*1000;
 let profile=null;
+let inactivityTimer=null;
+let sessionEnding=false;
+let lastActivityWrite=0;
 
-function fail(reason='session'){signOut(auth).catch(()=>{}).finally(()=>location.replace('beta-login.html?error='+encodeURIComponent(reason)));}
+function fail(reason='session'){sessionEnding=true;clearTimeout(inactivityTimer);signOut(auth).catch(()=>{}).finally(()=>location.replace('beta-login.html?error='+encodeURIComponent(reason)));}
 function detectedScreenSize(){try{return `${window.screen.width}×${window.screen.height} @ ${window.devicePixelRatio||1}x`;}catch(_){return '';}}
 function detectedOsVersion(){const ua=navigator.userAgent||'';const ios=ua.match(/OS ([0-9_]+) like Mac OS X/i);if(ios)return 'iOS '+ios[1].replaceAll('_','.');const android=ua.match(/Android\s+([^;\)]+)/i);if(android)return 'Android '+android[1].trim();return '';}
 function normalizedStage(value){if(value==='deviceReady')return 'setupComplete';if(['approved','setupComplete','inviteSent','activeTesting'].includes(value))return value;return 'approved';}
@@ -26,7 +29,35 @@ function applyPlatformCopy(p=profile||{}){
   const check=document.getElementById('settingsDistributionConfirm');if(check){const confirmed=distributionAccountConfirmed(p);check.checked=confirmed;check.required=!confirmed;check.disabled=confirmed;}
 }
 function setMessage(text,tone=''){message.textContent=text||'';message.className='portal-device-message'+(tone?' '+tone:'');}
-function touchActivity(){sessionStorage.setItem(PORTAL_ACTIVITY_KEY,String(Date.now()));if(auth.currentUser)updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()}).catch(()=>{});}
+function scheduleInactivityLogout(){
+  clearTimeout(inactivityTimer);
+  const last=Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY)||Date.now());
+  const remaining=PORTAL_INACTIVITY_MS-(Date.now()-last);
+  if(remaining<=0){fail('inactive');return;}
+  inactivityTimer=setTimeout(()=>fail('inactive'),remaining+250);
+}
+function touchActivity(forceWrite=false){
+  if(sessionEnding)return;
+  const now=Date.now();
+  sessionStorage.setItem(PORTAL_ACTIVITY_KEY,String(now));
+  scheduleInactivityLogout();
+  if(auth.currentUser&&(forceWrite||now-lastActivityWrite>5*60*1000)){
+    lastActivityWrite=now;
+    updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()}).catch(()=>{});
+  }
+}
+function startInactivityWatcher(){
+  touchActivity(true);
+  ['pointerdown','keydown','touchstart','scroll'].forEach(name=>window.addEventListener(name,()=>touchActivity(false),{passive:true}));
+  window.addEventListener('focus',()=>{const last=Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY)||0);if(last&&Date.now()-last>=PORTAL_INACTIVITY_MS)fail('inactive');else touchActivity(false);});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const last=Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY)||0);if(last&&Date.now()-last>=PORTAL_INACTIVITY_MS)fail('inactive');else scheduleInactivityLogout();}});
+}
+function installSettingsTextEntryCompatibility(){
+  document.querySelectorAll('#settingsDeviceForm input[type="text"],#settingsDeviceForm input[type="email"],#settingsDeviceForm textarea').forEach(field=>{
+    const sync=()=>field.setCustomValidity('');
+    field.addEventListener('input',sync);field.addEventListener('change',sync);field.addEventListener('compositionend',sync);field.addEventListener('paste',()=>requestAnimationFrame(sync));
+  });
+}
 
 if(!firebaseConfigured){loading.innerHTML='<div class="portal-alert warning">The beta portal is not connected yet. Please check back shortly.</div>';}
 else onAuthStateChanged(auth,async user=>{
@@ -41,11 +72,9 @@ else onAuthStateChanged(auth,async user=>{
     document.getElementById('settingsOsVersion').value=profile.osVersion||'';
     document.getElementById('settingsScreenSize').value=detectedScreenSize()||profile.screenSize||'';
     applyPlatformCopy(profile);
-    touchActivity();loading.hidden=true;app.hidden=false;
+    installSettingsTextEntryCompatibility();startInactivityWatcher();loading.hidden=true;app.hidden=false;
   }catch(err){fail(err.message==='access'?'access':'session');}
 });
-
-['pointerdown','keydown','touchstart','scroll'].forEach(name=>window.addEventListener(name,()=>{const last=Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY)||0);if(last&&Date.now()-last>=PORTAL_INACTIVITY_MS){fail('inactive');return;}sessionStorage.setItem(PORTAL_ACTIVITY_KEY,String(Date.now()));},{passive:true}));
 
 if(form)form.addEventListener('submit',async e=>{
   e.preventDefault();if(!form.checkValidity()){form.reportValidity();return;}if(!auth.currentUser||!profile){fail('session');return;}
@@ -63,7 +92,7 @@ if(form)form.addEventListener('submit',async e=>{
     await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),update);
     Object.assign(profile,{deviceModel,osVersion,screenSize});if(needsAccountConfirmation){profile.distributionAccountEmail=distributionAccountEmail;profile.distributionAccountConfirmedAt=new Date();}if(firstSetup)profile.timelineStage='setupComplete';applyPlatformCopy(profile);
     document.getElementById('settingsScreenSize').value=screenSize;
-    sessionStorage.setItem(PORTAL_ACTIVITY_KEY,String(Date.now()));
+    touchActivity(true);
     setMessage(firstSetup?'Settings saved. Step 2 is complete and your Beta Program timeline advanced to Step 3.':'Settings saved.','success');
   }catch(err){setMessage('We could not save your settings. '+friendlyFirebaseError(err),'error');}
   finally{button.disabled=false;button.innerHTML=original;}

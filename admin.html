@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=72" rel="stylesheet"/>
+<link href="styles.css?v=73" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -183,13 +183,18 @@
 <div class="admin-announcement-layout">
 <article class="admin-panel admin-announcement-composer">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Publish Update</span><h3>New beta announcement</h3></div></div>
-<div class="admin-task-form-grid">
-<div class="beta-field admin-task-span"><label for="announcementTitle">Headline</label><input id="announcementTitle" maxlength="140" placeholder="Example: Build 228 is available" type="text"/></div>
-<div class="beta-field admin-task-span"><label for="announcementMessage">Announcement</label><textarea id="announcementMessage" maxlength="3000" placeholder="Tell testers what changed, what to focus on, or anything they need to know."></textarea></div>
-<div class="beta-field"><label for="announcementAudience">Audience</label><select id="announcementAudience"><option>All</option><option>iOS</option><option>Android</option></select></div>
-<div class="beta-field"><label>Options</label><div class="admin-announcement-options"><label><input id="announcementImportant" type="checkbox"/><span><strong>Important</strong><small>Marks the update as important. Important updates are emailed automatically.</small></span></label><label><input id="announcementAckRequired" type="checkbox"/><span><strong>Require acknowledgement</strong><small>Tester must confirm they have read it. Acknowledgement-required updates are emailed automatically.</small></span></label><label><input id="announcementEmailTesters" type="checkbox"/><span><strong>Email testers</strong><small>Also email targeted testers for a normal informational update.</small></span></label></div></div>
+<div class="admin-announcement-form">
+<div class="beta-field"><label for="announcementTitle">Headline</label><input id="announcementTitle" maxlength="140" placeholder="Example: Build 228 is available" type="text"/></div>
+<div class="beta-field"><label for="announcementMessage">Announcement</label><textarea id="announcementMessage" maxlength="3000" placeholder="Tell testers what changed, what to focus on, or anything they need to know."></textarea></div>
+<div class="beta-field admin-announcement-audience"><label for="announcementAudience">Audience</label><select id="announcementAudience"><option>All</option><option>iOS</option><option>Android</option></select></div>
+<div class="admin-announcement-options-label">Options</div>
+<div class="admin-announcement-options" role="group" aria-label="Announcement options">
+<label><input id="announcementImportant" type="checkbox"/><span><strong>Important</strong><small>Important updates are emailed automatically.</small></span></label>
+<label><input id="announcementAckRequired" type="checkbox"/><span><strong>Require acknowledgement</strong><small>Tester must confirm they have read it.</small></span></label>
+<label><input id="announcementEmailTesters" type="checkbox"/><span><strong>Email testers</strong><small>Email a normal informational update too.</small></span></label>
 </div>
 <button class="admin-primary-button admin-announcement-publish" id="announcementPublishButton" type="button">Publish Announcement <span>→</span></button>
+</div>
 </article>
 <article class="admin-panel admin-announcement-history">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">History</span><h3>Published beta news</h3></div></div>
@@ -237,5 +242,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=72"></script><script src="admin-firebase.js?v=72" type="module"></script></body>
+<script src="firebase-config.js?v=73"></script><script src="admin-firebase.js?v=73" type="module"></script></body>
 </html>
