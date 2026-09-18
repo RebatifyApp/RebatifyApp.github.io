@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 75
+// Rebatify Beta Tester Portal - Website Build 76
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
