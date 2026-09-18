@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 73
+// Rebatify Beta Admin — Website Build 74
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -78,6 +78,7 @@ let state = {
 let feedbackRealtimeUnsubscribe = null;
 let adminConversationUnsubscribe = null;
 let activeDrawerFeedbackId = null;
+let adminConversationMessageCount = 0;
 
 
 
@@ -881,7 +882,7 @@ async function switchView(view){
   }catch(e){showToast('Could not load '+view+'. '+friendlyFirebaseError(e),'error');}
 }
 function openDrawer(kicker,title,html){document.getElementById('drawerKicker').textContent=kicker;document.getElementById('drawerTitle').textContent=title;document.getElementById('adminDrawerContent').innerHTML=html;document.getElementById('adminDrawerBackdrop').hidden=false;document.getElementById('adminDrawer').classList.add('is-open');document.getElementById('adminDrawer').setAttribute('aria-hidden','false');}
-function closeDrawer(){if(adminConversationUnsubscribe){adminConversationUnsubscribe();adminConversationUnsubscribe=null;}activeDrawerFeedbackId=null;document.getElementById('adminDrawerBackdrop').hidden=true;document.getElementById('adminDrawer').classList.remove('is-open');document.getElementById('adminDrawer').setAttribute('aria-hidden','true');}
+function closeDrawer(){if(adminConversationUnsubscribe){adminConversationUnsubscribe();adminConversationUnsubscribe=null;}adminConversationMessageCount=0;activeDrawerFeedbackId=null;document.getElementById('adminDrawerBackdrop').hidden=true;document.getElementById('adminDrawer').classList.remove('is-open');document.getElementById('adminDrawer').setAttribute('aria-hidden','true');}
 function findApp(id){return state.applications.find(a=>a.id===id)||state.recentApplications.find(a=>a.id===id);}
 function findFeedback(id){return state.feedback.find(f=>f.id===id)||state.recentFeedback.find(f=>f.id===id);}
 function findTester(uid){return state.testers.find(t=>t.uid===uid);}
@@ -936,12 +937,14 @@ function subscribeAdminConversationMessages(feedbackId){
   if(adminConversationUnsubscribe){adminConversationUnsubscribe();adminConversationUnsubscribe=null;}
   const list=document.getElementById('drawerConversationThread');if(!list)return;
   list.innerHTML='<div class="admin-empty-inline">Connecting live conversation…</div>';
+  adminConversationMessageCount=0;
   adminConversationUnsubscribe=onSnapshot(query(collection(db,'betaFeedback',feedbackId,'messages'),orderBy('createdAt','asc')),snap=>{
     if(activeDrawerFeedbackId!==feedbackId)return;
-    const nearBottom=list.scrollHeight-list.scrollTop-list.clientHeight<110;
     const rows=snap.docs.map(normalizeDoc);
+    const animate=adminConversationMessageCount>0&&rows.length>adminConversationMessageCount;
+    adminConversationMessageCount=rows.length;
     list.innerHTML=rows.length?rows.map(adminConversationMessageHtml).join(''):'<div class="admin-empty-inline">No replies yet.</div>';
-    if(nearBottom||rows.length<=1)requestAnimationFrame(()=>{list.scrollTop=list.scrollHeight;});
+    requestAnimationFrame(()=>list.scrollTo({top:list.scrollHeight,behavior:animate?'smooth':'auto'}));
   },error=>{console.error('Realtime admin conversation listener failed:',error);if(activeDrawerFeedbackId===feedbackId)list.innerHTML='<div class="admin-empty-inline">Live conversation could not be loaded right now.</div>';});
 }
 function openFeedbackRecord(f){

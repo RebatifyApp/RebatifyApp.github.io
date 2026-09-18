@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 73
+// Rebatify Beta Tester Portal - Website Build 74
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -32,6 +32,7 @@ let activeRetestFeedback = null;
 let activeConversation = null;
 let feedbackHistoryUnsubscribe = null;
 let conversationMessagesUnsubscribe = null;
+let conversationMessageCount = 0;
 let lastFirestoreActivityWrite = 0;
 const PORTAL_ACTIVITY_WRITE_MS = 5 * 60 * 1000;
 const taskBackdrop = document.getElementById('portalTaskBackdrop');
@@ -320,15 +321,29 @@ function conversationMessageHtml(message){
   const admin=String(message.authorRole||'').toLowerCase()==='admin';
   return `<div class="portal-chat-message ${admin?'from-rebatify':'from-tester'}"><div class="portal-chat-message-head"><strong>${admin?'Rebatify':'You'}</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'')}</p></div>`;
 }
+function scrollConversationToLatest(behavior='auto'){
+  const thread=document.getElementById('portalConversationThread');
+  if(!thread)return;
+  requestAnimationFrame(()=>thread.scrollTo({top:thread.scrollHeight,behavior}));
+}
+function resizeConversationComposer(){
+  const input=document.getElementById('portalConversationReply');
+  if(!input)return;
+  input.style.height='auto';
+  input.style.height=Math.min(Math.max(input.scrollHeight,48),112)+'px';
+}
 function renderOpenConversationThread(messages=[]){
   if(!activeConversation)return;
   const thread=document.getElementById('portalConversationThread');if(!thread)return;
-  const f=activeConversation;const nearBottom=thread.scrollHeight-thread.scrollTop-thread.clientHeight<110;
-  const original=`<div class="portal-chat-message from-tester initial"><div class="portal-chat-original-kicker"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-5 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg><span>Original submission</span></div><div class="portal-chat-message-head"><strong>You</strong><time>${escapeHtml(formatPortalMessageTime(f.submittedAt))}</time></div><p>${escapeHtml(f.details||'')}</p><div class="portal-chat-meta-list">${f.supportAccountEmail?`<span>Account: ${escapeHtml(f.supportAccountEmail)}</span>`:''}${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div></div>`;
+  const f=activeConversation;
+  const original=`<div class="portal-chat-message from-tester initial"><div class="portal-chat-message-head"><strong>You <span class="portal-chat-original-label">Original</span></strong><time>${escapeHtml(formatPortalMessageTime(f.submittedAt))}</time></div><p>${escapeHtml(f.details||'')}</p><div class="portal-chat-meta-list">${f.supportAccountEmail?`<span>Account: ${escapeHtml(f.supportAccountEmail)}</span>`:''}${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div></div>`;
   const replies=messages.map(conversationMessageHtml).join('');
   const retest=f.retestedAt?`<div class="portal-chat-system"><strong>Retest submitted: ${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:'';
+  const nextCount=messages.length+(f.retestedAt?1:0)+1;
+  const animate=conversationMessageCount>0&&nextCount>conversationMessageCount;
+  conversationMessageCount=nextCount;
   thread.innerHTML=original+replies+retest;
-  if(nearBottom||messages.length<=1)requestAnimationFrame(()=>{thread.scrollTop=thread.scrollHeight;});
+  scrollConversationToLatest(animate?'smooth':'auto');
 }
 function subscribeConversationMessages(feedbackId){
   if(conversationMessagesUnsubscribe){conversationMessagesUnsubscribe();conversationMessagesUnsubscribe=null;}
@@ -349,13 +364,14 @@ function openConversation(id){
   const reply=document.getElementById('portalConversationReply');if(reply)reply.value='';
   const message=document.getElementById('portalConversationMessage');if(message){message.textContent='';message.className='portal-task-message';}
   const thread=document.getElementById('portalConversationThread');if(thread)thread.innerHTML='';
-  back.hidden=false;document.body.classList.add('portal-conversation-open');
+  conversationMessageCount=0;back.hidden=false;document.body.classList.add('portal-conversation-active');
   renderOpenConversationThread([]);
+  resizeConversationComposer();
   subscribeConversationMessages(id);
 }
 function closeConversation(){
   if(conversationMessagesUnsubscribe){conversationMessagesUnsubscribe();conversationMessagesUnsubscribe=null;}
-  activeConversation=null;const back=document.getElementById('portalConversationBackdrop');if(back)back.hidden=true;document.body.classList.remove('portal-conversation-open');
+  conversationMessageCount=0;activeConversation=null;const back=document.getElementById('portalConversationBackdrop');if(back)back.hidden=true;document.body.classList.remove('portal-conversation-active');
 }
 async function sendConversationReply(){
   if(!activeConversation||!auth.currentUser)return;const input=document.getElementById('portalConversationReply');const body=String(input.value||'').trim();const message=document.getElementById('portalConversationMessage');
@@ -367,7 +383,7 @@ async function sendConversationReply(){
     const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',updatedAt:serverTimestamp()};
     if(isSupportConversation(activeConversation))update.status='Waiting for Rebatify';
     await updateDoc(doc(db,'betaFeedback',feedbackId),update);
-    input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));message.textContent='Reply sent.';message.className='portal-task-message success';
+    input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));resizeConversationComposer();message.textContent='';message.className='portal-task-message';scrollConversationToLatest('smooth');
     workerPostAuthorized('conversation-reply-added',{feedbackId,messageId:ref.id}).catch(err=>console.warn('Conversation reply email failed:',err));
   }catch(error){message.textContent='We could not send your reply. '+friendlyFirebaseError(error);message.className='portal-task-message error';}
   finally{btn.disabled=false;btn.innerHTML=original;}
@@ -675,6 +691,7 @@ const retestSubmit=document.getElementById('portalRetestSubmit');if(retestSubmit
 const conversationClose=document.getElementById('portalConversationClose');if(conversationClose)conversationClose.addEventListener('click',closeConversation);
 const conversationBackdrop=document.getElementById('portalConversationBackdrop');if(conversationBackdrop)conversationBackdrop.addEventListener('click',event=>{if(event.target===conversationBackdrop)closeConversation();});
 const conversationSend=document.getElementById('portalConversationSend');if(conversationSend)conversationSend.addEventListener('click',sendConversationReply);
+const conversationReplyInput=document.getElementById('portalConversationReply');if(conversationReplyInput){conversationReplyInput.addEventListener('input',resizeConversationComposer);conversationReplyInput.addEventListener('compositionend',resizeConversationComposer);}
 const feedbackTypeSelect=document.getElementById('feedbackType');if(feedbackTypeSelect)feedbackTypeSelect.addEventListener('change',updateHelpFormForType);updateHelpFormForType();installTextEntryCompatibility();
 
 if (feedbackForm) {
