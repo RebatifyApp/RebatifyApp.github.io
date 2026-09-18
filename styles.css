@@ -1874,19 +1874,11 @@ body.portal-conversation-active{overflow:hidden!important}
 .admin-support-identity-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe8f3}.admin-support-identity-action span{color:#6c7f95;font-size:.72rem;line-height:1.45;font-weight:700}
 .admin-confirm-backdrop{z-index:420}
 
-
-/* ===== Website Build 77: sticky-navigation-safe anchor fallback =====
-   JavaScript calculates the live sticky-menu bottom edge for menu clicks.
-   These margins remain as a safe fallback for direct browser hash navigation. */
+/* Website Build 79: keep Beta Portal section headings clear of sticky navigation. */
 #program-timeline,
 #submit-feedback,
 #feedback-history,
 #how-to,
-#faq{scroll-margin-top:190px}
-@media(max-width:700px){
-  #program-timeline,
-  #submit-feedback,
-  #feedback-history,
-  #how-to,
-  #faq{scroll-margin-top:112px}
+#faq {
+  scroll-margin-top: 220px;
 }

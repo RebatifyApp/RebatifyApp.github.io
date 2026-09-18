@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 77
+// Rebatify Beta Tester Portal - Website Build 79
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -596,7 +596,7 @@ function prefillAccountMismatchHelp(){
   if(subject){subject.value='Beta account email mismatch';subject.dispatchEvent(new Event('input',{bubbles:true}));}
   if(details){details.value=`My approved beta email is ${approved}, but this is not the ${ios?'Apple Account used for App Store/TestFlight':'Google Account selected in Google Play'} on my testing device. Please help correct my beta access.`;details.dispatchEvent(new Event('input',{bubbles:true}));}
   if(supportEmail){supportEmail.value='';supportEmail.dispatchEvent(new Event('input',{bubbles:true}));}
-  scrollPortalSection(document.getElementById('submit-feedback'),{behavior:'smooth',updateHash:true});setTimeout(()=>supportEmail?.focus(),450);
+  document.getElementById('submit-feedback')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>supportEmail?.focus(),450);
 }
 function handleHelpQuery(){
   const params=new URLSearchParams(location.search);if(params.get('help')==='account-mismatch')setTimeout(prefillAccountMismatchHelp,350);
@@ -756,30 +756,35 @@ if (feedbackForm) {
   });
 }
 
+// Website Build 79: sticky Beta Portal navigation section positioning.
+function rebatifyPortalScrollTarget(target, behavior = 'smooth') {
+  if (!target) return;
+  const stickyNav = document.querySelector('.portal-mobile-nav');
+  const navRect = stickyNav?.getBoundingClientRect();
+  const stickyBottom = navRect ? Math.max(0, navRect.bottom) : 0;
+  const breathingRoom = 28;
+  const absoluteTargetTop = window.scrollY + target.getBoundingClientRect().top;
+  const destination = Math.max(0, absoluteTargetTop - stickyBottom - breathingRoom);
+  window.scrollTo({ top: destination, behavior });
+}
 
-// Website Build 77 — sticky-navigation-safe section scrolling.
-function portalStickyNavigationOffset(){
-  const nav=document.querySelector('.portal-mobile-nav');
-  if(!nav)return 24;
-  const rect=nav.getBoundingClientRect();
-  // rect.bottom represents the exact bottom edge of the sticky navigation in the viewport,
-  // including the desktop/tablet header offset when the nav sits below the sticky header.
-  return Math.max(0,rect.bottom)+24;
-}
-function scrollPortalSection(target,{behavior='smooth',updateHash=true}={}){
-  const el=typeof target==='string'?document.querySelector(target):target;
-  if(!el)return;
-  const top=Math.max(0,window.scrollY+el.getBoundingClientRect().top-portalStickyNavigationOffset());
-  window.scrollTo({top,behavior});
-  if(updateHash&&el.id)history.replaceState(null,'','#'+el.id);
-}
-document.querySelectorAll('.portal-mobile-nav a[href^="#"]').forEach(link=>{
-  link.addEventListener('click',event=>{
-    const hash=link.getAttribute('href');
-    if(!hash||hash==='#')return;
-    const target=document.querySelector(hash);
-    if(!target)return;
+document.querySelectorAll('.portal-mobile-nav a[href^="#"]').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    const href = link.getAttribute('href');
+    if (!href || href === '#') return;
+    const target = document.querySelector(href);
+    if (!target) return;
     event.preventDefault();
-    scrollPortalSection(target,{behavior:'smooth',updateHash:true});
+    history.replaceState(null, '', href);
+    rebatifyPortalScrollTarget(target, 'smooth');
   });
 });
+
+function rebatifyPortalApplyHashOffset() {
+  if (!window.location.hash) return;
+  const target = document.querySelector(window.location.hash);
+  if (!target) return;
+  requestAnimationFrame(() => rebatifyPortalScrollTarget(target, 'auto'));
+}
+window.addEventListener('hashchange', rebatifyPortalApplyHashOffset);
+window.addEventListener('load', () => setTimeout(rebatifyPortalApplyHashOffset, 80));
