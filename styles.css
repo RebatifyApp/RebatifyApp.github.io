@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 73 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 74 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1146,7 +1146,7 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
 @media(max-width:640px){.portal-login-support-panel{padding:15px;border-radius:17px}}
 
 
-/* ===== Website Build 73: web-app line icons + premium Help & Feedback conversation ===== */
+/* ===== Website Build 74: web-app line icons + premium Help & Feedback conversation ===== */
 .portal-mobile-nav a{
   display:inline-flex;
   align-items:center;
@@ -1681,4 +1681,168 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
   .admin-announcement-options>label{min-height:0}
   .admin-feedback-card-meta{font-size:.67rem}
   .admin-feedback-card-preview{font-size:.73rem}
+}
+
+
+/* ===== Website Build 74: premium live Help & Feedback messaging ===== */
+body.portal-conversation-active{overflow:hidden!important}
+.portal-conversation-backdrop{padding:12px;align-items:center}
+.portal-conversation-modal{
+  width:min(680px,100%);
+  height:min(780px,calc(100dvh - 24px));
+  max-height:calc(100dvh - 24px);
+  padding:0!important;
+  overflow:hidden!important;
+  display:grid!important;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  background:#fff;
+  border-radius:22px;
+}
+.portal-conversation-header{
+  position:relative;z-index:2;
+  padding:16px 18px 14px!important;
+  border-bottom:1px solid #e4ebf4;
+  box-shadow:0 5px 16px rgba(7,31,72,.035);
+}
+.portal-conversation-icon{width:38px;height:38px;flex-basis:38px;border-radius:12px}
+.portal-conversation-icon svg{width:19px;height:19px}
+.portal-conversation-heading-copy>span:first-child{font-size:.61rem;letter-spacing:.085em}
+.portal-conversation-heading-copy h2{font-size:1.18rem!important;line-height:1.15}
+.portal-conversation-status-row{margin-top:7px!important;margin-bottom:0!important;gap:6px}
+.portal-conversation-type,.portal-feedback-public-status{min-height:24px!important;padding:4px 8px!important;font-size:.61rem!important}
+.portal-live-indicator{font-size:.61rem}
+.portal-conversation-close{width:38px;height:38px;flex-basis:38px}
+.portal-conversation-thread-shell{
+  min-height:0!important;
+  overflow:hidden!important;
+  padding:14px 14px 10px!important;
+  background:#f5f7fb!important;
+  border-bottom:1px solid #e2e9f2;
+}
+.portal-conversation-thread{
+  min-height:0!important;
+  height:100%!important;
+  max-height:none!important;
+  overflow-y:auto!important;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:2px 2px 10px!important;
+  scroll-behavior:smooth;
+}
+.portal-chat-message{
+  max-width:82%!important;
+  padding:10px 12px!important;
+  border-radius:16px!important;
+  box-shadow:0 3px 12px rgba(7,31,72,.035)!important;
+}
+.portal-chat-message.from-tester{border-bottom-right-radius:5px!important}
+.portal-chat-message.from-rebatify{border-bottom-left-radius:5px!important}
+.portal-chat-message.initial{
+  align-self:flex-end!important;
+  max-width:86%!important;
+  border:1px solid #cfddf4!important;
+  border-left:1px solid #cfddf4!important;
+  background:#eef4ff!important;
+  border-bottom-right-radius:5px!important;
+  padding:11px 12px!important;
+}
+.portal-chat-original-kicker{display:none!important}
+.portal-chat-original-label{
+  display:inline-flex;align-items:center;margin-left:5px;padding:2px 6px;border-radius:999px;
+  background:rgba(20,92,242,.08);color:#145cf2;font-size:.54rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em;
+}
+.portal-chat-message-head{margin-bottom:4px!important}
+.portal-chat-message-head strong{font-size:.68rem!important}
+.portal-chat-message-head time{font-size:.58rem!important}
+.portal-chat-message p{font-size:.78rem!important;line-height:1.46!important}
+.portal-chat-meta-list{gap:5px!important;margin-top:7px!important}
+.portal-chat-meta-list span{padding:3px 6px!important;font-size:.56rem!important}
+.portal-chat-system{align-self:center;max-width:90%;padding:8px 10px!important;border-radius:12px!important;font-size:.65rem!important;text-align:center}
+.portal-chat-loading{align-self:center;padding:8px 10px!important;font-size:.65rem!important}
+.portal-conversation-reply{
+  position:relative;z-index:3;
+  margin:0!important;
+  padding:10px 12px max(10px,env(safe-area-inset-bottom))!important;
+  border-top:0!important;
+  background:#fff!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 52px;
+  grid-template-areas:"heading heading" "input send" "message message";
+  column-gap:8px;row-gap:6px;
+  box-shadow:0 -8px 24px rgba(7,31,72,.045);
+}
+.portal-conversation-reply-heading{grid-area:heading;margin:0!important;min-height:18px}
+.portal-conversation-reply-heading>div{display:block!important}
+.portal-conversation-reply-heading strong{font-size:.67rem!important;color:#596e84!important}
+.portal-conversation-reply-heading>div>span{display:none!important}
+.portal-conversation-reply-heading>svg{display:none!important}
+.portal-conversation-reply textarea{
+  grid-area:input;
+  min-height:48px!important;
+  height:48px;
+  max-height:112px!important;
+  margin:0!important;
+  padding:12px 13px!important;
+  resize:none!important;
+  overflow-y:auto;
+  border-radius:12px!important;
+  background:#f8fafc!important;
+  font-size:.82rem!important;
+  line-height:1.4!important;
+}
+.portal-conversation-reply .portal-task-message{grid-area:message;margin:0!important;min-height:0!important;font-size:.64rem!important}
+.portal-conversation-reply .portal-task-message:empty{display:none!important}
+.portal-conversation-send{
+  grid-area:send;
+  align-self:end;
+  width:52px!important;height:52px!important;min-height:52px!important;
+  margin:0!important;padding:0!important;
+  border-radius:12px!important;
+  display:grid!important;place-items:center!important;
+}
+.portal-conversation-send span{display:none!important}
+.portal-conversation-send svg{width:21px!important;height:21px!important;margin:0!important}
+
+/* Admin conversations use the same message-stream model: fixed composer, scrolling history. */
+.admin-conversation-section{display:grid;grid-template-rows:auto minmax(160px,360px) auto;overflow:hidden;background:#fff}
+.admin-conversation-section>.admin-feedback-section-head{padding:14px 15px 10px;border-bottom:1px solid #e6edf5}
+.admin-conversation-thread{
+  min-height:160px;max-height:360px!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;background:#f6f8fb;padding:13px!important;scroll-behavior:smooth;
+}
+.admin-chat-message{max-width:84%!important;padding:10px 12px!important;border-radius:15px!important;box-shadow:0 3px 12px rgba(7,31,72,.03)}
+.admin-chat-message.from-admin{border-bottom-right-radius:5px!important}
+.admin-chat-message.from-tester{border-bottom-left-radius:5px!important}
+.admin-conversation-reply{position:relative;background:#fff;padding:11px 13px!important;border-top:1px solid #e4ebf4!important}
+.admin-conversation-reply .admin-detail-label{display:block;margin-bottom:5px}
+.admin-conversation-reply .admin-detail-textarea{min-height:54px!important;max-height:110px;margin:0 0 8px!important;resize:vertical}
+.admin-conversation-reply .admin-primary-button{min-height:44px!important;margin:0 0 0 auto!important;width:auto!important}
+
+@media(max-width:700px){
+  .portal-conversation-backdrop{padding:6px!important;align-items:center!important}
+  .portal-conversation-modal{
+    width:100%!important;
+    height:calc(100dvh - 12px)!important;
+    max-height:calc(100dvh - 12px)!important;
+    border-radius:20px!important;
+  }
+  .portal-conversation-header{padding:13px 13px 11px!important}
+  .portal-conversation-header-main{gap:9px!important}
+  .portal-conversation-icon{width:34px;height:34px;flex-basis:34px}
+  .portal-conversation-heading-copy h2{font-size:1.06rem!important;letter-spacing:-.02em!important}
+  .portal-conversation-close{width:36px;height:36px;flex-basis:36px}
+  .portal-conversation-thread-shell{padding:10px 9px 8px!important}
+  .portal-chat-message{max-width:88%!important}
+  .portal-chat-message.initial{max-width:90%!important}
+  .portal-conversation-reply{padding:8px 9px max(8px,env(safe-area-inset-bottom))!important;grid-template-columns:minmax(0,1fr) 48px}
+  .portal-conversation-reply-heading{display:none!important}
+  .portal-conversation-reply textarea{min-height:48px!important;height:48px;font-size:16px!important}
+  .portal-conversation-send{width:48px!important;height:48px!important;min-height:48px!important}
+  .portal-conversation-send svg{width:20px!important;height:20px!important}
+  .admin-conversation-section{grid-template-rows:auto minmax(180px,44dvh) auto}
+  .admin-conversation-thread{max-height:44dvh!important}
 }
