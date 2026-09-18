@@ -1875,18 +1875,18 @@ body.portal-conversation-active{overflow:hidden!important}
 .admin-confirm-backdrop{z-index:420}
 
 
-/* ===== Website Build 76: anchor navigation offset ===== */
+/* ===== Website Build 77: sticky-navigation-safe anchor fallback =====
+   JavaScript calculates the live sticky-menu bottom edge for menu clicks.
+   These margins remain as a safe fallback for direct browser hash navigation. */
 #program-timeline,
 #submit-feedback,
 #feedback-history,
 #how-to,
-#faq{
-  scroll-margin-top:140px;
-}
+#faq{scroll-margin-top:190px}
 @media(max-width:700px){
   #program-timeline,
   #submit-feedback,
   #feedback-history,
   #how-to,
-  #faq{scroll-margin-top:82px}
+  #faq{scroll-margin-top:112px}
 }
