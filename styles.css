@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 71 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 72 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1144,3 +1144,419 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
 .portal-login-support-heading span{color:#64758e;line-height:1.5;font-size:.93rem}
 .portal-login-support-panel textarea{min-height:120px}
 @media(max-width:640px){.portal-login-support-panel{padding:15px;border-radius:17px}}
+
+
+/* ===== Website Build 72: web-app line icons + premium Help & Feedback conversation ===== */
+.portal-mobile-nav a{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  min-height:42px;
+  padding:8px 13px;
+}
+.portal-nav-icon{
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.85;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.portal-mobile-nav a:hover,.portal-mobile-nav a:focus-visible{
+  text-decoration:none;
+  color:#145cf2;
+  border-color:rgba(20,92,242,.22);
+  background:#f8fbff;
+}
+
+.portal-conversation-backdrop{
+  background:rgba(4,17,45,.56);
+  backdrop-filter:blur(12px) saturate(1.08);
+  -webkit-backdrop-filter:blur(12px) saturate(1.08);
+  padding:18px;
+}
+.portal-conversation-modal,
+.portal-conversation-modal button,
+.portal-conversation-modal textarea{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+.portal-conversation-modal{
+  width:min(680px,100%);
+  max-height:min(840px,92svh);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  padding:0;
+  border:1px solid rgba(20,92,242,.14);
+  border-radius:30px;
+  background:#fbfdff;
+  box-shadow:0 34px 100px rgba(4,25,71,.34),0 1px 0 rgba(255,255,255,.95) inset;
+}
+.portal-conversation-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:22px 22px 19px;
+  background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+  border-bottom:1px solid #e3ebf6;
+}
+.portal-conversation-header-main{display:flex;align-items:flex-start;gap:14px;min-width:0}
+.portal-conversation-icon{
+  width:46px;height:46px;flex:0 0 46px;border-radius:15px;
+  display:grid;place-items:center;color:#145cf2;
+  background:linear-gradient(145deg,#eef4ff,#ecfbfa);
+  border:1px solid rgba(20,92,242,.12);
+  box-shadow:0 7px 18px rgba(20,92,242,.08);
+}
+.portal-conversation-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.portal-conversation-heading-copy{min-width:0}
+.portal-conversation-heading-copy>span:first-child{
+  display:block;margin:1px 0 3px;color:#3B9E4A;font-size:.68rem;font-weight:950;
+  letter-spacing:.095em;text-transform:uppercase;line-height:1.2;
+}
+.portal-conversation-heading-copy h2{
+  margin:0;color:#0b1831;font-size:clamp(1.35rem,4vw,1.72rem);line-height:1.12;
+  letter-spacing:-.035em;font-weight:900;overflow-wrap:anywhere;
+}
+.portal-conversation-close{
+  width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;
+  border-radius:14px;border:1px solid #dce7f6;background:#fff;color:#425a73;cursor:pointer;
+  box-shadow:0 6px 16px rgba(8,34,92,.05);transition:.16s ease;
+}
+.portal-conversation-close:hover{color:#145cf2;border-color:#bfd3f4;background:#f7faff;transform:translateY(-1px)}
+.portal-conversation-close svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.portal-conversation-status-row{margin:10px 0 0;gap:8px;font-size:.7rem}
+.portal-conversation-type{
+  display:inline-flex;align-items:center;min-height:27px;padding:5px 9px;border-radius:999px;
+  background:#f1f5fa;color:#61748a;border:1px solid #e2e9f2;font-size:.65rem;font-weight:850;
+}
+.portal-conversation-thread-shell{
+  min-height:0;flex:1;padding:18px;background:linear-gradient(180deg,#f5f8fc 0%,#f8fbfe 100%);
+  border-bottom:1px solid #e3ebf6;
+}
+.portal-conversation-thread{
+  max-height:none;height:100%;min-height:150px;overflow:auto;padding:0 3px 2px;gap:12px;
+  scrollbar-width:thin;scrollbar-color:#c6d4e6 transparent;
+}
+.portal-chat-message{
+  max-width:86%;padding:13px 14px;border-radius:18px;font-family:inherit;
+  box-shadow:0 6px 18px rgba(7,32,78,.04);
+}
+.portal-chat-message.from-tester{align-self:flex-end;background:#eef4ff;border:1px solid #cfddf4;border-bottom-right-radius:7px}
+.portal-chat-message.from-rebatify{align-self:flex-start;background:#fff;border:1px solid #dde7f2;border-bottom-left-radius:7px}
+.portal-chat-message.initial{
+  align-self:stretch;max-width:100%;padding:16px 17px;border-radius:20px;border:1px solid #d7e4f6;
+  border-left:4px solid #145cf2;background:#fff;box-shadow:0 9px 24px rgba(8,34,92,.055);
+}
+.portal-chat-original-kicker{display:flex;align-items:center;gap:7px;margin-bottom:9px;color:#145cf2;font-size:.66rem;font-weight:950;letter-spacing:.07em;text-transform:uppercase}
+.portal-chat-original-kicker svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.portal-chat-message-head{margin-bottom:7px}
+.portal-chat-message-head strong{font-size:.74rem;color:#1f3854;font-weight:900}
+.portal-chat-message-head time{font-size:.64rem;color:#8796a8;font-weight:750}
+.portal-chat-message p{color:#334c67;font-size:.8rem;line-height:1.58}
+.portal-chat-meta-list{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.portal-chat-meta-list span{
+  display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;background:#f3f6fa;
+  color:#6f8094;border:1px solid #e4eaf2;font-size:.63rem;font-weight:800;
+}
+.portal-chat-loading,.portal-chat-system{background:#fff;border:1px solid #e0e8f3;color:#718399;box-shadow:0 5px 14px rgba(7,32,78,.03)}
+.portal-conversation-reply{
+  margin:0;padding:18px 20px 20px;border-top:0;background:#fff;
+}
+.portal-conversation-reply-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
+.portal-conversation-reply-heading>div{display:flex;flex-direction:column;gap:1px}
+.portal-conversation-reply-heading strong{color:#16304e;font-size:.82rem;font-weight:900}
+.portal-conversation-reply-heading span{color:#7a8a9e;font-size:.68rem;font-weight:700}
+.portal-conversation-reply-heading svg{width:21px;height:21px;fill:none;stroke:#6e8196;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.portal-conversation-reply textarea{
+  width:100%;min-height:104px;margin:0;padding:13px 14px;border:1px solid #d8e3f1;border-radius:16px;
+  background:#fbfdff;color:#0b1831;font:inherit;font-size:.82rem;line-height:1.5;resize:vertical;outline:none;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.portal-conversation-reply textarea:focus{background:#fff;border-color:rgba(20,92,242,.48);box-shadow:0 0 0 4px rgba(20,92,242,.08)}
+.portal-conversation-reply textarea::placeholder{color:#9aa8b8}
+.portal-conversation-reply .portal-task-message{margin:7px 0 0;min-height:0}
+.portal-conversation-send{
+  margin:12px 0 0 auto;min-height:43px;padding:10px 15px;border:0;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(105deg,#0b49d8,#1464f6 66%,#16a9b0);
+  color:#fff;font:inherit;font-size:.76rem;font-weight:900;cursor:pointer;box-shadow:0 10px 22px rgba(20,92,242,.20);transition:.16s ease;
+}
+.portal-conversation-send:hover{transform:translateY(-1px);box-shadow:0 13px 26px rgba(20,92,242,.24)}
+.portal-conversation-send:disabled{opacity:.6;cursor:wait;transform:none}
+.portal-conversation-send svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+@media(max-width:700px){
+  .portal-mobile-nav-scroll{gap:7px;padding-top:8px;padding-bottom:8px}
+  .portal-mobile-nav a{gap:8px;min-height:40px;padding:7px 11px;font-size:.7rem}
+  .portal-nav-icon{width:18px;height:18px;flex-basis:18px}
+  .portal-conversation-backdrop{padding:12px;align-items:center}
+  .portal-conversation-modal{width:100%;max-height:88svh;border-radius:26px}
+  .portal-conversation-header{padding:18px 17px 16px;gap:12px}
+  .portal-conversation-header-main{gap:11px}
+  .portal-conversation-icon{width:40px;height:40px;flex-basis:40px;border-radius:13px}
+  .portal-conversation-icon svg{width:20px;height:20px}
+  .portal-conversation-close{width:38px;height:38px;flex-basis:38px;border-radius:12px}
+  .portal-conversation-heading-copy h2{font-size:1.35rem}
+  .portal-conversation-thread-shell{padding:14px;min-height:160px}
+  .portal-chat-message{max-width:92%;padding:12px 13px}
+  .portal-chat-message.initial{padding:14px 14px}
+  .portal-conversation-reply{padding:15px 16px 17px}
+  .portal-conversation-reply textarea{min-height:88px}
+  .portal-conversation-send{width:100%;min-height:45px;margin-top:10px}
+}
+
+/* ===== Build 72 locked Rebatify button standard ===== */
+:root{
+  --rebatify-action-green:#3B9E4A;
+  --rebatify-action-green-text:#2F7E3B;
+  --rebatify-danger-red:#D93949;
+  --rebatify-neutral-border:#dbe4ee;
+  --rebatify-neutral-text:#314357;
+}
+
+/* Web-app style navigation icons: outlined, consistent, with deliberate label spacing. */
+.admin-nav-item{
+  grid-template-columns:24px minmax(0,1fr) auto;
+  column-gap:12px;
+  border-radius:12px;
+}
+.admin-nav-icon{
+  width:24px;height:24px;border-radius:0;background:transparent;
+  color:currentColor;
+}
+.admin-nav-icon svg{width:20px;height:20px;stroke-width:1.9}
+.admin-nav-item.is-active{
+  background:#edf4ff;
+  color:#145cf2;
+}
+.admin-nav-item.is-active .admin-nav-icon{
+  background:transparent;color:#145cf2;box-shadow:none;
+}
+.portal-mobile-nav a{
+  gap:10px;
+  border-radius:12px;
+  box-shadow:none;
+}
+.portal-control-icon{
+  width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;
+}
+.portal-settings-link,.portal-logout{gap:10px}
+
+/* Shared geometry + typography for normal Rebatify web buttons. */
+.btn,
+.beta-submit,
+.admin-primary-button,
+.admin-secondary-button,
+.admin-action-button,
+.admin-row-button,
+.admin-table-open,
+.admin-text-button,
+.admin-task-remind-button,
+.portal-settings-link,
+.portal-logout,
+.portal-account-help-button,
+.portal-login-support-toggle,
+.portal-announcement-ack,
+.portal-testflight-button,
+.portal-tile-testflight-button,
+.portal-conversation-send,
+.admin-menu-toggle,
+.admin-icon-button{
+  border-radius:12px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px;
+  font-weight:750;
+  letter-spacing:0;
+  box-shadow:none;
+}
+
+/* Forward / affirmative / commit = soft green. */
+.admin-primary-button,
+.beta-submit,
+.btn.primary,
+.admin-action-button.approve,
+.admin-task-remind-button:not(.admin-task-remove-button),
+.portal-announcement-ack,
+.portal-conversation-send{
+  color:var(--rebatify-action-green-text)!important;
+  background:rgba(59,158,74,.10)!important;
+  border:1px solid rgba(59,158,74,.22)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+.admin-primary-button,
+.beta-submit,
+.btn.primary,
+.portal-conversation-send{
+  min-height:52px;
+  padding:12px 14px;
+}
+.admin-action-button.approve,
+.admin-task-remind-button:not(.admin-task-remove-button),
+.portal-announcement-ack{
+  min-height:44px;
+  padding:10px 14px;
+}
+.admin-primary-button:hover,
+.beta-submit:hover,
+.btn.primary:hover,
+.admin-action-button.approve:hover,
+.admin-task-remind-button:not(.admin-task-remove-button):hover,
+.portal-announcement-ack:hover,
+.portal-conversation-send:hover{
+  color:var(--rebatify-action-green-text)!important;
+  background:rgba(59,158,74,.16)!important;
+  border-color:rgba(59,158,74,.28)!important;
+  box-shadow:none!important;
+  transform:translateY(-1px);
+}
+
+/* Destructive = soft red, never solid red. */
+.admin-action-button.danger,
+.admin-action-button.danger-soft,
+.admin-task-remove-button{
+  color:var(--rebatify-danger-red)!important;
+  background:rgba(217,57,73,.10)!important;
+  border:1px solid rgba(217,57,73,.22)!important;
+  box-shadow:none!important;
+  min-height:44px;
+  padding:10px 14px;
+}
+.admin-action-button.danger:hover,
+.admin-action-button.danger-soft:hover,
+.admin-task-remove-button:hover{
+  color:var(--rebatify-danger-red)!important;
+  background:rgba(217,57,73,.16)!important;
+  border-color:rgba(217,57,73,.28)!important;
+  box-shadow:none!important;
+  transform:translateY(-1px);
+}
+
+/* Secondary / cancel / back / navigation = neutral light. */
+.admin-secondary-button,
+.admin-action-button:not(.approve):not(.danger):not(.danger-soft),
+.admin-row-button,
+.admin-table-open,
+.admin-text-button,
+.portal-settings-link,
+.portal-logout,
+.portal-account-help-button,
+.portal-login-support-toggle,
+.portal-testflight-button,
+.portal-tile-testflight-button,
+.admin-menu-toggle,
+.admin-icon-button,
+.btn:not(.primary){
+  color:var(--rebatify-neutral-text)!important;
+  background:#fff!important;
+  border:1px solid var(--rebatify-neutral-border)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+.admin-secondary-button,
+.admin-action-button:not(.approve):not(.danger):not(.danger-soft),
+.admin-row-button,
+.admin-table-open,
+.portal-settings-link,
+.portal-logout,
+.portal-account-help-button,
+.portal-login-support-toggle,
+.portal-testflight-button,
+.portal-tile-testflight-button{
+  min-height:44px;
+  padding:10px 14px;
+}
+.admin-secondary-button:hover,
+.admin-action-button:not(.approve):not(.danger):not(.danger-soft):hover,
+.admin-row-button:hover,
+.admin-table-open:hover,
+.admin-text-button:hover,
+.portal-settings-link:hover,
+.portal-logout:hover,
+.portal-account-help-button:hover,
+.portal-login-support-toggle:hover,
+.portal-testflight-button:hover,
+.portal-tile-testflight-button:hover,
+.admin-menu-toggle:hover,
+.admin-icon-button:hover,
+.btn:not(.primary):hover{
+  color:#24374c!important;
+  background:#f7f9fc!important;
+  border-color:#cbd7e4!important;
+  box-shadow:none!important;
+  transform:translateY(-1px);
+  text-decoration:none;
+}
+
+/* Confirmation/action icon treatment. */
+.portal-conversation-send{gap:10px}
+.portal-conversation-send svg{
+  width:28px!important;height:28px!important;padding:6px;box-sizing:border-box;border-radius:50%;
+  background:rgba(59,158,74,.10);stroke:var(--rebatify-action-green-text)!important;
+}
+
+/* Standard disabled state. */
+.btn:disabled,
+.beta-submit:disabled,
+.admin-primary-button:disabled,
+.admin-secondary-button:disabled,
+.admin-action-button:disabled,
+.admin-row-button:disabled,
+.admin-table-open:disabled,
+.admin-text-button:disabled,
+.admin-task-remind-button:disabled,
+.portal-logout:disabled,
+.portal-announcement-ack:disabled,
+.portal-testflight-button:disabled,
+.portal-conversation-send:disabled,
+.admin-menu-toggle:disabled,
+.admin-icon-button:disabled{
+  opacity:.48!important;
+  cursor:not-allowed!important;
+  transform:none!important;
+  box-shadow:none!important;
+}
+
+/* Keep the Help & Feedback conversation clean and premium on iPhone. */
+.portal-conversation-modal{
+  border-radius:24px;
+  border-color:#dbe5f0;
+  background:#fff;
+  box-shadow:0 26px 72px rgba(6,24,58,.28);
+}
+.portal-conversation-header{
+  padding:20px 20px 17px;
+  background:#fff;
+}
+.portal-conversation-heading-copy>span:first-child{color:#2F7E3B}
+.portal-conversation-heading-copy h2{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#0b1831;font-weight:800}
+.portal-conversation-icon{border-radius:12px}
+.portal-conversation-close{border-radius:12px;box-shadow:none}
+.portal-conversation-thread-shell{background:#f6f8fb}
+.portal-chat-message{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.portal-chat-message.initial{border-left:3px solid #145cf2}
+.portal-chat-message p{font-size:.85rem;line-height:1.55}
+.portal-conversation-reply{background:#fff}
+.portal-conversation-reply textarea{border-radius:12px;font-size:.88rem}
+
+@media(max-width:700px){
+  .portal-mobile-nav a{gap:9px;border-radius:12px}
+  .portal-conversation-modal{border-radius:22px}
+  .portal-conversation-header{padding:17px 16px 15px}
+  .portal-conversation-heading-copy h2{font-size:1.28rem}
+  .portal-conversation-send{min-height:52px}
+}
+
+
+/* Enforce the 12px button geometry even inside more-specific component rules. */
+.portal-feedback-form .beta-submit,
+.portal-device-form .beta-submit,
+.admin-drawer .admin-primary-button,
+.admin-drawer .admin-secondary-button,
+.admin-drawer .admin-action-button,
+.portal-conversation-reply .portal-conversation-send{
+  border-radius:12px!important;
+}
