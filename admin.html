@@ -9,7 +9,7 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Beta Program Admin</title>
 <link href="app-icon.png" rel="icon"/>
-<link href="styles.css?v=74" rel="stylesheet"/>
+<link href="styles.css?v=75" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
@@ -228,6 +228,21 @@
 <div class="admin-confirm-actions"><button class="admin-secondary-button" id="adminConfirmCancel" type="button">Cancel</button><button class="admin-primary-button" id="adminConfirmOk" type="button">Continue</button></div>
 </div>
 </div>
+
+<div class="admin-email-change-backdrop" hidden id="adminEmailChangeBackdrop">
+  <div class="admin-email-change-card" role="dialog" aria-modal="true" aria-labelledby="adminEmailChangeTitle">
+    <div class="admin-email-change-header">
+      <div><span class="admin-section-kicker">Tester Identity</span><h3 id="adminEmailChangeTitle">Change Beta Email</h3></div>
+      <button class="admin-icon-button" id="adminEmailChangeClose" type="button" aria-label="Close email change"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11m0-11-11 11" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
+    </div>
+    <p class="admin-email-change-lead">This keeps the same tester, application, task history, and Help &amp; Feedback history. The old email will stop working for Beta Portal sign-in and the tester will be required to sign in again with the new email.</p>
+    <div class="beta-field"><label for="adminEmailChangeCurrent">Current beta email</label><input id="adminEmailChangeCurrent" type="email" readonly></div>
+    <div class="beta-field"><label for="adminEmailChangeNew">New beta email <span class="admin-required-inline">*</span></label><input id="adminEmailChangeNew" type="email" autocomplete="off" inputmode="email" required placeholder="newemail@example.com"><small class="admin-email-change-help">Confirmation emails are sent to both the old and new addresses.</small></div>
+    <div class="admin-email-change-warning"><strong>What happens next</strong><span>Rebatify updates the tester profile and Firebase sign-in email, invalidates the old portal identity, preserves their beta history, and signs active portal sessions out.</span></div>
+    <div class="admin-email-change-message" id="adminEmailChangeMessage" aria-live="polite"></div>
+    <div class="admin-email-change-actions"><button class="admin-secondary-button" id="adminEmailChangeCancel" type="button">Cancel</button><button class="admin-primary-button" id="adminEmailChangeSubmit" type="button">Update Beta Email</button></div>
+  </div>
+</div>
 <div class="admin-toast" hidden="" id="adminToast"></div>
 <script>
 window.__REBATIFY_ADMIN_BOOT = { moduleLoaded:false, authResolved:false };
@@ -242,5 +257,5 @@ setTimeout(function(){
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=74"></script><script src="admin-firebase.js?v=74" type="module"></script></body>
+<script src="firebase-config.js?v=75"></script><script src="admin-firebase.js?v=75" type="module"></script></body>
 </html>

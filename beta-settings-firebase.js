@@ -1,7 +1,7 @@
-// Rebatify Beta Tester Settings - Website Build 74
+// Rebatify Beta Tester Settings - Website Build 75
 import { firebaseConfigured, auth, db, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { doc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const loading=document.getElementById('settingsLoading');
 const app=document.getElementById('settingsApp');
@@ -13,8 +13,10 @@ let profile=null;
 let inactivityTimer=null;
 let sessionEnding=false;
 let lastActivityWrite=0;
+let profileUnsubscribe=null;
 
-function fail(reason='session'){sessionEnding=true;clearTimeout(inactivityTimer);signOut(auth).catch(()=>{}).finally(()=>location.replace('beta-login.html?error='+encodeURIComponent(reason)));}
+function fail(reason='session'){sessionEnding=true;clearTimeout(inactivityTimer);if(profileUnsubscribe){profileUnsubscribe();profileUnsubscribe=null;}signOut(auth).catch(()=>{}).finally(()=>location.replace('beta-login.html?error='+encodeURIComponent(reason)));}
+function endEmailChangedSession(newEmail=''){if(sessionEnding)return;sessionEnding=true;clearTimeout(inactivityTimer);if(profileUnsubscribe){profileUnsubscribe();profileUnsubscribe=null;}const target=String(newEmail||'').trim().toLowerCase();signOut(auth).catch(()=>{}).finally(()=>{const params=new URLSearchParams();params.set('notice','email-changed');if(target)params.set('email',target);location.replace('beta-login.html?'+params.toString());});}
 function detectedScreenSize(){try{return `${window.screen.width}×${window.screen.height} @ ${window.devicePixelRatio||1}x`;}catch(_){return '';}}
 function detectedOsVersion(){const ua=navigator.userAgent||'';const ios=ua.match(/OS ([0-9_]+) like Mac OS X/i);if(ios)return 'iOS '+ios[1].replaceAll('_','.');const android=ua.match(/Android\s+([^;\)]+)/i);if(android)return 'Android '+android[1].trim();return '';}
 function normalizedStage(value){if(value==='deviceReady')return 'setupComplete';if(['approved','setupComplete','inviteSent','activeTesting'].includes(value))return value;return 'approved';}
@@ -72,6 +74,16 @@ else onAuthStateChanged(auth,async user=>{
     document.getElementById('settingsOsVersion').value=profile.osVersion||'';
     document.getElementById('settingsScreenSize').value=detectedScreenSize()||profile.screenSize||'';
     applyPlatformCopy(profile);
+    if(profileUnsubscribe)profileUnsubscribe();
+    const sessionEmail=String(user.email||'').trim().toLowerCase();
+    profileUnsubscribe=onSnapshot(doc(db,'betaUsers',user.uid),snap=>{
+      if(!snap.exists()){fail('access');return;}
+      const next={id:snap.id,...snap.data()};
+      if(next.accessStatus!=='Enabled'||!['Approved','Active'].includes(next.status)){fail('access');return;}
+      const profileEmail=String(next.email||'').trim().toLowerCase();
+      if(sessionEmail&&profileEmail&&sessionEmail!==profileEmail){endEmailChangedSession(profileEmail);return;}
+      profile=next;document.getElementById('settingsEmail').textContent=profile.email||user.email||'';applyPlatformCopy(profile);
+    },err=>console.warn('Settings profile listener failed:',err));
     installSettingsTextEntryCompatibility();startInactivityWatcher();loading.hidden=true;app.hidden=false;
   }catch(err){fail(err.message==='access'?'access':'session');}
 });

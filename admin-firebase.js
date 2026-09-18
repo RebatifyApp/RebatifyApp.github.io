@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 74
+// Rebatify Beta Admin — Website Build 75
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -79,6 +79,24 @@ let feedbackRealtimeUnsubscribe = null;
 let adminConversationUnsubscribe = null;
 let activeDrawerFeedbackId = null;
 let adminConversationMessageCount = 0;
+let emailChangeApplicationId = null;
+
+function openEmailChangeModal(applicationId,currentEmail){
+  emailChangeApplicationId=applicationId||null;
+  const back=document.getElementById('adminEmailChangeBackdrop');
+  const current=document.getElementById('adminEmailChangeCurrent');
+  const next=document.getElementById('adminEmailChangeNew');
+  const msg=document.getElementById('adminEmailChangeMessage');
+  if(current)current.value=String(currentEmail||'').trim().toLowerCase();
+  if(next){next.value='';next.setCustomValidity('');setTimeout(()=>next.focus(),50);}
+  if(msg){msg.textContent='';msg.className='admin-email-change-message';}
+  if(back)back.hidden=false;
+}
+function closeEmailChangeModal(){
+  emailChangeApplicationId=null;
+  const back=document.getElementById('adminEmailChangeBackdrop');
+  if(back)back.hidden=true;
+}
 
 
 
@@ -907,6 +925,7 @@ function applicationActionButtons(a){
   }else if(status==='Inactive'){
     buttons.push(btn('approve','active','Enable Access'));
   }
+  if(a.email)buttons.push(btn('','change-email','Change Beta Email'));
   buttons.push(btn('danger-soft','delete','Delete Application'));
   return buttons.join('');
 }
@@ -920,9 +939,10 @@ function openTesterRecord(t){
   const pending=pendingAssignmentsForTester(t);const activity=testerActivityInfo(t);const score=testerScore(t);const build=testerBuild(t);const device=testerDeviceSummary(t);
   const feedbackRows=testerFeedbackRows(t);const lastFeedback=score.lastFeedback;
   const pendingHtml=pending.length?pending.map(x=>`<div class="admin-task-assignment"><div class="admin-task-assignment-top"><div><strong>${esc(x.taskTitle||'Required task')}</strong><small>Due ${esc(formatDate(x.dueAt))}</small></div><span class="admin-status-pill status-pending">Pending</span></div><div class="admin-task-assignment-actions"><button class="admin-task-remind-button" data-remind-assignment="${esc(x.id)}" type="button">${x.lastReminderSentAt?'Remind Again':'Send Reminder'}</button><button class="admin-task-remind-button admin-task-remove-button" data-remove-task-assignment="${esc(x.id)}" type="button">Remove Task</button></div></div>`).join(''):'<div class="admin-empty-inline">No required tasks are pending for this tester.</div>';
+  const emailAction=a?`<button class="admin-action-button" data-app-action="change-email" data-row="${esc(a.id)}" type="button">Change Beta Email</button>`:'';
   const accessAction=a?(t.accessStatus==='Enabled'?`<button class="admin-action-button danger-soft" data-app-action="inactive" data-row="${esc(a.id)}" type="button">Disable Access</button>`:`<button class="admin-action-button approve" data-app-action="active" data-row="${esc(a.id)}" type="button">Enable Access</button>`):'';
   const deleteAction=a?`<button class="admin-action-button danger-soft" data-app-action="delete" data-row="${esc(a.id)}" type="button">Delete Application & Tester</button>`:`<button class="admin-action-button danger-soft" data-tester-action="delete" data-tester-uid="${esc(t.uid)}" type="button">Delete Tester</button>`;
-  const actions=[accessAction,deleteAction].filter(Boolean).join('');
+  const actions=[emailAction,accessAction,deleteAction].filter(Boolean).join('');
   const nextIndex=Math.min(TIMELINE_STAGES.length-1,timelineStageRank(timelineStage)+1);const canAdvance=timelineStage!=='activeTesting'&&t.accessStatus==='Enabled';
   const lastActive=activity.anchor?formatDate(activity.anchor):'Never';
   const lastFeedbackText=lastFeedback?`${formatDate(lastFeedback.submittedAt)} · ${lastFeedback.subject||'Feedback'}`:'No beta feedback submitted yet';
@@ -956,7 +976,8 @@ function openFeedbackRecord(f){
     if(f.retestedAt){const resultClass=String(f.retestResult||'').toLowerCase().includes('still')?'is-still-happening':'is-fixed';retestBlock=`<section class="admin-feedback-section admin-feedback-retest"><div class="admin-feedback-section-head"><div><span>Retest Result</span><strong class="admin-retest-result-badge ${resultClass}">${esc(f.retestResult||'Retest submitted')}</strong></div><time>${esc(formatDate(f.retestedAt))}</time></div><p>${f.retestNotes?esc(f.retestNotes):'<em>No additional retest notes were provided.</em>'}</p></section>`;}else{retestBlock=`<section class="admin-feedback-section admin-feedback-retest is-pending"><div class="admin-feedback-section-head"><div><span>Retest Result</span><strong>Waiting for tester</strong></div></div><p>The tester has been asked to retest this issue. Their portal shows the original report and requires a retest response.</p></section>`;}
   }
   const details=`<div class="admin-detail-grid"><div><span>Tester</span><strong>${esc(f.name)}</strong><small>${esc(f.email)}</small></div><div><span>Submitted</span><strong>${esc(formatDate(f.submittedAt))}</strong></div>${support?`<div><span>Workflow</span><strong>Account / Access Support</strong></div><div><span>Testing Platform</span><strong>${esc(f.platform||'Not provided')}</strong></div>`:`<div><span>Build</span><strong>${esc(f.appVersion||'Not provided')}</strong></div><div><span>Device / OS</span><strong>${esc(f.deviceDetails||[f.deviceModel,f.osVersion].filter(Boolean).join(' · ')||'Not provided')}</strong></div><div><span>Screen Size</span><strong>${esc(f.screenSize||'Not provided')}</strong></div><div><span>Page / Feature</span><strong>${esc(f.pageFeature||'Not provided')}</strong></div>`}</div>`;
-  openDrawer(support?'Support Conversation':'Tester Feedback',f.subject,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-feedback-type-chip">${esc(f.type)}</span><span class="admin-platform-pill">${esc(f.platform)}</span><span class="admin-subtle-chip">Tester sees: ${esc(publicStatus)}</span></div>${details}${originalBlock}${retestBlock}<section class="admin-conversation-section"><div class="admin-feedback-section-head"><div><span>Conversation</span><strong>Replies <span class="admin-live-conversation"><i aria-hidden="true"></i> Live</span></strong></div></div><div class="admin-conversation-thread" id="drawerConversationThread"><div class="admin-empty-inline">Loading replies…</div></div><div class="admin-conversation-reply"><label class="admin-detail-label" for="drawerConversationReply">Reply to tester</label><textarea id="drawerConversationReply" class="admin-detail-textarea" maxlength="5000" placeholder="Write a reply…"></textarea><button class="admin-primary-button" data-send-conversation-reply="${esc(f.id)}" type="button">Send Reply</button></div></section><div class="beta-field"><label for="drawerFeedbackStatus">Status</label><select id="drawerFeedbackStatus" class="admin-detail-select">${feedbackWorkflowOptions(f)}</select></div><div><label class="admin-detail-label" for="drawerFeedbackNotes">Private admin notes</label><textarea id="drawerFeedbackNotes" class="admin-detail-textarea" placeholder="Internal notes only administrators can see…">${esc(f.adminNotes||'')}</textarea></div><button class="admin-primary-button" data-save-feedback="${esc(f.id)}" type="button">Save Status &amp; Notes</button></div>`);
+  const supportEmailAction=support?`<div class="admin-support-identity-action"><button class="admin-secondary-button" data-feedback-change-email="${esc(f.id)}" type="button">Change Beta Email</button><span>Use this when the tester supplied a corrected Apple Account or Google Play email.</span></div>`:'';
+  openDrawer(support?'Support Conversation':'Tester Feedback',f.subject,`<div class="admin-detail-stack"><div class="admin-detail-status-row"><span class="admin-feedback-type-chip">${esc(f.type)}</span><span class="admin-platform-pill">${esc(f.platform)}</span><span class="admin-subtle-chip">Tester sees: ${esc(publicStatus)}</span></div>${details}${supportEmailAction}${originalBlock}${retestBlock}<section class="admin-conversation-section"><div class="admin-feedback-section-head"><div><span>Conversation</span><strong>Replies <span class="admin-live-conversation"><i aria-hidden="true"></i> Live</span></strong></div></div><div class="admin-conversation-thread" id="drawerConversationThread"><div class="admin-empty-inline">Loading replies…</div></div><div class="admin-conversation-reply"><label class="admin-detail-label" for="drawerConversationReply">Reply to tester</label><textarea id="drawerConversationReply" class="admin-detail-textarea" maxlength="5000" placeholder="Write a reply…"></textarea><button class="admin-primary-button" data-send-conversation-reply="${esc(f.id)}" type="button">Send Reply</button></div></section><div class="beta-field"><label for="drawerFeedbackStatus">Status</label><select id="drawerFeedbackStatus" class="admin-detail-select">${feedbackWorkflowOptions(f)}</select></div><div><label class="admin-detail-label" for="drawerFeedbackNotes">Private admin notes</label><textarea id="drawerFeedbackNotes" class="admin-detail-textarea" placeholder="Internal notes only administrators can see…">${esc(f.adminNotes||'')}</textarea></div><button class="admin-primary-button" data-save-feedback="${esc(f.id)}" type="button">Save Status &amp; Notes</button></div>`);
   subscribeAdminConversationMessages(f.id);
 }
 
@@ -1060,6 +1081,19 @@ async function deleteTesterOnly(t){
 }
 async function deleteApplication(a){return runApplicationAdminAction(a,'delete');}
 
+async function changeBetaEmail(applicationId,newEmail){
+  const result=await callWorkerAdminAction('admin-change-beta-email',{applicationId,newEmail:String(newEmail||'').trim().toLowerCase()});
+  state.loaded.applications=false;state.loaded.testers=false;state.loaded.tasks=false;state.loaded.feedback=false;
+  await Promise.all([loadApplications(true),loadTesters(true),loadTasks(true),loadFeedback(true)]);
+  await loadOverview();
+  if(activeView==='applications')renderApplications();
+  if(activeView==='testers')renderTesters();
+  if(activeView==='tasks')renderTasks();
+  if(activeView==='announcements')renderAnnouncements();
+  if(activeView==='feedback')renderFeedback();
+  return result;
+}
+
 
 async function refreshActiveView(){
   if(!isAdminUser(auth.currentUser)){
@@ -1135,6 +1169,14 @@ if(!firebaseConfigured){
 }
 
 document.addEventListener('click',async e=>{
+  const feedbackEmailBtn=e.target.closest('[data-feedback-change-email]');if(feedbackEmailBtn){
+    const f=await ensureFeedbackLoaded(feedbackEmailBtn.dataset.feedbackChangeEmail);if(!f)return;
+    if(!state.loaded.applications)await loadApplications(true);
+    const normalized=String(f.email||'').trim().toLowerCase();
+    const a=state.applications.find(x=>(f.ownerUid&&x.testerUid===f.ownerUid)||String(x.email||'').trim().toLowerCase()===normalized);
+    if(!a){showToast('No beta application is linked to this conversation. Open Applications to review the tester record.','error');return;}
+    openEmailChangeModal(a.id,a.email);return;
+  }
   const nav=e.target.closest('[data-admin-view]');if(nav){await switchView(nav.dataset.adminView);return;}
   const jump=e.target.closest('[data-jump-view]');if(jump){await switchView(jump.dataset.jumpView);return;}
   const appBtn=e.target.closest('[data-open-app]');if(appBtn){try{const a=await ensureApplicationLoaded(appBtn.dataset.openApp);if(a)openApplicationRecord(a);}catch(err){showToast('Could not open that application.','error');}return;}
@@ -1235,6 +1277,7 @@ document.addEventListener('click',async e=>{
   const actionBtn=e.target.closest('[data-app-action]');if(actionBtn){
     const task=actionBtn.dataset.appAction;const id=actionBtn.dataset.row;if(!id){showToast('Could not find the tester application record.','error');return;}
     const a=await ensureApplicationLoaded(id);if(!a)return;
+    if(task==='change-email'){openEmailChangeModal(a.id,a.email);return;}
     const notification=(emailAutomationEnabled&&emailWorkerEndpoint)?' and notify them':'';
     const deleteNote=' This also deletes the tester portal profile and Firebase Authentication login for this email so the address can be used again later.';
     const confirmation={
@@ -1267,6 +1310,34 @@ document.addEventListener('click',async e=>{
     finally{actionBtn.disabled=false;}
     return;
   }
+});
+
+const emailChangeBackdrop=document.getElementById('adminEmailChangeBackdrop');
+const emailChangeClose=document.getElementById('adminEmailChangeClose');
+const emailChangeCancel=document.getElementById('adminEmailChangeCancel');
+const emailChangeSubmit=document.getElementById('adminEmailChangeSubmit');
+if(emailChangeClose)emailChangeClose.addEventListener('click',closeEmailChangeModal);
+if(emailChangeCancel)emailChangeCancel.addEventListener('click',closeEmailChangeModal);
+if(emailChangeBackdrop)emailChangeBackdrop.addEventListener('click',e=>{if(e.target===emailChangeBackdrop)closeEmailChangeModal();});
+if(emailChangeSubmit)emailChangeSubmit.addEventListener('click',async()=>{
+  const input=document.getElementById('adminEmailChangeNew');
+  const current=String(document.getElementById('adminEmailChangeCurrent')?.value||'').trim().toLowerCase();
+  const newEmail=String(input?.value||'').trim().toLowerCase();
+  const msg=document.getElementById('adminEmailChangeMessage');
+  if(!input||!input.checkValidity()){input?.reportValidity();return;}
+  if(newEmail===current){input.setCustomValidity('Enter a different email address.');input.reportValidity();return;}
+  input.setCustomValidity('');
+  if(!(await confirmAction(`Change this tester’s Beta Portal email from ${current} to ${newEmail}? Their current portal sessions will end and both email addresses will receive a confirmation.`,'')))return;
+  const original=emailChangeSubmit.textContent;emailChangeSubmit.disabled=true;emailChangeSubmit.textContent='Updating…';
+  if(msg){msg.textContent='Updating the tester identity and sending confirmation emails…';msg.className='admin-email-change-message';}
+  try{
+    const result=await changeBetaEmail(emailChangeApplicationId,newEmail);
+    const failed=[];if(result.oldEmailSent===false)failed.push('old address');if(result.newEmailSent===false)failed.push('new address');
+    closeEmailChangeModal();closeDrawer();
+    showToast(failed.length?`Beta email changed, but confirmation could not be sent to the ${failed.join(' and ')}.`:`Beta email changed. The old login is inactive and confirmation was sent to both addresses.`,failed.length?'error':'success');
+  }catch(err){
+    if(msg){msg.textContent=friendlyFirebaseError(err);msg.className='admin-email-change-message error';}
+  }finally{emailChangeSubmit.disabled=false;emailChangeSubmit.textContent=original;}
 });
 
 document.getElementById('adminDrawerClose').addEventListener('click',closeDrawer);

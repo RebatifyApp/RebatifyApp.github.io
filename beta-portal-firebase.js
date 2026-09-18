@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 74
+// Rebatify Beta Tester Portal - Website Build 75
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -31,6 +31,7 @@ let feedbackHistory = [];
 let activeRetestFeedback = null;
 let activeConversation = null;
 let feedbackHistoryUnsubscribe = null;
+let profileUnsubscribe = null;
 let conversationMessagesUnsubscribe = null;
 let conversationMessageCount = 0;
 let lastFirestoreActivityWrite = 0;
@@ -175,6 +176,21 @@ function startInactivityWatcher() {
     }
   });
   scheduleInactivityLogout();
+}
+
+function endEmailChangedSession(newEmail='') {
+  if (sessionEnding) return;
+  sessionEnding = true;
+  clearTimeout(inactivityTimer);
+  if (profileUnsubscribe) { profileUnsubscribe(); profileUnsubscribe = null; }
+  sessionStorage.removeItem(PORTAL_ACTIVITY_KEY);
+  const target = String(newEmail || '').trim().toLowerCase();
+  signOut(auth).catch(() => {}).finally(() => {
+    const params = new URLSearchParams();
+    params.set('notice', 'email-changed');
+    if (target) params.set('email', target);
+    location.replace('beta-login.html?' + params.toString());
+  });
 }
 
 function fail(reason='session') {
@@ -620,6 +636,16 @@ if (!firebaseConfigured) {
     try {
       currentProfile = await loadProfile(user);
       renderProfile(currentProfile);
+      if(profileUnsubscribe)profileUnsubscribe();
+      const sessionEmail=String(user.email||'').trim().toLowerCase();
+      profileUnsubscribe=onSnapshot(doc(db,'betaUsers',user.uid),snap=>{
+        if(!snap.exists()){fail('access');return;}
+        const next={id:snap.id,...snap.data()};
+        if(next.accessStatus!=='Enabled'||!['Approved','Active'].includes(next.status)){fail('access');return;}
+        const profileEmail=String(next.email||'').trim().toLowerCase();
+        if(sessionEmail&&profileEmail&&sessionEmail!==profileEmail){endEmailChangedSession(profileEmail);return;}
+        currentProfile=next;renderProfile(currentProfile);
+      },err=>console.warn('Beta profile realtime listener failed:',err));
       startInactivityWatcher();
     } catch (error) {
       fail(error && error.message === 'access' ? 'access' : 'session');
@@ -643,6 +669,7 @@ if (logout) {
   logout.addEventListener('click', async () => {
     sessionEnding = true;
     clearTimeout(inactivityTimer);
+    if(profileUnsubscribe){profileUnsubscribe();profileUnsubscribe=null;}
     sessionStorage.removeItem(PORTAL_ACTIVITY_KEY);
     try { await signOut(auth); } catch (_) {}
     location.replace('beta-login.html');

@@ -79,6 +79,7 @@ if (prefill && emailInput) emailInput.value = prefill;
 if (params.get('error') === 'access') showError('Your Rebatify Beta Program Portal access is currently disabled.');
 if (params.get('error') === 'session') showError('Your portal session ended. Enter your approved beta email to sign in again.');
 if (params.get('error') === 'inactive') showError('For your security, you were signed out after 6 hours of inactivity. Enter your approved beta email to sign in again.');
+if (params.get('notice') === 'email-changed') showError('Your Rebatify Beta email was updated. Your previous portal session ended. Sign in again using the new approved beta email shown below.', 'success');
 
 if (form) {
   form.addEventListener('submit', async event => {
