@@ -1873,3 +1873,20 @@ body.portal-conversation-active{overflow:hidden!important}
 @media(max-width:560px){.admin-email-change-card{padding:19px;border-radius:20px}.admin-email-change-actions{grid-template-columns:1fr}.admin-email-change-header h3{font-size:1.4rem}}
 .admin-support-identity-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe8f3}.admin-support-identity-action span{color:#6c7f95;font-size:.72rem;line-height:1.45;font-weight:700}
 .admin-confirm-backdrop{z-index:420}
+
+
+/* ===== Website Build 76: anchor navigation offset ===== */
+#program-timeline,
+#submit-feedback,
+#feedback-history,
+#how-to,
+#faq{
+  scroll-margin-top:140px;
+}
+@media(max-width:700px){
+  #program-timeline,
+  #submit-feedback,
+  #feedback-history,
+  #how-to,
+  #faq{scroll-margin-top:82px}
+}
