@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 71
+// Rebatify Beta Tester Portal - Website Build 72
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -295,7 +295,7 @@ async function openConversation(id){
   document.getElementById('portalConversationType').textContent=f.type||'';
   const ps=feedbackPublicStatus(f);const status=document.getElementById('portalConversationStatus');status.textContent=ps.label;status.className='portal-feedback-public-status '+ps.className;
   document.getElementById('portalConversationReply').value='';document.getElementById('portalConversationMessage').textContent='';
-  thread.innerHTML=`<div class="portal-chat-message from-tester initial"><div class="portal-chat-message-head"><strong>You · Original submission</strong><time>${escapeHtml(formatPortalDate(f.submittedAt))}</time></div><p>${escapeHtml(f.details||'')}</p>${f.supportAccountEmail?`<small>Account supplied: ${escapeHtml(f.supportAccountEmail)}</small>`:''}${f.appVersion?`<small>${escapeHtml(f.appVersion)}${f.pageFeature?' · '+escapeHtml(f.pageFeature):''}</small>`:''}</div><div class="portal-chat-loading">Loading replies…</div>`;
+  thread.innerHTML=`<div class="portal-chat-message from-tester initial"><div class="portal-chat-original-kicker"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-5 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg><span>Original submission</span></div><div class="portal-chat-message-head"><strong>You</strong><time>${escapeHtml(formatPortalDate(f.submittedAt))}</time></div><p>${escapeHtml(f.details||'')}</p><div class="portal-chat-meta-list">${f.supportAccountEmail?`<span>Account: ${escapeHtml(f.supportAccountEmail)}</span>`:''}${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div></div><div class="portal-chat-loading">Loading replies…</div>`;
   back.hidden=false;document.body.classList.add('portal-conversation-open');
   try{
     const messages=await loadConversationMessages(id);
@@ -607,8 +607,9 @@ if (feedbackForm) {
     const button=feedbackForm.querySelector('button[type="submit"]');const original=button.innerHTML;button.disabled=true;button.innerHTML='Submitting…';setFeedbackMessage('');
     const data=new FormData(feedbackForm);const type=String(data.get('feedbackType')||'').trim();const support=type==='Account / Access Problem';
     if(!support&&!testingSetupComplete(currentProfile)){setFeedbackMessage('Complete Testing Setup before submitting beta feedback so the report includes your confirmed testing account and device information.','error');openTestingSetup();button.disabled=false;button.innerHTML=original;return;}
-    const appVersion=support?'':String(data.get('appVersion')||'').trim();
-    if(!support&&!/^Build [0-9]+$/.test(appVersion)){setFeedbackMessage('Enter the Build number in the format “Build 228”.','error');button.disabled=false;button.innerHTML=original;return;}
+    const buildNumber=support?'':String(data.get('appVersion')||'').trim();
+    if(!support&&!/^[0-9]+$/.test(buildNumber)){setFeedbackMessage('Enter only the Build number, for example “228”.','error');button.disabled=false;button.innerHTML=original;return;}
+    const appVersion=support?'':`Build ${buildNumber}`;
     const deviceDetails=support?String(profileDeviceDetails(currentProfile)||'').trim():String(data.get('deviceDetails')||profileDeviceDetails(currentProfile)||'').trim();
     const payload={
       ownerUid:auth.currentUser.uid,name:currentProfile.name||'',email:currentProfile.email||auth.currentUser.email||'',platform:currentProfile.platform||'',
