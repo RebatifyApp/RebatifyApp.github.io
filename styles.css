@@ -1846,3 +1846,30 @@ body.portal-conversation-active{overflow:hidden!important}
   .admin-conversation-section{grid-template-rows:auto minmax(180px,44dvh) auto}
   .admin-conversation-thread{max-height:44dvh!important}
 }
+
+
+/* ===== Website Build 75: universal Beta Portal navigation + in-place email changes ===== */
+.portal-mobile-nav{display:block!important;position:sticky;top:67px;z-index:58;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.10);backdrop-filter:blur(14px)}
+.portal-mobile-nav-scroll{display:flex;justify-content:center;gap:9px;overflow-x:auto;scrollbar-width:none;padding-top:9px;padding-bottom:9px}
+.portal-mobile-nav-scroll::-webkit-scrollbar{display:none}
+@media(min-width:1100px){.portal-mobile-nav a{font-size:.76rem;padding:8px 14px}.portal-mobile-nav-scroll{overflow-x:visible;flex-wrap:wrap}}
+@media(min-width:701px) and (max-width:1099px){.portal-mobile-nav{top:67px}.portal-mobile-nav-scroll{justify-content:flex-start;padding-left:18px;padding-right:18px}.portal-mobile-nav a{flex:0 0 auto}}
+@media(max-width:700px){.portal-mobile-nav{top:0}.portal-mobile-nav-scroll{justify-content:flex-start}.portal-header{position:relative}}
+
+.admin-email-change-backdrop{position:fixed;inset:0;z-index:360;display:grid;place-items:center;padding:20px;background:rgba(7,19,46,.48);backdrop-filter:blur(7px)}
+.admin-email-change-backdrop[hidden]{display:none!important}
+.admin-email-change-card{width:min(100%,560px);padding:24px;border-radius:24px;background:#fff;border:1px solid #dce7f6;box-shadow:0 30px 90px rgba(7,19,46,.26)}
+.admin-email-change-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:10px}
+.admin-email-change-header h3{margin:4px 0 0;font-size:1.65rem}
+.admin-email-change-lead{margin:0 0 20px;color:#5f7188;line-height:1.55;font-size:.9rem}
+.admin-email-change-card input[readonly]{background:#f4f7fb;color:#5b6d82}
+.admin-email-change-help{display:block;margin-top:6px;color:#718399;font-size:.72rem;line-height:1.4}
+.admin-required-inline{color:#d93949;font-weight:900}
+.admin-email-change-warning{display:grid;gap:5px;margin:15px 0;padding:13px 14px;border-radius:14px;background:#f5f8fc;border:1px solid #dfe8f3;color:#52677f;font-size:.77rem;line-height:1.5}
+.admin-email-change-warning strong{color:#18314f}
+.admin-email-change-message{min-height:18px;margin:5px 0 10px;color:#60748c;font-size:.78rem;font-weight:750}
+.admin-email-change-message.error{color:#b42318}
+.admin-email-change-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+@media(max-width:560px){.admin-email-change-card{padding:19px;border-radius:20px}.admin-email-change-actions{grid-template-columns:1fr}.admin-email-change-header h3{font-size:1.4rem}}
+.admin-support-identity-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe8f3}.admin-support-identity-action span{color:#6c7f95;font-size:.72rem;line-height:1.45;font-weight:700}
+.admin-confirm-backdrop{z-index:420}
