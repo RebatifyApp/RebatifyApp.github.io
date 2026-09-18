@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 72 ===== */
+/* ===== Rebatify Beta Portal refinements — Website Build 73 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1146,7 +1146,7 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
 @media(max-width:640px){.portal-login-support-panel{padding:15px;border-radius:17px}}
 
 
-/* ===== Website Build 72: web-app line icons + premium Help & Feedback conversation ===== */
+/* ===== Website Build 73: web-app line icons + premium Help & Feedback conversation ===== */
 .portal-mobile-nav a{
   display:inline-flex;
   align-items:center;
@@ -1308,7 +1308,7 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
   .portal-conversation-send{width:100%;min-height:45px;margin-top:10px}
 }
 
-/* ===== Build 72 locked Rebatify button standard ===== */
+/* ===== Build 73 locked Rebatify button standard ===== */
 :root{
   --rebatify-action-green:#3B9E4A;
   --rebatify-action-green-text:#2F7E3B;
@@ -1559,4 +1559,126 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
 .admin-drawer .admin-action-button,
 .portal-conversation-reply .portal-conversation-send{
   border-radius:12px!important;
+}
+
+/* Build 73 — required Help & Feedback fields, live messaging, spacing, announcements */
+.portal-required-legend{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:0 0 10px;
+  color:#D93949;
+  font-size:.72rem;
+  font-weight:850;
+}
+.portal-required-legend span,
+.portal-required-asterisk{
+  color:#D93949!important;
+  font-weight:950!important;
+}
+.portal-feedback-form.is-validation-attempted input:invalid,
+.portal-feedback-form.is-validation-attempted select:invalid,
+.portal-feedback-form.is-validation-attempted textarea:invalid{
+  border-color:rgba(217,57,73,.52)!important;
+  box-shadow:0 0 0 3px rgba(217,57,73,.08)!important;
+}
+.portal-feedback-form input,
+.portal-feedback-form select,
+.portal-feedback-form textarea,
+.portal-conversation-reply textarea{
+  -webkit-user-select:text;
+  user-select:text;
+}
+.portal-live-indicator,
+.admin-live-conversation{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  color:#2F7E3B;
+  font-size:.65rem;
+  font-weight:850;
+  white-space:nowrap;
+}
+.portal-live-indicator i,
+.admin-live-conversation i{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#3B9E4A;
+  box-shadow:0 0 0 3px rgba(59,158,74,.12);
+}
+.portal-conversation-status-row{row-gap:7px}
+
+/* Help & Feedback inbox cards: keep metadata and message preview visually separated. */
+.admin-feedback-card-main{
+  min-width:0;
+  display:grid;
+  gap:5px;
+}
+.admin-feedback-card-meta{
+  display:block;
+  margin-top:1px;
+  color:#74859a;
+  font-size:.69rem;
+  line-height:1.5;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.admin-feedback-card-preview{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  margin-top:3px;
+  padding-top:8px;
+  border-top:1px solid #edf2f7;
+  color:#4f647c;
+  font-size:.76rem;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+.admin-feedback-card-top{min-width:0}
+.admin-feedback-card-top strong{min-width:0;overflow-wrap:anywhere}
+
+/* Announcement composer: Audience first, then three equal options, then publish. */
+.admin-announcement-form{display:flex;flex-direction:column}
+.admin-announcement-form>.beta-field{margin-bottom:15px}
+.admin-announcement-audience{width:100%}
+.admin-announcement-audience select{width:100%;min-height:48px}
+.admin-announcement-options-label{
+  margin:1px 0 8px;
+  color:#334960;
+  font-size:.86rem;
+  font-weight:850;
+}
+.admin-announcement-options{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px!important;
+  margin-bottom:14px;
+}
+.admin-announcement-options>label{
+  min-height:94px;
+  grid-template-columns:22px minmax(0,1fr)!important;
+  gap:10px!important;
+  align-items:start!important;
+  padding:13px!important;
+  border-radius:14px!important;
+  background:#f8fbff!important;
+  border:1px solid #e2ebf6!important;
+}
+.admin-announcement-options>label:has(input:checked){
+  border-color:rgba(59,158,74,.28)!important;
+  background:rgba(59,158,74,.06)!important;
+}
+.admin-announcement-options input{accent-color:#3B9E4A!important}
+.admin-announcement-options strong{font-size:.75rem!important;line-height:1.3}
+.admin-announcement-options small{font-size:.64rem!important;line-height:1.42!important}
+.admin-announcement-publish{margin-top:0!important}
+
+@media(max-width:760px){
+  .admin-announcement-options{grid-template-columns:1fr!important}
+  .admin-announcement-options>label{min-height:0}
+  .admin-feedback-card-meta{font-size:.67rem}
+  .admin-feedback-card-preview{font-size:.73rem}
 }

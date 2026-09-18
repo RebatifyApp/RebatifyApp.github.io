@@ -74,3 +74,32 @@ export function friendlyFirebaseError(error) {
   };
   return map[code] || (error && error.message ? error.message : 'Something went wrong. Please try again.');
 }
+
+// Build 73 — make native text replacement, composition, dictation, paste, and autofill
+// visible to all Rebatify Beta/Admin form logic without depending on key events.
+function isCompatibleTextField(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target instanceof HTMLTextAreaElement) return true;
+  if (!(target instanceof HTMLInputElement)) return false;
+  return ['text','email','search','url','tel','number'].includes(String(target.type || 'text').toLowerCase());
+}
+function resyncNativeField(target) {
+  if (!isCompatibleTextField(target)) return;
+  target.setCustomValidity('');
+  target.dataset.rebatifyLiveValue = target.value;
+}
+document.addEventListener('input', event => resyncNativeField(event.target), true);
+document.addEventListener('change', event => resyncNativeField(event.target), true);
+document.addEventListener('compositionend', event => {
+  const target = event.target;
+  if (!isCompatibleTextField(target)) return;
+  requestAnimationFrame(() => {
+    resyncNativeField(target);
+    target.dispatchEvent(new Event('input', { bubbles:true }));
+  });
+}, true);
+document.addEventListener('paste', event => {
+  const target = event.target;
+  if (!isCompatibleTextField(target)) return;
+  requestAnimationFrame(() => resyncNativeField(target));
+}, true);
