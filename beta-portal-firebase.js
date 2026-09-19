@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 79
+// Rebatify Beta Tester Portal - Website Build 80
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -756,7 +756,7 @@ if (feedbackForm) {
   });
 }
 
-// Website Build 79: sticky Beta Portal navigation section positioning.
+// Website Build 80: sticky Beta Portal navigation section positioning.
 function rebatifyPortalScrollTarget(target, behavior = 'smooth') {
   if (!target) return;
   const stickyNav = document.querySelector('.portal-mobile-nav');
