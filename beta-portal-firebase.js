@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 85
+// Rebatify Beta Tester Portal - Website Build 88
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -100,15 +100,27 @@ function applyTestingSetupPlatformCopy(profile=currentProfile||{}){
   const input=document.getElementById('testerDistributionEmail');if(input)input.value=email;
   const help=document.getElementById('testerDistributionEmailHelp');if(help)help.textContent=ios?'This approved beta email must match the Apple Account signed in for the App Store/TestFlight on the iPhone or iPad where you installed TestFlight.':'Confirm the Google Account currently selected in Google Play on the Android device you will use for testing.';
   const confirmText=document.getElementById('testerDistributionConfirmText');if(confirmText)confirmText.textContent=ios?'I confirm this approved beta email matches the Apple Account signed in on this testing iPhone or iPad.':'I confirm this is the Google Account selected in Google Play on my testing Android device.';
-  const testFlightRequirement=document.getElementById('testerTestFlightRequirement');if(testFlightRequirement)testFlightRequirement.hidden=!ios;
-  const testFlightInstalled=document.getElementById('testerTestFlightInstalled');if(testFlightInstalled){testFlightInstalled.required=ios;if(!ios)testFlightInstalled.checked=false;}
-  const intro=document.getElementById('portalSetupIntro');if(intro)intro.textContent=ios?'Before you continue, install TestFlight on the iPhone or iPad you will use for testing, then confirm its Apple Account matches your approved beta email.':'Confirm the Android device, Android version, and Google Play account you will use for Rebatify beta testing.';
+  const intro=document.getElementById('portalSetupIntro');if(intro)intro.textContent=ios?'TestFlight is already installed. Now confirm the iPhone or iPad, iOS/iPadOS version, detected screen size, and matching Apple Account you will use for Rebatify beta testing.':'Confirm the Android device, Android version, and Google Play account you will use for Rebatify beta testing.';
 }
 function distributionAccountConfirmed(profile=currentProfile||{}){
   return !!String(profile.distributionAccountEmail||'').trim() && !!profile.distributionAccountConfirmedAt;
 }
 function testingSetupComplete(profile=currentProfile||{}){
+  // Backward compatibility: testers who already completed Step 2 before newer
+  // distribution-account requirements were introduced must remain complete.
+  // The saved timeline stage / completion timestamp is the canonical proof that
+  // Testing Setup was completed. New testers at the approved stage still must
+  // satisfy all current device + distribution-account requirements.
+  const stage=normalizeProgramTimelineStage(profile.timelineStage);
+  const previouslyCompleted=['setupComplete','inviteSent','activeTesting'].includes(stage)||!!profile.deviceSetupCompletedAt;
+  if(previouslyCompleted)return true;
   return !!String(profile.deviceModel||'').trim() && !!String(profile.osVersion||'').trim() && !!String(profile.screenSize||'').trim() && distributionAccountConfirmed(profile);
+}
+
+function testFlightPrepared(profile=currentProfile||{}){
+  if(String(profile.platform||'')!=='iOS')return true;
+  // Existing testers who already completed Testing Setup are grandfathered in.
+  return !!profile.testFlightPreparedAt||testingSetupComplete(profile);
 }
 
 function isSupportConversation(f){return String(f&&f.workflowType||'Feedback')==='Support'||String(f&&f.type||'')==='Account / Access Problem';}
@@ -461,8 +473,12 @@ function normalizeProgramTimelineStage(value){
 }
 
 
-function testFlightActionHtml(){
-  return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Open TestFlight</span></button><small><strong>Shortcut only —</strong> opens TestFlight if installed or its App Store page if needed. It does not complete this step or advance your Beta Program status.</small></div>`;
+function testFlightActionHtml(profile=currentProfile||{}){
+  const prepared=testFlightPrepared(profile);
+  if(prepared){
+    return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Open TestFlight</span></button><small>TestFlight installation is confirmed. You can use this shortcut anytime to open TestFlight.</small></div>`;
+  }
+  return `<div class="portal-timeline-actions"><button class="portal-testflight-button" data-open-testflight type="button"><span class="portal-testflight-icon" aria-hidden="true">↗</span><span>Install / Open TestFlight</span></button><button class="portal-testflight-button portal-setup-button" data-confirm-testflight type="button"><span>I have TestFlight installed</span></button><small>Install TestFlight on the iPhone or iPad you will use for beta testing. After it is installed, confirm above to unlock Step 3.</small></div>`;
 }
 
 function showPortalShortcutToast(message){
@@ -484,11 +500,26 @@ function openTestFlightOrStore(){
   const visibilityHandler=()=>{if(document.hidden)cancelFallback();};
   document.addEventListener('visibilitychange',visibilityHandler,{once:true});
   window.addEventListener('pagehide',cancelFallback,{once:true});
-  showPortalShortcutToast('Opening TestFlight. This shortcut does not advance your Beta Program status.');
+  showPortalShortcutToast('Opening TestFlight. After it is installed, return here and confirm Step 2.');
   fallbackTimer=setTimeout(()=>{
     if(!leftPage)window.location.href=appStoreUrl;
   },1050);
   setTimeout(()=>{window.location.href=deepLink;},180);
+}
+
+async function confirmTestFlightInstalled(button){
+  if(!auth.currentUser||!currentProfile||String(currentProfile.platform||'')!=='iOS')return;
+  if(testFlightPrepared(currentProfile)){renderProgramTimeline(currentProfile);return;}
+  const original=button.innerHTML;button.disabled=true;button.innerHTML='Saving…';
+  try{
+    await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{testFlightPreparedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()});
+    currentProfile.testFlightPreparedAt=new Date();currentProfile.lastPortalActivity=new Date();
+    renderProgramTimeline(currentProfile);
+    showPortalShortcutToast('TestFlight confirmed. Step 2 is complete — continue with Testing Setup in Step 3.');
+  }catch(error){
+    showPortalShortcutToast('We could not save the TestFlight confirmation. '+friendlyFirebaseError(error));
+    button.disabled=false;button.innerHTML=original;
+  }
 }
 
 function bindTestFlightButtons(scope=document){
@@ -497,39 +528,58 @@ function bindTestFlightButtons(scope=document){
     btn.dataset.bound='1';
     btn.addEventListener('click',openTestFlightOrStore);
   });
+  scope.querySelectorAll('[data-confirm-testflight]').forEach(btn=>{
+    if(btn.dataset.bound==='1')return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click',()=>confirmTestFlightInstalled(btn));
+  });
 }
 
 function renderProgramTimeline(profile){
   const timeline=document.getElementById('portalProgramTimeline');const footnote=document.getElementById('portalTimelineFootnote');if(!timeline)return;
-  const ios=profile.platform==='iOS';const stage=normalizeProgramTimelineStage(profile.timelineStage);const setupDone=testingSetupComplete(profile);
+  const ios=profile.platform==='iOS';const stage=normalizeProgramTimelineStage(profile.timelineStage);const setupDone=testingSetupComplete(profile);const tfDone=testFlightPrepared(profile);
   const accessCopy=ios
-    ? (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>TestFlight invitation has been sent</strong> to your approved beta email. Open it on the same iPhone or iPad where TestFlight is installed, accept it, and install Rebatify.':'TestFlight should already be installed on your testing iPhone or iPad, and the Apple Account on that device must match your approved beta email. Watch that email for the Rebatify invitation; Rebatify will advance this stage when testing access is released.')
+    ? (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>Rebatify TestFlight invitation has been sent</strong> to your approved beta email. Open it on the same iPhone or iPad where TestFlight is installed, accept it, and install Rebatify.':'TestFlight and Testing Setup are complete. Watch your approved beta email for the Rebatify TestFlight invitation. Rebatify will advance this stage when testing access is released.')
     : (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone, opt in, and install Rebatify.':'Make sure Google Play uses the Google Account that matches your approved beta email, then watch for the closed-testing link. Rebatify will advance this stage when testing access is released.');
   const setupAction=setupDone
     ? '<div class="portal-timeline-completed-note">Testing Setup is complete. You can update your saved device details later from <strong>Settings</strong>.</div>'
-    : `<div class="portal-timeline-actions"><button class="portal-testflight-button portal-setup-button" data-open-testing-setup type="button"><span>Complete Testing Setup</span></button><small>${ios?'Install TestFlight, then confirm your testing device and matching Apple Account before continuing.':'Confirm your testing device and Google Play account before continuing.'}</small></div>`;
-  const content=[
-    ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
-    [ios?'Install TestFlight & Complete Testing Setup':'Complete Testing Setup',ios?'Install TestFlight on the testing iPhone or iPad, then confirm the device, iOS/iPadOS version, automatically detected screen size, and that its Apple Account matches your approved beta email.':'Confirm the device, operating-system version, automatically detected screen size, and the Google Play account you will use to receive and install the beta build.',setupAction],
-    [ios?'Prepare your iPhone & watch for TestFlight':'Prepare your Android phone & watch for testing access',accessCopy,(ios&&setupDone)?testFlightActionHtml():''],
-    ['Install Rebatify, create your account & begin testing',ios?'After accepting the TestFlight invitation, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.':'After opting in through Google Play, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
-  ];
-  let visuals;
-  if(!setupDone){
-    visuals=['complete','now','waiting','waiting'];
-  }else if(stage==='approved'||stage==='setupComplete'){
-    visuals=['complete','complete','now','waiting'];
-  }else if(stage==='inviteSent'){
-    visuals=['complete','complete','complete','now'];
+    : (ios&&!tfDone
+      ? '<div class="portal-timeline-completed-note">Complete Step 2 first by installing and confirming TestFlight. Testing Setup will unlock next.</div>'
+      : `<div class="portal-timeline-actions"><button class="portal-testflight-button portal-setup-button" data-open-testing-setup type="button"><span>Complete Testing Setup</span></button><small>${ios?'Confirm your testing iPhone or iPad, iOS/iPadOS version, detected screen size, and matching Apple Account.':'Confirm your testing device and Google Play account before continuing.'}</small></div>`);
+
+  let content,visuals,currentLabel;
+  if(ios){
+    content=[
+      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+      ['Install TestFlight','Install Apple’s TestFlight app on the iPhone or iPad you will use for Rebatify beta testing. Use the shortcut below, then confirm when TestFlight is installed.',testFlightActionHtml(profile)],
+      ['Complete Testing Setup','Confirm the device, iOS/iPadOS version, automatically detected screen size, and that the Apple Account on that device matches your approved beta email.',setupAction],
+      ['Watch for your Rebatify TestFlight invitation',accessCopy,''],
+      ['Install Rebatify, create your account & begin testing','After accepting the Rebatify TestFlight invitation, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
+    ];
+    if(!tfDone){visuals=['complete','now','waiting','waiting','waiting'];currentLabel='TestFlight Installation Required';}
+    else if(!setupDone){visuals=['complete','complete','now','waiting','waiting'];currentLabel='Testing Setup Required';}
+    else if(stage==='approved'||stage==='setupComplete'){visuals=['complete','complete','complete','now','waiting'];currentLabel='Waiting for TestFlight Invitation';}
+    else if(stage==='inviteSent'){visuals=['complete','complete','complete','complete','now'];currentLabel='TestFlight Invitation Sent';}
+    else{visuals=['complete','complete','complete','complete','ongoing'];currentLabel='Active Beta Testing';}
   }else{
-    visuals=['complete','complete','complete','ongoing'];
+    content=[
+      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+      ['Complete Testing Setup','Confirm the device, operating-system version, automatically detected screen size, and the Google Play account you will use to receive and install the beta build.',setupAction],
+      ['Prepare your Android phone & watch for testing access',accessCopy,''],
+      ['Install Rebatify, create your account & begin testing','After opting in through Google Play, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
+    ];
+    if(!setupDone){visuals=['complete','now','waiting','waiting'];currentLabel='Testing Setup Required';}
+    else if(stage==='approved'||stage==='setupComplete'){visuals=['complete','complete','now','waiting'];currentLabel='Waiting for Testing Access';}
+    else if(stage==='inviteSent'){visuals=['complete','complete','complete','now'];currentLabel='Google Play Testing Link Sent';}
+    else{visuals=['complete','complete','complete','ongoing'];currentLabel='Active Beta Testing';}
   }
   timeline.innerHTML=content.map((item,index)=>timelineStep(index+1,visuals[index],item[0],item[1],item[2])).join('');
   bindTestFlightButtons(timeline);
   timeline.querySelectorAll('[data-open-testing-setup]').forEach(btn=>btn.addEventListener('click',openTestingSetup));
   if(footnote){
-    const currentLabel=!setupDone?'Testing Setup Required':({approved:'Testing Setup Complete',setupComplete:'Waiting for Testing Access',inviteSent:ios?'TestFlight Invitation Sent':'Google Play Testing Link Sent',activeTesting:'Active Beta Testing'}[stage]);
-    footnote.innerHTML='<strong>How progress works:</strong> Approval completes Step 1 automatically. Completing Testing Setup marks Step 2 complete and advances you to Step 3. Rebatify controls the later testing-access stages. Opening TestFlight, Google Play, or Rebatify by itself does not advance your program status.'+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
+    footnote.innerHTML=(ios
+      ? '<strong>How progress works:</strong> Approval completes Step 1 automatically. Install and confirm TestFlight in Step 2, then complete Testing Setup in Step 3. Rebatify controls the invitation and later testing-access stages.'
+      : '<strong>How progress works:</strong> Approval completes Step 1 automatically. Completing Testing Setup marks Step 2 complete. Rebatify controls the later Google Play testing-access stages.')+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
   }
 }
 
@@ -682,7 +732,7 @@ if(taskSubmit)taskSubmit.addEventListener('click',completeRequiredTask);
 
 
 const setupBackdrop=document.getElementById('portalSetupBackdrop');
-function openTestingSetup(){if(!setupBackdrop)return;renderDeviceProfile(currentProfile||{});const confirm=document.getElementById('testerDistributionConfirm');if(confirm)confirm.checked=distributionAccountConfirmed(currentProfile||{});const tf=document.getElementById('testerTestFlightInstalled');if(tf)tf.checked=false;setupBackdrop.hidden=false;document.body.classList.add('portal-setup-open');}
+function openTestingSetup(){if(!setupBackdrop)return;if(String(currentProfile?.platform||'')==='iOS'&&!testFlightPrepared(currentProfile||{})){showPortalShortcutToast('Install and confirm TestFlight in Step 2 before completing Testing Setup.');return;}renderDeviceProfile(currentProfile||{});const confirm=document.getElementById('testerDistributionConfirm');if(confirm)confirm.checked=distributionAccountConfirmed(currentProfile||{});setupBackdrop.hidden=false;document.body.classList.add('portal-setup-open');}
 function closeTestingSetup(){if(!setupBackdrop)return;setupBackdrop.hidden=true;document.body.classList.remove('portal-setup-open');}
 const setupClose=document.getElementById('portalSetupClose');if(setupClose)setupClose.addEventListener('click',closeTestingSetup);
 if(setupBackdrop)setupBackdrop.addEventListener('click',e=>{if(e.target===setupBackdrop)closeTestingSetup();});
@@ -691,9 +741,9 @@ if(deviceForm){deviceForm.addEventListener('submit',async event=>{
   event.preventDefault();if(!auth.currentUser||!currentProfile){fail('session');return;}if(!deviceForm.checkValidity()){deviceForm.reportValidity();return;}
   const button=deviceForm.querySelector('button[type="submit"]');const original=button.innerHTML;button.disabled=true;button.innerHTML='Saving…';setDeviceMessage('');
   const deviceModel=String(document.getElementById('testerDeviceModel').value||'').trim();const osVersion=String(document.getElementById('testerOsVersion').value||'').trim();const screenSize=detectedScreenSize()||String(document.getElementById('testerScreenSize').value||'').trim();
-  const distributionAccountEmail=String(currentProfile.email||auth.currentUser.email||'').trim();const distributionConfirm=document.getElementById('testerDistributionConfirm');const ios=String(currentProfile.platform||'')==='iOS';const testFlightInstalled=document.getElementById('testerTestFlightInstalled');
+  const distributionAccountEmail=String(currentProfile.email||auth.currentUser.email||'').trim();const distributionConfirm=document.getElementById('testerDistributionConfirm');const ios=String(currentProfile.platform||'')==='iOS';
   if(!distributionAccountEmail){setDeviceMessage('Your approved beta email could not be loaded. Contact Rebatify Support before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
-  if(ios&&(!testFlightInstalled||!testFlightInstalled.checked)){setDeviceMessage('Install TestFlight on this iPhone or iPad and confirm it is installed before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
+  if(ios&&!testFlightPrepared(currentProfile)){setDeviceMessage('Complete Step 2 first by installing and confirming TestFlight.','error');button.disabled=false;button.innerHTML=original;return;}
   if(!distributionConfirm||!distributionConfirm.checked){setDeviceMessage(ios?'Confirm that the Apple Account signed in on this iPhone or iPad matches your approved beta email before continuing.':'Confirm the Google Play account you use for beta distribution before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
   const stage=normalizeProgramTimelineStage(currentProfile.timelineStage);const firstSetup=stage==='approved';const needsAccountConfirmation=!distributionAccountConfirmed(currentProfile);
   try{
@@ -702,7 +752,7 @@ if(deviceForm){deviceForm.addEventListener('submit',async event=>{
     if(firstSetup){update.timelineStage='setupComplete';update.timelineUpdatedAt=serverTimestamp();update.deviceSetupCompletedAt=serverTimestamp();}
     await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),update);
     Object.assign(currentProfile,{deviceModel,osVersion,screenSize,deviceUpdatedAt:new Date(),lastPortalActivity:new Date()});if(needsAccountConfirmation){currentProfile.distributionAccountEmail=distributionAccountEmail;currentProfile.distributionAccountConfirmedAt=new Date();}if(firstSetup){currentProfile.timelineStage='setupComplete';currentProfile.timelineUpdatedAt=new Date();currentProfile.deviceSetupCompletedAt=new Date();}
-    renderDeviceProfile(currentProfile);renderProfile(currentProfile);setDeviceMessage(firstSetup?'Testing Setup saved. Step 2 is complete and your timeline advanced to Step 3.':'Testing Setup saved.','success');setTimeout(closeTestingSetup,650);
+    renderDeviceProfile(currentProfile);renderProfile(currentProfile);setDeviceMessage(firstSetup?(ios?'Testing Setup saved. Step 3 is complete and your timeline advanced to Step 4.':'Testing Setup saved. Step 2 is complete and your timeline advanced to Step 3.'):'Testing Setup saved.','success');setTimeout(closeTestingSetup,650);
   }catch(error){setDeviceMessage('We could not save your testing setup. '+friendlyFirebaseError(error),'error');}
   finally{button.disabled=false;button.innerHTML=original;}
 });}
@@ -759,7 +809,7 @@ if (feedbackForm) {
   });
 }
 
-// Website Build 85: sticky Beta Portal navigation section positioning.
+// Website Build 88: sticky Beta Portal navigation section positioning.
 function rebatifyPortalScrollTarget(target, behavior = 'smooth') {
   if (!target) return;
   const stickyNav = document.querySelector('.portal-mobile-nav');
