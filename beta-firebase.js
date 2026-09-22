@@ -5,6 +5,17 @@ const form = document.getElementById('betaApplicationForm');
 const message = document.getElementById('betaFormMessage');
 const success = document.getElementById('betaSuccess');
 
+const iosEnrollmentNote = document.getElementById('betaIosEnrollmentNote');
+function syncPlatformEnrollmentNote() {
+  if (!iosEnrollmentNote || !form) return;
+  const selected = form.querySelector('input[name="platform"]:checked');
+  iosEnrollmentNote.hidden = !selected || selected.value !== 'iOS';
+}
+if (form) {
+  form.querySelectorAll('input[name="platform"]').forEach(input => input.addEventListener('change', syncPlatformEnrollmentNote));
+  syncPlatformEnrollmentNote();
+}
+
 function setMessage(text, type) {
   if (!message) return;
   message.textContent = text || '';

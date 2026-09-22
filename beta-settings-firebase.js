@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Settings - Website Build 80
+// Rebatify Beta Tester Settings - Website Build 85
 import { firebaseConfigured, auth, db, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { doc, getDoc, updateDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
@@ -26,8 +26,12 @@ function applyPlatformCopy(p=profile||{}){
   const os=document.getElementById('settingsOsVersion');if(os)os.placeholder=ios?'Example: iOS 27':'Example: Android 17';
   const label=document.getElementById('settingsDistributionEmailLabel');if(label)label.textContent=ios?'Apple Account email':'Google Play account email';
   const input=document.getElementById('settingsDistributionEmail');if(input)input.value=email;
-  const help=document.getElementById('settingsDistributionEmailHelp');if(help)help.textContent=ios?'This is the Apple Account expected in the App Store/TestFlight on your testing iPhone or iPad.':'This is the Google Account expected in Google Play on your testing Android device.';
-  const text=document.getElementById('settingsDistributionConfirmText');if(text)text.textContent=ios?'I confirm this is the Apple Account signed in on my testing iPhone or iPad.':'I confirm this is the Google Account selected in Google Play on my testing Android device.';
+  const help=document.getElementById('settingsDistributionEmailHelp');if(help)help.textContent=ios?'This approved beta email must match the Apple Account signed in for the App Store/TestFlight on your testing iPhone or iPad.':'This is the Google Account expected in Google Play on your testing Android device.';
+  const text=document.getElementById('settingsDistributionConfirmText');if(text)text.textContent=ios?'I confirm this approved beta email matches the Apple Account signed in on my testing iPhone or iPad.':'I confirm this is the Google Account selected in Google Play on my testing Android device.';
+  const requirement=document.getElementById('settingsTestFlightRequirement');if(requirement)requirement.hidden=!ios;
+  const firstSetup=normalizedStage(p.timelineStage)==='approved';
+  const tfWrap=document.getElementById('settingsTestFlightInstalledWrap');if(tfWrap)tfWrap.hidden=!(ios&&firstSetup);
+  const tfCheck=document.getElementById('settingsTestFlightInstalled');if(tfCheck){tfCheck.required=ios&&firstSetup;if(!(ios&&firstSetup))tfCheck.checked=false;}
   const check=document.getElementById('settingsDistributionConfirm');if(check){const confirmed=distributionAccountConfirmed(p);check.checked=confirmed;check.required=!confirmed;check.disabled=confirmed;}
 }
 function setMessage(text,tone=''){message.textContent=text||'';message.className='portal-device-message'+(tone?' '+tone:'');}
@@ -94,8 +98,9 @@ if(form)form.addEventListener('submit',async e=>{
   const deviceModel=String(document.getElementById('settingsDeviceModel').value||'').trim();
   const osVersion=String(document.getElementById('settingsOsVersion').value||'').trim();
   const screenSize=detectedScreenSize()||String(document.getElementById('settingsScreenSize').value||'').trim();
-  const firstSetup=normalizedStage(profile.timelineStage)==='approved';const needsAccountConfirmation=!distributionAccountConfirmed(profile);
-  const distributionConfirm=document.getElementById('settingsDistributionConfirm');if(needsAccountConfirmation&&(!distributionConfirm||!distributionConfirm.checked)){setMessage('Confirm the account you use for beta distribution before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
+  const firstSetup=normalizedStage(profile.timelineStage)==='approved';const needsAccountConfirmation=!distributionAccountConfirmed(profile);const ios=String(profile.platform||'')==='iOS';
+  const testFlightInstalled=document.getElementById('settingsTestFlightInstalled');if(firstSetup&&ios&&(!testFlightInstalled||!testFlightInstalled.checked)){setMessage('Install TestFlight on this iPhone or iPad and confirm it is installed before completing Testing Setup.','error');button.disabled=false;button.innerHTML=original;return;}
+  const distributionConfirm=document.getElementById('settingsDistributionConfirm');if(needsAccountConfirmation&&(!distributionConfirm||!distributionConfirm.checked)){setMessage(ios?'Confirm that the Apple Account signed in on this iPhone or iPad matches your approved beta email before continuing.':'Confirm the Google Play account you use for beta distribution before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
   const distributionAccountEmail=String(profile.email||auth.currentUser.email||'').trim();
   const update={deviceModel,osVersion,screenSize,deviceUpdatedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()};
   if(needsAccountConfirmation){update.distributionAccountEmail=distributionAccountEmail;update.distributionAccountConfirmedAt=serverTimestamp();}
