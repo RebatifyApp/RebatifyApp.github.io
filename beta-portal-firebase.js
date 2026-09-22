@@ -800,10 +800,14 @@ if(deviceForm){deviceForm.addEventListener('submit',async event=>{
   const stage=normalizeProgramTimelineStage(currentProfile.timelineStage);const firstSetup=stage==='approved';const needsAccountConfirmation=!distributionAccountConfirmed(currentProfile);
   try{
     const update={deviceModel,osVersion,screenSize,deviceUpdatedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()};
-    if(needsAccountConfirmation){update.distributionAccountEmail=distributionAccountEmail;update.distributionAccountConfirmedAt=serverTimestamp();}
+    // First-time Testing Setup must always record a fresh account confirmation.
+    // This is important after an Admin beta-email/account swap: the Worker may
+    // have updated the stored distribution email, but Firestore requires the
+    // tester's current confirmation timestamp when approved -> setupComplete.
+    if(firstSetup||needsAccountConfirmation){update.distributionAccountEmail=distributionAccountEmail;update.distributionAccountConfirmedAt=serverTimestamp();}
     if(firstSetup){update.timelineStage='setupComplete';update.timelineUpdatedAt=serverTimestamp();update.deviceSetupCompletedAt=serverTimestamp();}
     await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),update);
-    Object.assign(currentProfile,{deviceModel,osVersion,screenSize,deviceUpdatedAt:new Date(),lastPortalActivity:new Date()});if(needsAccountConfirmation){currentProfile.distributionAccountEmail=distributionAccountEmail;currentProfile.distributionAccountConfirmedAt=new Date();}if(firstSetup){currentProfile.timelineStage='setupComplete';currentProfile.timelineUpdatedAt=new Date();currentProfile.deviceSetupCompletedAt=new Date();}
+    Object.assign(currentProfile,{deviceModel,osVersion,screenSize,deviceUpdatedAt:new Date(),lastPortalActivity:new Date()});if(firstSetup||needsAccountConfirmation){currentProfile.distributionAccountEmail=distributionAccountEmail;currentProfile.distributionAccountConfirmedAt=new Date();}if(firstSetup){currentProfile.timelineStage='setupComplete';currentProfile.timelineUpdatedAt=new Date();currentProfile.deviceSetupCompletedAt=new Date();}
     renderDeviceProfile(currentProfile);renderProfile(currentProfile);setDeviceMessage(firstSetup?(ios?'Testing Setup saved. Step 3 is complete and your timeline advanced to Step 4.':'Testing Setup saved. Step 2 is complete and your timeline advanced to Step 3.'):'Testing Setup saved.','success');setTimeout(closeTestingSetup,650);
   }catch(error){setDeviceMessage('We could not save your testing setup. '+friendlyFirebaseError(error),'error');}
   finally{button.disabled=false;button.innerHTML=original;}
@@ -814,7 +818,13 @@ const supportLauncherPanel=document.getElementById('portalSupportLauncherPanel')
 function setSupportLauncherOpen(open){if(!supportLauncherPanel||!supportLauncherButton)return;supportLauncherPanel.hidden=!open;supportLauncherButton.setAttribute('aria-expanded',open?'true':'false');document.getElementById('portalSupportLauncher')?.classList.toggle('is-open',open);}
 supportLauncherButton?.addEventListener('click',event=>{event.stopPropagation();setSupportLauncherOpen(supportLauncherPanel?.hidden!==false);});
 document.getElementById('portalSupportLauncherClose')?.addEventListener('click',()=>setSupportLauncherOpen(false));
-document.querySelectorAll('[data-support-launch]').forEach(button=>button.addEventListener('click',()=>{const mode=button.dataset.supportLaunch;setSupportLauncherOpen(false);const target=mode==='new'?(document.querySelector('.portal-feedback-form-column')||document.getElementById('submit-feedback')):document.getElementById('feedback-history');rebatifyPortalScrollTarget(target,'smooth');}));
+document.querySelectorAll('[data-support-launch]').forEach(button=>button.addEventListener('click',()=>{const mode=button.dataset.supportLaunch;setSupportLauncherOpen(false);
+  // Support must remain reachable even before Testing Setup is complete. If the
+  // setup dialog is open, close it first so Help & Feedback is visible and usable.
+  closeTestingSetup();
+  const target=mode==='new'?(document.querySelector('.portal-feedback-form-column')||document.getElementById('submit-feedback')):document.getElementById('feedback-history');rebatifyPortalScrollTarget(target,'smooth');
+  if(mode==='new')setTimeout(()=>{const type=document.getElementById('feedbackType');if(type)type.focus({preventScroll:true});},500);
+}));
 document.addEventListener('click',event=>{const launcher=document.getElementById('portalSupportLauncher');if(launcher&&!launcher.contains(event.target))setSupportLauncherOpen(false);});
 renderSupportLauncher();
 

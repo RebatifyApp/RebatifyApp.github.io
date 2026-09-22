@@ -101,11 +101,13 @@ if(form)form.addEventListener('submit',async e=>{
   const distributionConfirm=document.getElementById('settingsDistributionConfirm');if(needsAccountConfirmation&&(!distributionConfirm||!distributionConfirm.checked)){setMessage(ios?'Confirm that the Apple Account signed in on this iPhone or iPad matches your approved beta email before continuing.':'Confirm the Google Play account you use for beta distribution before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
   const distributionAccountEmail=String(profile.email||auth.currentUser.email||'').trim();
   const update={deviceModel,osVersion,screenSize,deviceUpdatedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),updatedAt:serverTimestamp()};
-  if(needsAccountConfirmation){update.distributionAccountEmail=distributionAccountEmail;update.distributionAccountConfirmedAt=serverTimestamp();}
+  // Initial setup always refreshes the tester's account confirmation, including
+  // after an Admin beta-email/account swap.
+  if(firstSetup||needsAccountConfirmation){update.distributionAccountEmail=distributionAccountEmail;update.distributionAccountConfirmedAt=serverTimestamp();}
   if(firstSetup){update.timelineStage='setupComplete';update.timelineUpdatedAt=serverTimestamp();update.deviceSetupCompletedAt=serverTimestamp();}
   try{
     await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),update);
-    Object.assign(profile,{deviceModel,osVersion,screenSize});if(needsAccountConfirmation){profile.distributionAccountEmail=distributionAccountEmail;profile.distributionAccountConfirmedAt=new Date();}if(firstSetup)profile.timelineStage='setupComplete';applyPlatformCopy(profile);
+    Object.assign(profile,{deviceModel,osVersion,screenSize});if(firstSetup||needsAccountConfirmation){profile.distributionAccountEmail=distributionAccountEmail;profile.distributionAccountConfirmedAt=new Date();}if(firstSetup)profile.timelineStage='setupComplete';applyPlatformCopy(profile);
     document.getElementById('settingsScreenSize').value=screenSize;
     touchActivity(true);
     setMessage(firstSetup?(ios?'Settings saved. Step 3 is complete and your Beta Program timeline advanced to Step 4.':'Settings saved. Step 2 is complete and your Beta Program timeline advanced to Step 3.'):'Settings saved.','success');

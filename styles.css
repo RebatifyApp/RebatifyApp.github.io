@@ -2075,7 +2075,7 @@ body.portal-conversation-active{overflow:hidden!important}
   .portal-timeline-step.complete{box-shadow:inset 3px 0 0 rgba(59,158,74,.72)}
 }
 
-/* ===== Website Build 91: Beta support launcher, unread updates, closed conversations ===== */
+/* ===== Website Build 92: Beta support launcher, unread updates, closed conversations ===== */
 .portal-feedback-history-card.has-unread{border-color:rgba(59,158,74,.34)!important;box-shadow:0 12px 30px rgba(59,158,74,.08)!important}
 .portal-history-unread{display:inline-flex;margin-left:7px;padding:3px 7px;border-radius:999px;background:rgba(59,158,74,.11);border:1px solid rgba(59,158,74,.20);color:#2F7E3B;font-size:.58rem;font-weight:900;letter-spacing:.02em;text-transform:none;vertical-align:middle}
 .portal-conversation-reply[hidden],.portal-conversation-closed-notice[hidden]{display:none!important}
@@ -2097,3 +2097,6 @@ body.portal-conversation-active{overflow:hidden!important}
 @media(max-width:620px){.portal-support-launcher{right:14px;bottom:max(14px,env(safe-area-inset-bottom))}.portal-support-launcher-button{width:54px;height:54px;border-radius:17px}.portal-support-launcher-panel{width:min(330px,calc(100vw - 20px))}.admin-conversation-closed{align-items:stretch;flex-direction:column}.admin-conversation-closed .admin-primary-button{width:100%}}
 
 .portal-support-launcher[hidden]{display:none!important}
+
+/* ===== Website Build 92: account-swap setup recovery + always-available Support ===== */
+.portal-support-launcher{z-index:270}
