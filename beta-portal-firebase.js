@@ -46,6 +46,7 @@ let inactivityTimer = null;
 let inactivityStarted = false;
 let sessionEnding = false;
 let lastActivityWrite = 0;
+const PORTAL_CONVERSATION_READ_KEY = 'rebatifyBetaConversationReads';
 
 
 async function workerPostAuthorized(type,payload={}){
@@ -124,10 +125,33 @@ function testFlightPrepared(profile=currentProfile||{}){
 }
 
 function isSupportConversation(f){return String(f&&f.workflowType||'Feedback')==='Support'||String(f&&f.type||'')==='Account / Access Problem';}
+function conversationIsClosed(f){
+  if(!f)return false;
+  if(isSupportConversation(f))return ['Resolved','Closed'].includes(String(f.status||''));
+  return ['Closed','Declined'].includes(String(f.status||''));
+}
+function conversationActivityMs(f){const d=timestampToDate(f?.lastMessageAt||f?.updatedAt||f?.submittedAt);return d?d.getTime():0;}
+function conversationReadMap(){try{return JSON.parse(localStorage.getItem(PORTAL_CONVERSATION_READ_KEY)||'{}')||{};}catch(_){return {};}}
+function saveConversationReadMap(map){try{localStorage.setItem(PORTAL_CONVERSATION_READ_KEY,JSON.stringify(map));}catch(_){}}
+function conversationHasTesterUpdate(f){
+  if(!f)return false;
+  const status=String(f.status||'');
+  return String(f.lastMessageBy||'')==='Admin'||['Waiting for Tester','Needs Retest','Fixed','Reviewing','Confirmed','Resolved','Closed'].includes(status);
+}
+function conversationIsUnread(f){const map=conversationReadMap();return conversationHasTesterUpdate(f)&&conversationActivityMs(f)>Number(map[f.id]||0);}
+function markConversationRead(f){if(!f)return;const map=conversationReadMap();map[f.id]=Math.max(Date.now(),conversationActivityMs(f));saveConversationReadMap(map);renderSupportLauncher();renderFeedbackHistory();}
+function unreadConversationCount(){return feedbackHistory.filter(conversationIsUnread).length;}
+function renderSupportLauncher(){
+  const count=unreadConversationCount();
+  const badge=document.getElementById('portalSupportUnreadBadge');const inline=document.getElementById('portalSupportLauncherInlineBadge');const meta=document.getElementById('portalSupportLauncherConversationMeta');const status=document.getElementById('portalSupportLauncherStatus');
+  [badge,inline].forEach(el=>{if(!el)return;el.hidden=count<1;el.textContent=count>9?'9+':String(count);});
+  if(meta)meta.textContent=count?`${count} new ${count===1?'update':'updates'} from Rebatify`:'View your support and feedback history';
+  if(status)status.textContent=count?`You have ${count} unread conversation ${count===1?'update':'updates'}.`:'Start a new conversation or check updates from the Rebatify team.';
+}
 function feedbackPublicStatus(f){
   if(isSupportConversation(f)){
     const status=String(f.status||'Waiting for Rebatify');
-    if(status==='Resolved')return {label:'Resolved',className:'resolved'};
+    if(status==='Resolved'||status==='Closed')return {label:'Resolved',className:'resolved'};
     if(status==='Waiting for Tester')return {label:'Waiting for you',className:'testing'};
     return {label:'Waiting for Rebatify',className:'reviewing'};
   }
@@ -312,7 +336,17 @@ function syncOpenConversationHeader(){
   const kicker=document.getElementById('portalConversationKicker');if(kicker)kicker.textContent=isSupportConversation(f)?'Support Conversation':'Beta Feedback Conversation';
   const type=document.getElementById('portalConversationType');if(type)type.textContent=f.type||'';
   const ps=feedbackPublicStatus(f);const status=document.getElementById('portalConversationStatus');if(status){status.textContent=ps.label;status.className='portal-feedback-public-status '+ps.className;}
+  syncConversationComposerState(f);
+  if(!document.getElementById('portalConversationBackdrop')?.hidden)markConversationRead(f);
 }
+function syncConversationComposerState(f=activeConversation){
+  const composer=document.getElementById('portalConversationReplyComposer');const notice=document.getElementById('portalConversationClosedNotice');const text=document.getElementById('portalConversationClosedText');
+  const closed=conversationIsClosed(f);
+  if(composer)composer.hidden=closed;
+  if(notice)notice.hidden=!closed;
+  if(text&&closed)text.textContent=isSupportConversation(f)?'This support conversation has been resolved and is now closed. Rebatify can reopen it if more follow-up is needed.':'This feedback conversation has been resolved and is now closed. Rebatify can reopen it if more follow-up is needed.';
+}
+
 async function loadFeedbackHistory(uid){
   if(feedbackHistoryUnsubscribe){feedbackHistoryUnsubscribe();feedbackHistoryUnsubscribe=null;}
   return new Promise((resolve,reject)=>{
@@ -321,6 +355,7 @@ async function loadFeedbackHistory(uid){
     feedbackHistoryUnsubscribe=onSnapshot(q,snap=>{
       feedbackHistory=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(timestampToDate(b.lastMessageAt||b.updatedAt||b.submittedAt)?.getTime()||0)-(timestampToDate(a.lastMessageAt||a.updatedAt||a.submittedAt)?.getTime()||0));
       renderFeedbackHistory();
+      renderSupportLauncher();
       renderPortalTaskSummary();
       syncOpenConversationHeader();
       maybePromptPendingRetest();
@@ -335,10 +370,10 @@ function renderFeedbackHistory(){
   const list=document.getElementById('portalFeedbackHistory');if(!list)return;
   if(!feedbackHistory.length){list.innerHTML='<div class="portal-feedback-history-empty">No conversations yet.</div>';return;}
   list.innerHTML=feedbackHistory.slice(0,40).map(f=>{
-    const publicStatus=feedbackPublicStatus(f);const support=isSupportConversation(f);const needsRetest=!support&&String(f.status||'')==='Needs Retest'&&!f.retestedAt;const replyNeeded=support&&String(f.status||'')==='Waiting for Tester';
+    const publicStatus=feedbackPublicStatus(f);const support=isSupportConversation(f);const unread=conversationIsUnread(f);const needsRetest=!support&&String(f.status||'')==='Needs Retest'&&!f.retestedAt;const replyNeeded=support&&String(f.status||'')==='Waiting for Tester';
     const action=needsRetest?`<button class="portal-retest-button" data-retest-feedback="${escapeHtml(f.id)}" type="button">Retest This Issue</button>`:(replyNeeded?`<button class="portal-conversation-open portal-reply-needed-button" data-open-conversation="${escapeHtml(f.id)}" type="button">Reply Needed</button>`:'');
     const workflow=support?'Support':'Beta Feedback';
-    return `<article class="portal-feedback-history-card${(needsRetest||replyNeeded)?' needs-action':''}"><div class="portal-feedback-history-top"><div><span>${escapeHtml(workflow)} · ${escapeHtml(f.type||'Conversation')}</span><h3>${escapeHtml(f.subject||'Conversation')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.lastMessageAt||f.updatedAt||f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}${f.supportAccountEmail?`<span>${escapeHtml(f.supportAccountEmail)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}<div class="portal-conversation-card-actions"><button class="portal-conversation-open" data-open-conversation="${escapeHtml(f.id)}" type="button">Open Conversation</button>${action}</div></article>`;
+    return `<article class="portal-feedback-history-card${(needsRetest||replyNeeded)?' needs-action':''}${unread?' has-unread':''}"><div class="portal-feedback-history-top"><div><span>${escapeHtml(workflow)} · ${escapeHtml(f.type||'Conversation')}${unread?'<b class="portal-history-unread">New update</b>':''}</span><h3>${escapeHtml(f.subject||'Conversation')}</h3></div><span class="portal-feedback-public-status ${publicStatus.className}">${escapeHtml(publicStatus.label)}</span></div><p>${escapeHtml(f.details||'')}</p><div class="portal-feedback-history-meta"><span>${escapeHtml(formatPortalDate(f.lastMessageAt||f.updatedAt||f.submittedAt))}</span>${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}${f.supportAccountEmail?`<span>${escapeHtml(f.supportAccountEmail)}</span>`:''}</div>${f.retestedAt?`<div class="portal-retest-result"><strong>${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:''}<div class="portal-conversation-card-actions"><button class="portal-conversation-open" data-open-conversation="${escapeHtml(f.id)}" type="button">Open Conversation</button>${action}</div></article>`;
   }).join('');
 }
 
@@ -395,6 +430,7 @@ function openConversation(id){
   const message=document.getElementById('portalConversationMessage');if(message){message.textContent='';message.className='portal-task-message';}
   const thread=document.getElementById('portalConversationThread');if(thread)thread.innerHTML='';
   conversationMessageCount=0;back.hidden=false;document.body.classList.add('portal-conversation-active');
+  markConversationRead(f);syncConversationComposerState(f);
   renderOpenConversationThread([]);
   resizeConversationComposer();
   subscribeConversationMessages(id);
@@ -404,7 +440,7 @@ function closeConversation(){
   conversationMessageCount=0;activeConversation=null;const back=document.getElementById('portalConversationBackdrop');if(back)back.hidden=true;document.body.classList.remove('portal-conversation-active');
 }
 async function sendConversationReply(){
-  if(!activeConversation||!auth.currentUser)return;const input=document.getElementById('portalConversationReply');const body=String(input.value||'').trim();const message=document.getElementById('portalConversationMessage');
+  if(!activeConversation||!auth.currentUser)return;if(conversationIsClosed(activeConversation)){syncConversationComposerState(activeConversation);return;}const input=document.getElementById('portalConversationReply');const body=String(input.value||'').trim();const message=document.getElementById('portalConversationMessage');
   if(!body){message.textContent='Write a reply before sending.';message.className='portal-task-message error';input?.focus();return;}
   const btn=document.getElementById('portalConversationSend');const original=btn.innerHTML;btn.disabled=true;btn.innerHTML='Sending…';message.textContent='';
   try{
@@ -623,16 +659,29 @@ function renderProfile(profile) {
   const stage=normalizeProgramTimelineStage(profile.timelineStage);const setupDone=testingSetupComplete(profile);
   const installCopy=document.getElementById('platformInstallCopy');const installMeta=document.getElementById('platformInstallMeta');const installAction=document.getElementById('platformInstallAction');
   if (profile.platform === 'iOS') {
-    const copy=!setupDone?'Install TestFlight and complete Testing Setup first, then prepare for your Rebatify TestFlight invitation.':({approved:'Testing Setup is complete. Install or open TestFlight and watch your approved beta email for your Rebatify invitation.',setupComplete:'Testing Setup is complete. Install or open TestFlight and watch your approved beta email for your Rebatify invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'}[stage]);
-    const meta=!setupDone?'Step 2 requires TestFlight to be installed and the Apple Account on this device to match your approved beta email.':({approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',setupComplete:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
-    if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction){installAction.innerHTML=setupDone?'<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>':'<small class="portal-tile-shortcut-note"><strong>Complete Step 2 first.</strong> The TestFlight shortcut will appear after Testing Setup is complete.</small>';bindTestFlightButtons(installAction);}
+    const tfDone=testFlightPrepared(profile);
+    let copy,meta,actionHtml;
+    if(!tfDone){
+      copy='Install TestFlight first, then return to your Beta Program timeline and confirm Step 2.';
+      meta='TestFlight must be installed on the iPhone or iPad you will use for Rebatify.';
+      actionHtml='<button class="portal-tile-testflight-button" data-open-testflight type="button">Install / Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Step 2.</strong> Confirm installation from the Progress timeline after TestFlight is installed.</small>';
+    }else if(!setupDone){
+      copy='TestFlight is installed. Complete Testing Setup in Step 3 to confirm your device and matching Apple Account.';
+      meta='Testing Setup is separate from the TestFlight installation step.';
+      actionHtml='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Complete Step 3 from your Progress timeline.</small>';
+    }else{
+      copy=({approved:'Testing Setup is complete. Watch your approved beta email for your Rebatify TestFlight invitation.',setupComplete:'Testing Setup is complete. Watch your approved beta email for your Rebatify TestFlight invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'}[stage]);
+      meta=({approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',setupComplete:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
+      actionHtml='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>';
+    }
+    if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction){installAction.innerHTML=actionHtml;bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
     const copy=!setupDone?'Complete Testing Setup first, then prepare the correct Google Play account.':({approved:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the closed-testing link.',setupComplete:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the closed-testing link.',inviteSent:'Your Google Play testing link has been sent. Open it on your Android phone, opt in, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage]);
     const meta=!setupDone?'Complete the required Testing Setup from Step 2 of your timeline.':({approved:'Google Play must be signed into the Google Account that matches your approved beta email.',setupComplete:'Google Play must be signed into the Google Account that matches your approved beta email.',inviteSent:'After opting in, install Rebatify, create your app account, and begin testing.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
     if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction)installAction.innerHTML='';
   }
   renderProgramTimeline(profile);
-  loading.hidden = true;app.hidden = false;if (content) content.classList.remove('portal-locked-content');
+  loading.hidden = true;app.hidden = false;document.getElementById('portalSupportLauncher')?.removeAttribute('hidden');if (content) content.classList.remove('portal-locked-content');
 }
 
 function updateHelpFormForType(){
@@ -651,7 +700,7 @@ function prefillAccountMismatchHelp(){
   if(subject){subject.value='Beta account email mismatch';subject.dispatchEvent(new Event('input',{bubbles:true}));}
   if(details){details.value=`My approved beta email is ${approved}, but this is not the ${ios?'Apple Account used for App Store/TestFlight':'Google Account selected in Google Play'} on my testing device. Please help correct my beta access.`;details.dispatchEvent(new Event('input',{bubbles:true}));}
   if(supportEmail){supportEmail.value='';supportEmail.dispatchEvent(new Event('input',{bubbles:true}));}
-  document.getElementById('submit-feedback')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>supportEmail?.focus(),450);
+  const target=document.querySelector('.portal-feedback-form-column')||feedbackForm||document.getElementById('submit-feedback');rebatifyPortalScrollTarget(target,'smooth');setTimeout(()=>{try{supportEmail?.focus({preventScroll:true});}catch(_){supportEmail?.focus();}},650);
 }
 function handleHelpQuery(){
   const params=new URLSearchParams(location.search);if(params.get('help')==='account-mismatch')setTimeout(prefillAccountMismatchHelp,350);
@@ -759,6 +808,15 @@ if(deviceForm){deviceForm.addEventListener('submit',async event=>{
   }catch(error){setDeviceMessage('We could not save your testing setup. '+friendlyFirebaseError(error),'error');}
   finally{button.disabled=false;button.innerHTML=original;}
 });}
+
+const supportLauncherButton=document.getElementById('portalSupportLauncherButton');
+const supportLauncherPanel=document.getElementById('portalSupportLauncherPanel');
+function setSupportLauncherOpen(open){if(!supportLauncherPanel||!supportLauncherButton)return;supportLauncherPanel.hidden=!open;supportLauncherButton.setAttribute('aria-expanded',open?'true':'false');document.getElementById('portalSupportLauncher')?.classList.toggle('is-open',open);}
+supportLauncherButton?.addEventListener('click',event=>{event.stopPropagation();setSupportLauncherOpen(supportLauncherPanel?.hidden!==false);});
+document.getElementById('portalSupportLauncherClose')?.addEventListener('click',()=>setSupportLauncherOpen(false));
+document.querySelectorAll('[data-support-launch]').forEach(button=>button.addEventListener('click',()=>{const mode=button.dataset.supportLaunch;setSupportLauncherOpen(false);const target=mode==='new'?(document.querySelector('.portal-feedback-form-column')||document.getElementById('submit-feedback')):document.getElementById('feedback-history');rebatifyPortalScrollTarget(target,'smooth');}));
+document.addEventListener('click',event=>{const launcher=document.getElementById('portalSupportLauncher');if(launcher&&!launcher.contains(event.target))setSupportLauncherOpen(false);});
+renderSupportLauncher();
 
 document.addEventListener('click',event=>{
   const ack=event.target.closest('[data-ack-announcement]');if(ack){acknowledgeAnnouncement(ack.dataset.ackAnnouncement,ack);return;}
