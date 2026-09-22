@@ -462,7 +462,10 @@ async function completeRequiredTask(){
 
 function timelineStep(number,status,title,body,actionHtml=''){
   const statusLabel={complete:'Completed',now:'Action Needed',waiting:'Upcoming',next:'Upcoming',ongoing:'In Progress'}[status]||status;
-  return `<article class="portal-timeline-step ${status}"><div class="portal-timeline-marker"><span>${number}</span></div><div class="portal-timeline-copy"><div class="portal-timeline-step-top"><h3>${title}</h3><span class="portal-timeline-status">${statusLabel}</span></div><p>${body}</p>${actionHtml}</div></article>`;
+  const marker=status==='complete'
+    ? `<span class="portal-timeline-complete-marker" aria-label="Step ${number} completed"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 7"/></svg></span>`
+    : `<span>${number}</span>`;
+  return `<article class="portal-timeline-step ${status}"><div class="portal-timeline-marker">${marker}</div><div class="portal-timeline-copy"><div class="portal-timeline-step-top"><h3>${title}</h3><span class="portal-timeline-status">${statusLabel}</span></div><p>${body}</p>${actionHtml}</div></article>`;
 }
 
 const PROGRAM_TIMELINE_STAGES=['approved','setupComplete','inviteSent','activeTesting'];
