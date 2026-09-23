@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 85
+// Rebatify Beta Admin — Website Build 93
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -80,6 +80,11 @@ let adminConversationUnsubscribe = null;
 let activeDrawerFeedbackId = null;
 let adminConversationMessageCount = 0;
 let emailChangeApplicationId = null;
+let applicationRealtimeUnsubscribe = null;
+let applicationsRealtimeReady = false;
+let feedbackRealtimeReady = false;
+const MAX_ADMIN_NOTIFICATIONS = 20;
+
 
 function openEmailChangeModal(applicationId,currentEmail,prefillEmail=''){
   emailChangeApplicationId=applicationId||null;
@@ -99,7 +104,83 @@ function closeEmailChangeModal(){
   if(back)back.hidden=true;
 }
 
-
+function adminNotificationTime(value){
+  const d=timestampToDate(value)||new Date();
+  try{return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}catch(_){return '';}
+}
+function adminNotificationDateMs(value){const d=timestampToDate(value)||new Date();return d.getTime();}
+function browserNotificationsSupported(){return typeof window!=='undefined'&&'Notification' in window;}
+function updateNotificationPermissionUI(){
+  const btn=document.getElementById('adminNotificationPermission');
+  if(!btn)return;
+  if(!browserNotificationsSupported()){btn.hidden=true;return;}
+  const permission=Notification.permission;
+  btn.hidden=false;
+  btn.disabled=permission==='granted';
+  btn.textContent=permission==='granted'?'Browser alerts enabled':permission==='denied'?'Browser alerts blocked':'Enable browser alerts';
+}
+function renderAdminNotifications(){
+  const list=document.getElementById('adminNotificationList');
+  const badge=document.getElementById('adminNotificationBadge');
+  const notifications=Array.isArray(state.notifications)?state.notifications:[];
+  const unread=notifications.filter(n=>!n.read).length;
+  if(badge){badge.hidden=unread<1;badge.textContent=unread>9?'9+':String(unread);}
+  if(!list)return;
+  if(!notifications.length){list.innerHTML='<div class="admin-empty-inline">No live notifications yet.</div>';return;}
+  list.innerHTML=notifications.map(n=>`<button class="admin-notification-item${n.read?'':' unread'}" data-open-notification="${esc(n.id)}" data-notification-type="${esc(n.targetType)}" data-notification-id="${esc(n.targetId)}" type="button"><span class="admin-notification-item-icon ${n.kind==='application'?'':'green'}">${n.kind==='application'?'<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2.5"></rect><path d="M9 4.5v-1h6v1M8.5 9h7M8.5 13h7M8.5 17h4.5"></path></svg>':'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7l-4.5 3v-3H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"></path><path d="M8 10h8M8 13h5"></path></svg>'}</span><span class="admin-notification-item-copy"><strong>${esc(n.title)}</strong><span>${esc(n.message)}</span></span><time>${esc(adminNotificationTime(n.createdAt))}</time></button>`).join('');
+}
+function markAdminNotificationsRead(){if(!Array.isArray(state.notifications)||!state.notifications.length)return;let changed=false;state.notifications=state.notifications.map(n=>{if(n.read)return n;changed=true;return {...n,read:true};});if(changed)renderAdminNotifications();}
+function setAdminNotificationPanelOpen(open){
+  const panel=document.getElementById('adminNotificationPanel');
+  const toggle=document.getElementById('adminNotificationToggle');
+  const wrap=document.getElementById('adminNotificationWrap');
+  if(!panel||!toggle||!wrap)return;
+  panel.hidden=!open;
+  wrap.classList.toggle('is-open',open);
+  toggle.setAttribute('aria-expanded',open?'true':'false');
+  if(open)markAdminNotificationsRead();
+}
+function sendBrowserAdminNotification(title,body=''){
+  if(!browserNotificationsSupported()||Notification.permission!=='granted')return;
+  try{new Notification(title,{body,icon:'app-icon.png'});}catch(_){ }
+}
+function pushAdminNotification(kind,targetType,targetId,title,message,createdAt){
+  state.notifications=Array.isArray(state.notifications)?state.notifications:[];
+  const item={id:`${kind}-${targetId}-${Date.now()}`,kind,targetType,targetId,title,message,createdAt:createdAt||new Date(),read:false};
+  state.notifications=[item,...state.notifications].sort((a,b)=>adminNotificationDateMs(b.createdAt)-adminNotificationDateMs(a.createdAt)).slice(0,MAX_ADMIN_NOTIFICATIONS);
+  renderAdminNotifications();
+  showToast(title+': '+message);
+  sendBrowserAdminNotification(title,message);
+}
+async function requestAdminNotificationPermission(){
+  if(!browserNotificationsSupported())return;
+  try{await Notification.requestPermission();}catch(_){ }
+  updateNotificationPermissionUI();
+}
+function startApplicationsRealtimeAdmin(){
+  if(applicationRealtimeUnsubscribe)return;
+  const q=query(collection(db,'betaApplications'),orderBy('submittedAt','desc'),limit(100));
+  applicationRealtimeUnsubscribe=onSnapshot(q,snap=>{
+    const firstLoad=!applicationsRealtimeReady;
+    const docs=snap.docs.map(normalizeDoc);
+    state.applications=docs;
+    state.recentApplications=docs.slice(0,5);
+    state.loaded.applications=true;
+    if(activeView==='applications')renderApplications();
+    if(activeView==='overview')renderOverview();
+    loadMetrics().then(()=>{renderMetrics();if(activeView==='overview')renderOverview();}).catch(()=>{});
+    if(!firstLoad){
+      snap.docChanges().forEach(change=>{
+        if(change.type!=='added')return;
+        const a=normalizeDoc(change.doc);
+        const label=(a.fullName||a.name||a.email||'A tester').trim();
+        const platform=a.platform?` · ${a.platform}`:'';
+        pushAdminNotification('application','application',a.id,'New beta application',`${label}${platform}`,(a.submittedAt||new Date()));
+      });
+    }
+    applicationsRealtimeReady=true;
+  },error=>console.error('Realtime admin application listener failed:',error));
+}
 
 const TIMELINE_STAGES = ['approved','setupComplete','inviteSent','activeTesting'];
 const selectedTimelineTesters = new Set();
@@ -452,6 +533,7 @@ function startFeedbackRealtimeAdmin(){
   if(feedbackRealtimeUnsubscribe)return;
   const q=query(collection(db,'betaFeedback'),orderBy('submittedAt','desc'),limit(100));
   feedbackRealtimeUnsubscribe=onSnapshot(q,snap=>{
+    const firstLoad=!feedbackRealtimeReady;
     const privateNotes=new Map(state.feedback.map(f=>[f.id,String(f.adminNotes||'')]));
     state.feedback=snap.docs.map(normalizeDoc).map(f=>({...f,adminNotes:privateNotes.get(f.id)||''}));
     state.recentFeedback=state.feedback.slice(0,5);
@@ -459,6 +541,18 @@ function startFeedbackRealtimeAdmin(){
     if(activeView==='feedback')renderFeedback();
     if(activeView==='overview')renderOverview();
     if(activeDrawerFeedbackId){const active=state.feedback.find(f=>f.id===activeDrawerFeedbackId);if(active)syncOpenAdminFeedbackState(active);}
+    loadMetrics().then(()=>{renderMetrics();if(activeView==='overview')renderOverview();}).catch(()=>{});
+    if(!firstLoad){
+      snap.docChanges().forEach(change=>{
+        if(change.type!=='added')return;
+        const f=normalizeDoc(change.doc);
+        const who=(f.fullName||f.name||f.email||'A tester').trim();
+        const kind=isSupportConversation(f)?'New help ticket':'New feedback ticket';
+        const summary=(f.subject||f.type||'New conversation').trim();
+        pushAdminNotification('feedback','feedback',f.id,kind,`${who} · ${summary}`,(f.submittedAt||new Date()));
+      });
+    }
+    feedbackRealtimeReady=true;
   },error=>console.error('Realtime admin Help & Feedback listener failed:',error));
 }
 
@@ -1150,6 +1244,10 @@ async function init(user){
   loading.style.display='none';
   app.hidden=false;
   app.style.display='';
+  updateNotificationPermissionUI();
+  renderAdminNotifications();
+  startApplicationsRealtimeAdmin();
+  startFeedbackRealtimeAdmin();
 
   try{
     await loadEmailServiceSettings();
@@ -1194,6 +1292,12 @@ if(!firebaseConfigured){
     showFatal('Firebase Authentication could not initialize.',friendlyFirebaseError(error));
   });
 }
+
+const adminNotificationToggle=document.getElementById('adminNotificationToggle');
+adminNotificationToggle?.addEventListener('click',event=>{event.stopPropagation();const panel=document.getElementById('adminNotificationPanel');setAdminNotificationPanelOpen(panel?.hidden!==false);});
+document.getElementById('adminNotificationPermission')?.addEventListener('click',requestAdminNotificationPermission);
+document.addEventListener('click',event=>{const wrap=document.getElementById('adminNotificationWrap');if(wrap&&!wrap.contains(event.target))setAdminNotificationPanelOpen(false);});
+document.getElementById('adminNotificationList')?.addEventListener('click',async event=>{const item=event.target.closest('[data-open-notification]');if(!item)return;setAdminNotificationPanelOpen(false);if(item.dataset.notificationType==='application'){await switchView('applications');const a=await ensureApplicationLoaded(item.dataset.notificationId);if(a)openApplicationRecord(a);return;}if(item.dataset.notificationType==='feedback'){await switchView('feedback');const f=await ensureFeedbackLoaded(item.dataset.notificationId);if(f)openFeedbackRecord(f);}});
 
 document.addEventListener('click',async e=>{
   const feedbackEmailBtn=e.target.closest('[data-feedback-change-email]');if(feedbackEmailBtn){

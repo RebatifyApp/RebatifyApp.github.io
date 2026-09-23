@@ -423,7 +423,7 @@ function subscribeConversationMessages(feedbackId){
   });
 }
 function openConversation(id){
-  const f=feedbackHistory.find(x=>x.id===id);if(!f)return;activeConversation=f;
+  const f=feedbackHistory.find(x=>x.id===id);if(!f)return;activeConversation=f;setSupportLauncherOpen(false);
   const back=document.getElementById('portalConversationBackdrop');
   syncOpenConversationHeader();
   const reply=document.getElementById('portalConversationReply');if(reply)reply.value='';
