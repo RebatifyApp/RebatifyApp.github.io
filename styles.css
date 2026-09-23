@@ -2222,3 +2222,24 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .portal-feedback-layout-single{grid-template-columns:minmax(0,760px);justify-content:center}.portal-feedback-layout-single .portal-feedback-form-column{width:100%}
 .portal-chat-event{align-self:stretch;max-width:100%;padding:13px 14px;border-radius:16px;background:linear-gradient(145deg,#f8fbff,#eef5ff);border:1px solid #cfe0fb;box-shadow:0 6px 18px rgba(20,92,242,.05)}.portal-chat-event .portal-chat-message-head{margin-bottom:7px}.portal-chat-event p{margin:0;color:#40566f;white-space:pre-wrap;line-height:1.55;font-size:.79rem}.portal-chat-event-detail{display:block;margin-top:7px;color:#5f738b;font-size:.72rem;white-space:pre-wrap}.portal-chat-event-action{margin-top:11px;border:1px solid rgba(20,92,242,.2);background:#145cf2;color:#fff;border-radius:11px;padding:9px 12px;font-weight:900;font-size:.75rem;cursor:pointer}.portal-chat-event-action:hover{background:#0f4fd6}.portal-chat-event.is-complete{background:linear-gradient(145deg,#f6fcf7,#edf8ef);border-color:#cde7d2}.portal-required-support strong::before{content:"✉";margin-right:8px;color:#145cf2}
 .admin-chat-event{align-self:stretch;max-width:100%!important;background:linear-gradient(145deg,#f8fbff,#eef5ff)!important;border-color:#cfe0fb!important}.admin-chat-event.is-complete{background:linear-gradient(145deg,#f6fcf7,#edf8ef)!important;border-color:#cde7d2!important}.admin-chat-event small{display:block;margin-top:6px;color:#697d93;font-size:.68rem;white-space:pre-wrap}
+
+
+/* ===== Website Build 108: Rebatify+ screenshot upgrade guide ===== */
+.upgrade-guide-intro{margin:0 0 14px;color:#52677e;line-height:1.6}
+.upgrade-path-card{display:grid;grid-template-columns:minmax(230px,.78fr) minmax(0,1.22fr);gap:18px;padding:18px;margin-top:14px;border:1px solid #dfe8f4;border-radius:20px;background:#f8fbff;align-items:start}
+.upgrade-path-card.expired{background:#f7fbf7;border-color:rgba(59,158,74,.20)}
+.upgrade-path-copy h3{margin:7px 0 10px;color:#1b2e49;font-size:.96rem;line-height:1.35}
+.upgrade-path-copy ol{margin:0;padding-left:20px}
+.upgrade-path-copy li+li{margin-top:5px}
+.upgrade-path-badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(20,92,242,.08);border:1px solid rgba(20,92,242,.14);color:#145cf2;font-size:.64rem;font-weight:900;letter-spacing:.03em}
+.upgrade-path-card.expired .upgrade-path-badge{background:rgba(59,158,74,.09);border-color:rgba(59,158,74,.18);color:#2f7e3b}
+.upgrade-guide-gallery{display:grid;gap:12px;align-items:start}.upgrade-guide-gallery.two{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)}.upgrade-guide-gallery.single{grid-template-columns:minmax(0,1fr)}
+.upgrade-guide-gallery figure{margin:0;padding:9px;border-radius:16px;background:#fff;border:1px solid #e2eaf4;box-shadow:0 8px 20px rgba(7,38,92,.05)}
+.upgrade-guide-gallery a{display:block;text-decoration:none;border-radius:12px;overflow:hidden;background:#f4f8fd}
+.upgrade-guide-gallery img,.portal-guide-body .upgrade-guide-gallery img{display:block;width:100%;max-width:none;height:auto;margin:0;border:0;border-radius:0}
+.upgrade-guide-gallery figcaption{padding:8px 3px 1px;color:#6a7d92;font-size:.68rem;line-height:1.35;font-weight:750}
+.upgrade-guide-note{margin:14px 0 0;padding:11px 13px;border-radius:13px;background:#fff;border:1px solid #e2e9f2;color:#5c7087;font-size:.74rem;line-height:1.5}
+.public-upgrade-faq .upgrade-faq-body{padding-top:8px}.public-upgrade-faq .upgrade-faq-body>p:first-child{margin-top:4px}
+.upgrade-guide-gallery.public{grid-template-columns:repeat(3,minmax(0,1fr));margin:14px 0}.upgrade-guide-gallery.public figure{padding:8px}.upgrade-guide-gallery.public figcaption{font-size:.72rem}
+@media(max-width:820px){.upgrade-path-card{grid-template-columns:1fr}.upgrade-guide-gallery.public{grid-template-columns:1fr 1fr}.upgrade-guide-gallery.public figure:last-child{grid-column:1/-1;max-width:380px}}
+@media(max-width:560px){.upgrade-path-card{padding:14px}.upgrade-guide-gallery.two,.upgrade-guide-gallery.public{grid-template-columns:1fr}.upgrade-guide-gallery.public figure:last-child{grid-column:auto;max-width:none}.upgrade-guide-gallery figure{padding:7px}.upgrade-guide-gallery figcaption{font-size:.66rem}}
