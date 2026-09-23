@@ -1,4 +1,4 @@
-// Rebatify Production Admin Console — Website Build 95
+// Rebatify Production Admin Console — Website Build 96
 // Uses the signed-in Beta Admin Firebase session only as the administrator identity.
 // All privileged production reads/writes go through the Production Admin Worker.
 // No production service-account secret is ever present in browser code.
@@ -60,7 +60,11 @@ function setConnectionUI(connected, label=''){
     chip.classList.toggle('admin-service-connected',connected);
   });
   const live=$('adminLiveChip');
-  if(state.scope==='production'&&live) live.innerHTML=connected?'<span></span> Production connected':'<span></span> Production offline';
+  if(state.scope==='production'&&live){
+    live.innerHTML=connected?'<span></span> Production connected':'<span></span> Production offline';
+    live.classList.toggle('admin-live-online',!!connected);
+    live.classList.toggle('admin-live-offline',!connected);
+  }
 }
 
 async function callProduction(action, payload={}){
@@ -102,7 +106,11 @@ function setScope(scope){
   if(beta){
     const active=document.querySelector('[data-admin-view].is-active');
     if($('adminViewTitle'))$('adminViewTitle').textContent=active?.innerText?.trim()||'Overview';
-    if($('adminLiveChip'))$('adminLiveChip').innerHTML='<span></span> Live updates';
+    if($('adminLiveChip')){
+      $('adminLiveChip').innerHTML='<span></span> Live updates';
+      $('adminLiveChip').classList.add('admin-live-online');
+      $('adminLiveChip').classList.remove('admin-live-offline');
+    }
   }else{
     const label=document.querySelector(`[data-production-view="${state.view}"] span:nth-child(2)`)?.textContent||'Overview';
     if($('adminViewTitle'))$('adminViewTitle').textContent=label;

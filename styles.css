@@ -2131,7 +2131,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 @media(max-width:760px){.admin-notification-panel{right:-4px;width:min(360px,calc(100vw - 20px))}}
 
 /* ================================================================
-   Rebatify Admin — Website Build 95 dual Beta / Production console
+   Rebatify Admin — Website Build 96 dual Beta / Production console
    ================================================================ */
 .admin-scope-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 12px 10px;padding:5px;border:1px solid rgba(130,154,188,.18);border-radius:14px;background:rgba(255,255,255,.045)}
 .admin-scope-switch button{min-width:0;border:0;border-radius:10px;padding:9px 8px;background:transparent;color:#9fb1ca;font:inherit;font-size:.68rem;font-weight:850;cursor:pointer;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
@@ -2160,7 +2160,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .production-integration-notice{display:flex;align-items:flex-start;gap:10px;margin:0 0 18px;padding:13px 15px;border:1px solid rgba(33,113,181,.18);border-radius:14px;background:rgba(33,113,181,.055);color:#294761}.production-integration-notice strong{flex:0 0 auto;color:#174f80;font-size:.76rem}.production-integration-notice span{font-size:.72rem;line-height:1.5;font-weight:650}@media(max-width:680px){.production-integration-notice{flex-direction:column;gap:4px}}
 
 
-/* Website Build 95 - Production account security */
+/* Website Build 96 - Production account security */
 .production-account-security-row{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:18px;padding-top:16px;border-top:1px solid #e6edf6}
 .production-account-security-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
 .production-account-security-row>div>strong{color:#10233b;font-size:.9rem}
@@ -2168,3 +2168,9 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .production-account-security-row .production-action-button{flex:0 0 auto}
 .production-account-security-row .production-action-button:disabled{opacity:.46;cursor:not-allowed}
 @media(max-width:680px){.production-account-security-row{align-items:stretch;flex-direction:column}.production-account-security-row .production-action-button{width:100%}}
+
+
+/* Build 96 — connection-state indicator */
+.admin-live-chip.admin-live-online span{background:var(--admin-green);box-shadow:0 0 0 4px rgba(59,158,74,.10)}
+.admin-live-chip.admin-live-offline span{background:#98a6b8;box-shadow:0 0 0 4px rgba(120,137,158,.10)}
+.admin-live-chip.admin-live-offline{color:#68798e}
