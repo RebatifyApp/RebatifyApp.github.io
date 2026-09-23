@@ -1,4 +1,4 @@
-// Rebatify Production Admin Console — Website Build 96
+// Rebatify Production Admin Console — Website Build 97
 // Uses the signed-in Beta Admin Firebase session only as the administrator identity.
 // All privileged production reads/writes go through the Production Admin Worker.
 // No production service-account secret is ever present in browser code.
@@ -16,6 +16,7 @@ const state = {
   overview: null,
   users: [],
   devices: [],
+  identities: [],
   access: { premiumGrants: [], trialOverrides: [], reviewAccess: [] },
   audit: [],
   selectedUser: null,
@@ -119,7 +120,18 @@ function setScope(scope){
   }
 }
 
-function switchProductionView(view){
+function focusProductionAccessTarget(kind){
+  const ids={premium:'productionAccessPremium',trial:'productionAccessTrial',review:'productionAccessReview'};
+  document.querySelectorAll('.production-access-target').forEach(x=>x.classList.remove('is-focused'));
+  const target=$(ids[kind]);
+  if(!target)return;
+  requestAnimationFrame(()=>{
+    target.classList.add('is-focused');
+    target.scrollIntoView({behavior:'smooth',block:'center'});
+    window.setTimeout(()=>target.classList.remove('is-focused'),1800);
+  });
+}
+function switchProductionView(view,focus=''){
   state.view=view||'overview';
   document.querySelectorAll('[data-production-view]').forEach(b=>b.classList.toggle('is-active',b.dataset.productionView===state.view));
   document.querySelectorAll('[data-production-panel]').forEach(p=>p.classList.toggle('is-active',p.dataset.productionPanel===state.view));
@@ -128,7 +140,8 @@ function switchProductionView(view){
   document.querySelector('.admin-main')?.scrollTo?.({top:0,behavior:'smooth'});
   if(state.view==='users') loadUsers().catch(err=>showProdToast(err.message,'error'));
   if(state.view==='devices') loadDevices().catch(err=>showProdToast(err.message,'error'));
-  if(state.view==='access') loadAccess().catch(err=>showProdToast(err.message,'error'));
+  if(state.view==='identities') loadIdentities().catch(err=>showProdToast(err.message,'error'));
+  if(state.view==='access') loadAccess().then(()=>{if(focus)focusProductionAccessTarget(focus);}).catch(err=>showProdToast(err.message,'error'));
   if(state.view==='audit') loadAudit().catch(err=>showProdToast(err.message,'error'));
   if(state.view==='settings') fillSettings();
 }
@@ -187,11 +200,11 @@ function userPlusState(u){
 }
 function userMatchesFilter(u,filter){
   if(!filter)return true;
-  if(filter==='plus')return !!u.premiumActive||!!u.adminPremiumGrantActive;
+  if(filter==='plus')return !!u.premiumActive||!!u.adminPremiumGrantActive||!!u.reviewAccessActive;
   if(filter==='grant')return !!u.adminPremiumGrantActive;
   if(filter==='trial')return !!u.trialActive||!!u.trialOverrideActive;
   if(filter==='review')return !!u.reviewAccessActive;
-  if(filter==='expired')return !u.premiumActive&&!u.adminPremiumGrantActive&&!u.trialActive&&!u.trialOverrideActive;
+  if(filter==='expired')return !u.premiumActive&&!u.adminPremiumGrantActive&&!u.reviewAccessActive&&!u.trialActive&&!u.trialOverrideActive;
   return true;
 }
 function renderUsers(){
@@ -199,8 +212,10 @@ function renderUsers(){
   const rows=state.users.filter(u=>{const hay=[u.name,u.email,u.uid].join(' ').toLowerCase();return (!q||hay.includes(q))&&userMatchesFilter(u,filter);});
   if($('productionUsersTableBody'))$('productionUsersTableBody').innerHTML=rows.map(u=>{
     const trial=userTrialState(u)==='trial'?'<span class="production-status blue">Active</span>':'<span class="production-status">Expired / none</span>';
-    const plus=u.adminPremiumGrantActive?'<span class="production-status green">Admin grant</span>':u.premiumActive?`<span class="production-status green">${esc(u.premiumSource||'Active')}</span>`:'<span class="production-status">None</span>';
-    return `<tr><td><div class="production-user-cell"><strong>${esc(u.name||'Rebatify user')}</strong><span>${esc(u.email||'')}</span><span title="${esc(u.uid)}">${esc(shortId(u.uid))}</span></div></td><td>${esc(fmtDate(u.createdAt))}</td><td>${trial}</td><td>${plus}</td><td>${esc(String(u.deviceCount??0))}</td><td><button class="admin-action-button" data-production-user="${esc(u.uid)}" type="button">Open</button></td></tr>`;
+    const plus=u.adminPremiumGrantActive?'<span class="production-status green">Admin grant</span>':u.premiumActive?`<span class="production-status green">${esc(u.premiumSource||'Store entitlement')}</span>`:u.reviewAccessActive?'<span class="production-status blue">App Review access</span>':'<span class="production-status">None</span>';
+    const review=u.reviewAccessActive?`<span class="production-status blue" title="${esc(u.reviewAccessSource||'App Review access')}">${esc(u.reviewAccessSource==='Admin grant'?'Admin grant':'Active')}</span>`:'<span class="production-status">None</span>';
+    const linked=Number(u.linkedAccountCount||1)>1?`<span class="production-status blue">${esc(String(u.linkedAccountCount))} accounts</span>`:'<span class="production-status">Not linked</span>';
+    return `<tr><td><div class="production-user-cell"><strong>${esc(u.name||'Rebatify user')}</strong><span>${esc(u.email||'')}</span><span title="${esc(u.uid)}">${esc(shortId(u.uid))}</span></div></td><td>${esc(fmtDate(u.createdAt))}</td><td>${trial}</td><td>${plus}</td><td>${review}</td><td>${linked}</td><td>${esc(String(u.deviceCount??0))}</td><td><button class="admin-action-button" data-production-user="${esc(u.uid)}" type="button">Open</button></td></tr>`;
   }).join('');
   if($('productionUsersEmpty')){$('productionUsersEmpty').hidden=rows.length>0;$('productionUsersEmpty').textContent=state.users.length?'No production users match these filters.':'No production users found.';}
 }
@@ -212,8 +227,21 @@ async function loadDevices(force=false){
 function renderDevices(){
   const q=String($('productionDeviceSearch')?.value||'').trim().toLowerCase();
   const rows=state.devices.filter(d=>!q||[d.deviceName,d.deviceModel,d.platform,d.deviceId,d.userEmail,d.userName,d.uid].join(' ').toLowerCase().includes(q));
-  if($('productionDevicesTableBody'))$('productionDevicesTableBody').innerHTML=rows.map(d=>`<tr><td><div class="production-user-cell"><strong>${esc(d.deviceName||d.deviceModel||'Device')}</strong><span title="${esc(d.deviceId)}">${esc(shortId(d.deviceId))}</span></div></td><td><div class="production-user-cell"><strong>${esc(d.userName||'User')}</strong><span>${esc(d.userEmail||d.uid||'')}</span></div></td><td>${esc(d.platform||'Device')}</td><td><div class="production-device-tags">${d.isPrimary?'<span class="production-status green">Primary</span>':''}${d.isTrusted?'<span class="production-status blue">Trusted</span>':''}${d.isActive?'<span class="production-status">Active</span>':''}</div></td><td>${esc(fmtDate(d.firstSeenAt))}</td><td>${esc(fmtDate(d.lastSeenAt))}</td><td><button class="admin-action-button" data-production-user="${esc(d.uid)}" type="button">User</button></td></tr>`).join('');
+  if($('productionDevicesTableBody'))$('productionDevicesTableBody').innerHTML=rows.map(d=>`<tr><td><div class="production-user-cell"><strong>${esc(d.deviceName||d.deviceModel||'Device')}</strong><span title="${esc(d.deviceId)}">${esc(shortId(d.deviceId))}</span></div></td><td><div class="production-user-cell"><strong>${esc(d.userName||'User')}</strong><span>${esc(d.userEmail||d.uid||'')}</span>${Number(d.linkedAccountCount||1)>1?`<span class="production-linked-note">Linked with ${esc(String(Number(d.linkedAccountCount)-1))} other account${Number(d.linkedAccountCount)-1===1?'':'s'}</span>`:''}</div></td><td>${esc(d.platform||'Device')}</td><td><div class="production-device-tags">${d.isPrimary?'<span class="production-status green">Primary</span>':''}${d.isTrusted?'<span class="production-status blue">Trusted</span>':''}${d.isActive?'<span class="production-status">Active</span>':''}</div></td><td>${esc(fmtDate(d.firstSeenAt))}</td><td>${esc(fmtDate(d.lastSeenAt))}</td><td><button class="admin-action-button" data-production-user="${esc(d.uid)}" type="button">User</button></td></tr>`).join('');
   if($('productionDevicesEmpty')){$('productionDevicesEmpty').hidden=rows.length>0;$('productionDevicesEmpty').textContent=state.devices.length?'No devices match this search.':'No production devices found.';}
+}
+
+async function loadIdentities(force=false){
+  if(state.identities.length&&!force){renderIdentities();return;}
+  const data=await callProduction('identity-list',{limit:500}); state.identities=data.identities||[]; renderIdentities();
+}
+function renderIdentities(){
+  const rows=state.identities||[];
+  if($('productionIdentityTableBody'))$('productionIdentityTableBody').innerHTML=rows.map(group=>{
+    const members=(group.members||[]).map(m=>`<button class="production-identity-member" data-production-user="${esc(m.uid)}" type="button"><strong>${esc(m.name||m.email||'Rebatify user')}</strong><span>${esc(m.email||shortId(m.uid))}</span></button>`).join('');
+    return `<tr><td><div class="production-user-cell"><strong>${esc(group.label||'Linked production accounts')}</strong><span>${esc(shortId(group.id))}</span></div></td><td><div class="production-identity-members">${members}</div></td><td>${esc(String(group.deviceCount||0))}</td><td>${esc(fmtDateTime(group.updatedAt))}</td><td>${group.members?.[0]?.uid?`<button class="admin-action-button" data-production-user="${esc(group.members[0].uid)}" type="button">Open</button>`:''}</td></tr>`;
+  }).join('');
+  if($('productionIdentityEmpty')){$('productionIdentityEmpty').hidden=rows.length>0;$('productionIdentityEmpty').textContent='No linked production accounts yet.';}
 }
 
 async function loadAccess(force=false){
@@ -226,7 +254,8 @@ function accessItemHtml(item,type){
   if(type==='premium')detail=item.indefinite?'Indefinite complimentary Rebatify+':`Expires ${fmtDateTime(item.expiresAt)}`;
   if(type==='trial')detail=`Trial reissue expires ${fmtDateTime(item.expiresAt)} · ${shortId(item.deviceId)}`;
   if(type==='review')detail=item.indefinite?'Indefinite App Review access':`Expires ${fmtDateTime(item.expiresAt)}`;
-  return `<div class="production-access-item"><div><strong>${esc(title)}</strong><span>${esc(detail)}</span><span>${esc(item.reason||'')}</span></div>${item.uid?`<button class="admin-text-button" data-production-user="${esc(item.uid)}" type="button">Open</button>`:''}</div>`;
+  const source=type==='review'&&item.source?`<span class="production-access-source">Source: ${esc(item.source)}</span>`:'';
+  return `<div class="production-access-item"><div><strong>${esc(title)}</strong><span>${esc(detail)}</span>${source}<span>${esc(item.reason||'')}</span></div>${item.uid?`<button class="admin-text-button" data-production-user="${esc(item.uid)}" type="button">Open</button>`:''}</div>`;
 }
 function renderAccess(){
   const p=state.access.premiumGrants.filter(x=>x.active),t=state.access.trialOverrides.filter(x=>x.active),r=state.access.reviewAccess.filter(x=>x.active);
@@ -258,16 +287,19 @@ async function openUser(uid){
 }
 function closeUserDrawer(){ $('productionDrawerBackdrop').hidden=true; $('productionAdminDrawer')?.classList.remove('is-open'); $('productionAdminDrawer')?.setAttribute('aria-hidden','true'); state.selectedUser=null;state.selectedUserDetail=null; }
 function renderUserDrawer(data){
-  const u=data.user||{}; const devices=data.devices||[]; const pg=data.premiumGrant||null; const ro=data.reviewAccess||null; const trial=data.trial||{};
+  const u=data.user||{}; const devices=data.devices||[]; const pg=data.premiumGrant||null; const ro=data.reviewAccess||null; const re=data.reviewAccessEffective||null; const trial=data.trial||{}; const identity=data.identity||{};
   if($('productionDrawerTitle'))$('productionDrawerTitle').textContent=u.name||u.email||'Production User';
   if($('productionDrawerKicker'))$('productionDrawerKicker').textContent='Production User';
-  const plusText=pg?.active?(pg.indefinite?'Complimentary · Indefinite':`Complimentary · Until ${fmtDate(pg.expiresAt)}`):(u.premiumActive?`${u.premiumSource||'Store'} entitlement`:'No Rebatify+ access');
+  const plusText=pg?.active?(pg.indefinite?'Complimentary · Indefinite':`Complimentary · Until ${fmtDate(pg.expiresAt)}`):(u.premiumActive?`${u.premiumSource||'Store'} entitlement`:re?.active?`App Review access · ${re.source||'Active'}`:'No Rebatify+ access');
   const trialText=trial.override?.active?`Admin reissue until ${fmtDate(trial.override.expiresAt)}`:trial.active?`Active until ${fmtDate(trial.expiresAt)}`:'Expired / unavailable';
-  const reviewText=ro?.active?(ro.indefinite?'Active · Indefinite':`Active until ${fmtDate(ro.expiresAt)}`):'Not granted';
+  const reviewText=re?.active?`${re.source||'Active'}${re.expiresAt?` · Until ${fmtDate(re.expiresAt)}`:' · Active'}`:'Not granted';
   const authEmail=data.auth?.email||u.email||'';
   const authStatus=data.auth?.disabled?'Disabled':'Active';
   const deviceHtml=devices.length?devices.map(d=>`<div class="production-device-card"><div><strong>${esc(d.deviceName||d.deviceModel||'Device')}</strong><span>${esc(d.platform||'Device')} · ${esc(shortId(d.deviceId))}</span></div><div class="production-device-tags">${d.isPrimary?'<span class="production-status green">Primary</span>':''}${d.isTrusted?'<span class="production-status blue">Trusted</span>':''}${d.isActive?'<span class="production-status">Active</span>':''}</div></div>`).join(''):'<div class="admin-empty-inline">No device records found.</div>';
-  $('productionDrawerContent').innerHTML=`<div class="production-user-summary"><div class="production-summary-card"><h3>Account</h3><div class="production-summary-grid"><div class="production-summary-field"><span>Email</span><strong>${esc(authEmail||'—')}</strong></div><div class="production-summary-field"><span>UID</span><strong title="${esc(u.uid||'')}">${esc(shortId(u.uid))}</strong></div><div class="production-summary-field"><span>Created</span><strong>${esc(fmtDateTime(u.createdAt))}</strong></div><div class="production-summary-field"><span>Auth Status</span><strong>${esc(authStatus)}</strong></div></div><div class="production-account-security-row"><div><strong>Password assistance</strong><span>Send the normal branded Rebatify password-reset email to this account.</span></div><button class="production-action-button blue" data-production-action="password-reset" data-uid="${esc(u.uid)}" type="button" ${data.auth?.disabled?'disabled':''}>Send Password Reset Email</button></div></div><div class="production-summary-card"><h3>Access</h3><div class="production-summary-grid"><div class="production-summary-field"><span>Trial</span><strong>${esc(trialText)}</strong></div><div class="production-summary-field"><span>Rebatify+</span><strong>${esc(plusText)}</strong></div><div class="production-summary-field"><span>App Review</span><strong>${esc(reviewText)}</strong></div><div class="production-summary-field"><span>Home Device</span><strong>${esc(shortId(u.homeDeviceID))}</strong></div></div><div class="production-action-row three"><button class="production-action-button blue" data-production-action="trial" data-uid="${esc(u.uid)}" type="button">Reset Trial</button><button class="production-action-button green" data-production-action="premium" data-uid="${esc(u.uid)}" type="button">${pg?.active?'Manage Rebatify+':'Grant Rebatify+'}</button><button class="production-action-button" data-production-action="review" data-uid="${esc(u.uid)}" type="button">${ro?.active?'Manage App Review':'Grant App Review'}</button></div></div><div class="production-summary-card"><h3>Devices</h3><div class="production-device-list">${deviceHtml}</div></div><div class="production-action-note">Privileged actions are applied by the Production Admin Worker and recorded in the audit log. The browser never receives the production service-account credential.</div></div>`;
+  const linkedMembers=(identity.members||[]).filter(m=>m.uid!==u.uid);
+  const linkedHtml=linkedMembers.length?linkedMembers.map(m=>`<div class="production-linked-account-row"><button class="production-linked-account-open" data-production-user="${esc(m.uid)}" type="button"><strong>${esc(m.name||m.email||'Rebatify user')}</strong><span>${esc(m.email||shortId(m.uid))} · ${esc(String(m.deviceCount||0))} device${Number(m.deviceCount||0)===1?'':'s'}</span></button><button class="admin-text-button production-unlink-button" data-production-identity-unlink="${esc(m.uid)}" data-base-uid="${esc(u.uid)}" type="button">Unlink</button></div>`).join(''):'<div class="admin-empty-inline">No other accounts are linked to this user.</div>';
+  const suggestionHtml=(identity.suggestions||[]).length?`<div class="production-identity-suggestions"><strong>Possible matches</strong><span>These are suggestions only. Rebatify will never merge them automatically.</span>${identity.suggestions.map(m=>`<button class="production-identity-suggestion" data-production-identity-quicklink="${esc(m.uid)}" data-base-uid="${esc(u.uid)}" type="button"><div><strong>${esc(m.name||m.email||'Rebatify user')}</strong><span>${esc(m.email||shortId(m.uid))} · ${esc(m.reason||'Possible match')}</span></div><span>Review & Link →</span></button>`).join('')}</div>`:'';
+  $('productionDrawerContent').innerHTML=`<div class="production-user-summary"><div class="production-summary-card"><h3>Account</h3><div class="production-summary-grid"><div class="production-summary-field"><span>Email</span><strong>${esc(authEmail||'—')}</strong></div><div class="production-summary-field"><span>UID</span><strong title="${esc(u.uid||'')}">${esc(shortId(u.uid))}</strong></div><div class="production-summary-field"><span>Created</span><strong>${esc(fmtDateTime(u.createdAt))}</strong></div><div class="production-summary-field"><span>Auth Status</span><strong>${esc(authStatus)}</strong></div></div><div class="production-account-security-row"><div><strong>Password assistance</strong><span>Send the normal branded Rebatify password-reset email to this account.</span></div><button class="production-action-button blue" data-production-action="password-reset" data-uid="${esc(u.uid)}" type="button" ${data.auth?.disabled?'disabled':''}>Send Password Reset Email</button></div></div><div class="production-summary-card"><h3>Access</h3><div class="production-summary-grid"><div class="production-summary-field"><span>Trial</span><strong>${esc(trialText)}</strong></div><div class="production-summary-field"><span>Rebatify+</span><strong>${esc(plusText)}</strong></div><div class="production-summary-field"><span>App Review</span><strong>${esc(reviewText)}</strong></div><div class="production-summary-field"><span>Home Device</span><strong>${esc(shortId(u.homeDeviceID))}</strong></div></div><div class="production-action-row three"><button class="production-action-button blue" data-production-action="trial" data-uid="${esc(u.uid)}" type="button">Reset Trial</button><button class="production-action-button green" data-production-action="premium" data-uid="${esc(u.uid)}" type="button">${pg?.active?'Manage Rebatify+':'Grant Rebatify+'}</button><button class="production-action-button" data-production-action="review" data-uid="${esc(u.uid)}" type="button">${ro?.active?'Manage App Review':re?.active?'Add Admin Review Grant':'Grant App Review'}</button></div></div><div class="production-summary-card"><div class="production-summary-card-heading"><div><h3>Linked Accounts</h3><p>Administrative identity grouping only. Customer accounts and data remain separate.</p></div><button class="production-action-button blue" data-production-action="identity" data-uid="${esc(u.uid)}" type="button">${linkedMembers.length?'Manage Links':'Link Account'}</button></div>${identity.group?.label?`<div class="production-linked-group-label"><span>Group</span><strong>${esc(identity.group.label)}</strong></div>`:''}<div class="production-linked-account-list">${linkedHtml}</div>${suggestionHtml}</div><div class="production-summary-card"><h3>Devices</h3><div class="production-device-list">${deviceHtml}</div></div><div class="production-action-note">Privileged actions are applied by the Production Admin Worker and recorded in the audit log. The browser never receives the production service-account credential.</div></div>`;
 }
 
 function closeAction(){ $('productionActionBackdrop').hidden=true; state.action=null; if($('productionActionMessage')){$('productionActionMessage').textContent='';$('productionActionMessage').className='production-action-message';} }
@@ -281,6 +313,7 @@ function openAccessAction(kind,uid){
   if(kind==='trial')renderTrialAction();
   if(kind==='review')renderReviewAction();
   if(kind==='password-reset')renderPasswordResetAction();
+  if(kind==='identity')renderIdentityAction();
 }
 function reasonField(placeholder){return `<div class="beta-field"><label for="productionActionReason">Reason <span class="admin-required-inline">*</span></label><textarea id="productionActionReason" maxlength="1000" required placeholder="${esc(placeholder)}"></textarea><small class="admin-email-change-help">Required for the production audit log.</small></div>`;}
 function durationFields(){return `<div class="production-duration-grid">${durationButtons()}</div><div class="production-custom-duration" id="productionCustomDuration" ${state.durationPreset==='custom'?'':'hidden'}><div class="beta-field"><label for="productionCustomAmount">Custom amount</label><input id="productionCustomAmount" min="1" max="3650" inputmode="numeric" type="number" value="30"/></div><div class="beta-field"><label for="productionCustomUnit">Unit</label><select id="productionCustomUnit"><option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option></select></div></div>`;}
@@ -290,10 +323,29 @@ function renderPremiumAction(){
   $('productionActionBody').innerHTML=`<div class="production-action-note">This creates a server-issued complimentary-access record. It does not forge or overwrite the customer’s App Store / Google Play subscription.</div>${durationFields()}${reasonField('Example: Beta reward, support goodwill, promotion, internal testing')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button>${grant?.active?'<button class="production-action-button red" data-production-revoke="premium" type="button">Revoke Current Grant</button>':''}<button class="admin-primary-button" data-production-submit="premium" type="button">${grant?.active?'Replace Grant':'Grant Rebatify+'}</button></div>`;
 }
 function renderReviewAction(){
-  const d=state.selectedUserDetail, grant=d.reviewAccess||null;
-  $('productionActionKicker').textContent='App Review Access';$('productionActionTitle').textContent=grant?.active?'Manage App Review Access':'Grant App Review Access';
-  $('productionActionBody').innerHTML=`<div class="production-action-note">Reviewer access is issued only by the trusted admin gateway. The ordinary Rebatify client cannot create or modify this record.</div>${durationFields()}${reasonField('Example: Apple App Review, Google Play review, internal review validation')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button>${grant?.active?'<button class="production-action-button red" data-production-revoke="review" type="button">Revoke Review Access</button>':''}<button class="admin-primary-button" data-production-submit="review" type="button">${grant?.active?'Replace Access':'Grant Access'}</button></div>`;
+  const d=state.selectedUserDetail, grant=d.reviewAccess||null, effective=d.reviewAccessEffective||null;
+  $('productionActionKicker').textContent='App Review Access';$('productionActionTitle').textContent=grant?.active?'Manage App Review Access':effective?.active?'Existing App Review Access':'Grant App Review Access';
+  const existingNote=effective?.active&&!grant?.active?`<div class="production-integration-notice"><strong>Existing access detected</strong><span>This account already has App Review access from <b>${esc(effective.source||'the existing production configuration')}</b>. This portal will not overwrite or revoke that legacy access. You can add a separate audited Admin grant if needed.</span></div>`:'';
+  $('productionActionBody').innerHTML=`${existingNote}<div class="production-action-note">Admin reviewer access is issued only by the trusted admin gateway. The ordinary Rebatify client cannot create or modify this record.</div>${durationFields()}${reasonField('Example: Apple App Review, Google Play review, internal review validation')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button>${grant?.active?'<button class="production-action-button red" data-production-revoke="review" type="button">Revoke Admin Grant</button>':''}<button class="admin-primary-button" data-production-submit="review" type="button">${grant?.active?'Replace Admin Grant':effective?.active?'Add Admin Grant':'Grant Access'}</button></div>`;
 }
+function renderIdentityAction(prefillUid=''){
+  const d=state.selectedUserDetail||{}, u=d.user||{}, identity=d.identity||{};
+  const linked=new Set((identity.members||[]).map(m=>m.uid)); linked.add(u.uid);
+  const candidates=(state.users||[]).filter(x=>x.uid!==u.uid&&!linked.has(x.uid));
+  const preferred=prefillUid||'';
+  const options=candidates.map(x=>`<option value="${esc(x.uid)}" ${x.uid===preferred?'selected':''}>${esc(x.name||x.email||'Rebatify user')} · ${esc(x.email||shortId(x.uid))}</option>`).join('');
+  $('productionActionKicker').textContent='Linked Accounts'; $('productionActionTitle').textContent='Link Production Accounts';
+  $('productionActionBody').innerHTML=`<div class="production-action-note"><strong>No data is merged.</strong> This creates admin-only relationship metadata so support can see that separate accounts/devices belong together. Authentication, orders, profiles, subscriptions, and device trust remain independent.</div><div class="beta-field"><label for="productionIdentityOther">Account to link <span class="admin-required-inline">*</span></label><select id="productionIdentityOther" ${candidates.length?'':'disabled'}>${options||'<option value="">No unlinked accounts available</option>'}</select></div><div class="beta-field"><label for="productionIdentityLabel">Group label <span class="admin-optional-inline">Optional</span></label><input id="productionIdentityLabel" maxlength="120" type="text" value="${esc(identity.group?.label||'')}" placeholder="Example: Andrew Taylor accounts"/></div>${reasonField('Example: Customer confirmed both accounts belong to them')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button><button class="admin-primary-button" data-production-submit="identity" type="button" ${candidates.length?'':'disabled'}>Link Accounts</button></div>`;
+}
+
+function openIdentityUnlinkAction(baseUid,otherUid){
+  const d=state.selectedUserDetail||{}; const member=(d.identity?.members||[]).find(m=>m.uid===otherUid)||{};
+  state.action={kind:'identity-unlink',uid:baseUid,otherUid};
+  $('productionActionBackdrop').hidden=false;
+  $('productionActionKicker').textContent='Linked Accounts'; $('productionActionTitle').textContent='Unlink Production Account';
+  $('productionActionBody').innerHTML=`<div class="production-warning"><strong>Remove only the Admin relationship?</strong>This does not delete either account, sign the customer out, move orders, change subscriptions, or modify device trust. It only removes the Admin link between these accounts.</div><div class="production-action-note"><strong>Account:</strong> ${esc(member.name||member.email||shortId(otherUid))}<br>${esc(member.email||'')}</div>${reasonField('Example: Customer confirmed these accounts belong to different people')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button><button class="production-action-button red" data-production-submit="identity-unlink" type="button">Unlink Account</button></div>`;
+}
+
 function renderTrialAction(){
   const d=state.selectedUserDetail, devices=d.devices||[], current=d.trial?.override||null;
   $('productionActionKicker').textContent='Trial Administration';$('productionActionTitle').textContent='Reset 14-Day Trial';
@@ -322,15 +374,19 @@ async function submitAction(kind,button){
     if(kind==='review'){action='review-grant';Object.assign(payload,currentDurationPayload());}
     if(kind==='trial'){action='trial-reissue';payload.deviceId=$('productionTrialDevice')?.value||'';}
     if(kind==='password-reset'){action='password-reset-send';}
+    if(kind==='identity'){action='identity-link';payload.otherUid=$('productionIdentityOther')?.value||'';payload.label=String($('productionIdentityLabel')?.value||'').trim();if(!payload.otherUid){setActionMessage('Choose an account to link.','error');return;}}
+    if(kind==='identity-unlink'){action='identity-unlink';payload.otherUid=state.action.otherUid||'';}
     await callProduction(action,payload);
     const reset=kind==='password-reset';
     setActionMessage(reset?'Password-reset email sent.':'Production access updated.','success');showProdToast(reset?'Password-reset email sent to the user.':'Production access updated.');
     const uid=state.action.uid;
     state.users=[];state.overview=null;
-    if(kind!=='password-reset')state.access={premiumGrants:[],trialOverrides:[],reviewAccess:[]};
+    if(kind!=='password-reset'&&kind!=='identity'&&kind!=='identity-unlink')state.access={premiumGrants:[],trialOverrides:[],reviewAccess:[]};
+    if(kind==='identity'||kind==='identity-unlink'){state.identities=[];state.devices=[];}
     closeAction();
     const reloads=[loadOverview(true),loadUsers(true),loadAudit(true)];
-    if(kind!=='password-reset')reloads.push(loadAccess(true));
+    if(kind!=='password-reset'&&kind!=='identity'&&kind!=='identity-unlink')reloads.push(loadAccess(true));
+    if(kind==='identity'||kind==='identity-unlink')reloads.push(loadIdentities(true),loadDevices(true));
     await Promise.all(reloads); await openUser(uid);
   }catch(error){setActionMessage(error.message,'error');}
   finally{button.disabled=false;button.textContent=original;}
@@ -349,7 +405,7 @@ async function revokeAction(kind,button){
 
 async function refreshProduction(){
   const btn=$('productionAdminRefresh'); if(btn)btn.classList.add('is-spinning');
-  try{state.overview=null;state.users=[];state.devices=[];state.access={premiumGrants:[],trialOverrides:[],reviewAccess:[]};state.audit=[];await Promise.all([loadOverview(true),loadUsers(true),loadAccess(true)]);if(state.view==='devices')await loadDevices(true);if(state.view==='audit')await loadAudit(true);showProdToast('Production data refreshed.');}
+  try{state.overview=null;state.users=[];state.devices=[];state.identities=[];state.access={premiumGrants:[],trialOverrides:[],reviewAccess:[]};state.audit=[];await Promise.all([loadOverview(true),loadUsers(true),loadAccess(true)]);if(state.view==='devices')await loadDevices(true);if(state.view==='identities')await loadIdentities(true);if(state.view==='audit')await loadAudit(true);showProdToast('Production data refreshed.');}
   catch(error){showProdToast(error.message,'error');}
   finally{if(btn)btn.classList.remove('is-spinning');}
 }
@@ -358,8 +414,10 @@ async function refreshProduction(){
 for(const b of document.querySelectorAll('[data-admin-scope]'))b.addEventListener('click',()=>setScope(b.dataset.adminScope));
 for(const b of document.querySelectorAll('[data-production-view]'))b.addEventListener('click',()=>switchProductionView(b.dataset.productionView));
 document.addEventListener('click',event=>{
-  const jump=event.target.closest('[data-production-jump]');if(jump){switchProductionView(jump.dataset.productionJump);return;}
+  const jump=event.target.closest('[data-production-jump]');if(jump){switchProductionView(jump.dataset.productionJump,jump.dataset.productionFocus||'');return;}
   const user=event.target.closest('[data-production-user]');if(user){openUser(user.dataset.productionUser);return;}
+  const quickLink=event.target.closest('[data-production-identity-quicklink]');if(quickLink){openAccessAction('identity',quickLink.dataset.baseUid);setTimeout(()=>renderIdentityAction(quickLink.dataset.productionIdentityQuicklink),0);return;}
+  const unlink=event.target.closest('[data-production-identity-unlink]');if(unlink){openIdentityUnlinkAction(unlink.dataset.baseUid,unlink.dataset.productionIdentityUnlink);return;}
   const action=event.target.closest('[data-production-action]');if(action){openAccessAction(action.dataset.productionAction,action.dataset.uid);return;}
   const preset=event.target.closest('[data-duration-preset]');if(preset){state.durationPreset=preset.dataset.durationPreset;document.querySelectorAll('[data-duration-preset]').forEach(x=>x.classList.toggle('is-active',x.dataset.durationPreset===state.durationPreset));const custom=$('productionCustomDuration');if(custom)custom.hidden=state.durationPreset!=='custom';return;}
   if(event.target.closest('[data-production-cancel-action]')){closeAction();return;}
