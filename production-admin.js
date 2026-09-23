@@ -1,4 +1,4 @@
-// Rebatify Production Admin Console — Website Build 99
+// Rebatify Production Admin Console — Website Build 102
 // Uses the signed-in Beta Admin Firebase session only as the administrator identity.
 // All privileged production reads/writes go through the Production Admin Worker.
 // No production service-account secret is ever present in browser code.
@@ -41,6 +41,11 @@ const fmtDateTime = value => {
   const d = asDate(value); if (!d) return '—';
   try { return d.toLocaleString([], {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}); } catch (_) { return d.toISOString(); }
 };
+const fmtExactDateTime = value => {
+  const d = asDate(value); if (!d) return '—';
+  try { return d.toLocaleString([], {month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'}); } catch (_) { return d.toISOString(); }
+};
+let productionExpiryRefreshTimer = null;
 const shortId = value => { const s=String(value||''); return s.length>20 ? `${s.slice(0,9)}…${s.slice(-7)}` : (s||'—'); };
 
 function endpoint(){
@@ -248,14 +253,14 @@ function renderIdentities(){
 
 async function loadAccess(force=false){
   if((state.access.premiumGrants.length||state.access.trialOverrides.length||state.access.reviewAccess.length)&&!force){renderAccess();return;}
-  const data=await callProduction('access-list',{limit:500}); state.access={premiumGrants:data.premiumGrants||[],trialOverrides:data.trialOverrides||[],reviewAccess:data.reviewAccess||[]}; renderAccess();
+  const data=await callProduction('access-list',{limit:500}); state.access={premiumGrants:data.premiumGrants||[],trialOverrides:data.trialOverrides||[],reviewAccess:data.reviewAccess||[]}; renderAccess(); scheduleProductionExpiryRefresh();
 }
 function accessItemHtml(item,type){
   const title=item.name||item.email||item.userEmail||item.uid||item.deviceId||'Access record';
   let detail='';
-  if(type==='premium')detail=item.indefinite?'Indefinite complimentary Rebatify+':`Expires ${fmtDateTime(item.expiresAt)}`;
-  if(type==='trial')detail=`Trial reissue expires ${fmtDateTime(item.expiresAt)} · ${shortId(item.deviceId)}`;
-  if(type==='review')detail=item.indefinite?'Indefinite App Review access':`Expires ${fmtDateTime(item.expiresAt)}`;
+  if(type==='premium')detail=item.indefinite?'Indefinite complimentary Rebatify+':`Expires ${fmtExactDateTime(item.expiresAt)}`;
+  if(type==='trial')detail=`Trial reissue expires ${fmtExactDateTime(item.expiresAt)} · ${shortId(item.deviceId)}`;
+  if(type==='review')detail=item.indefinite?'Indefinite App Review access':`Expires ${fmtExactDateTime(item.expiresAt)}`;
   const source=type==='review'&&item.source?`<span class="production-access-source">Source: ${esc(item.source)}</span>`:'';
   return `<div class="production-access-item"><div><strong>${esc(title)}</strong><span>${esc(detail)}</span>${source}<span>${esc(item.reason||'')}</span></div>${item.uid?`<button class="admin-text-button" data-production-user="${esc(item.uid)}" type="button">Open</button>`:''}</div>`;
 }
@@ -267,6 +272,42 @@ function renderAccess(){
   if($('productionPremiumGrantList'))$('productionPremiumGrantList').innerHTML=p.length?p.map(x=>accessItemHtml(x,'premium')).join(''):'<div class="admin-empty-inline">No active complimentary Rebatify+ grants.</div>';
   if($('productionTrialOverrideList'))$('productionTrialOverrideList').innerHTML=t.length?t.map(x=>accessItemHtml(x,'trial')).join(''):'<div class="admin-empty-inline">No active admin trial reissues.</div>';
   if($('productionReviewAccessList'))$('productionReviewAccessList').innerHTML=r.length?r.map(x=>accessItemHtml(x,'review')).join(''):'<div class="admin-empty-inline">No active App Review grants.</div>';
+}
+
+function scheduleProductionExpiryRefresh(){
+  if(productionExpiryRefreshTimer){clearTimeout(productionExpiryRefreshTimer);productionExpiryRefreshTimer=null;}
+  const now=Date.now(), candidates=[];
+  const add=record=>{if(record?.active&&!record?.indefinite){const d=asDate(record.expiresAt);if(d&&d.getTime()>now)candidates.push(d.getTime());}};
+  (state.access.premiumGrants||[]).forEach(add);
+  (state.access.trialOverrides||[]).forEach(add);
+  (state.access.reviewAccess||[]).forEach(add);
+  add(state.selectedUserDetail?.premiumGrant);
+  add(state.selectedUserDetail?.reviewAccess);
+  add(state.selectedUserDetail?.trial?.override);
+  if(!candidates.length)return;
+  const next=Math.min(...candidates);
+  productionExpiryRefreshTimer=setTimeout(()=>{void refreshProductionAfterExpiry();},Math.max(0,next-Date.now())+150);
+}
+async function refreshProductionAfterExpiry(){
+  const selectedUid=state.selectedUser;
+  const actionKind=state.action?.kind||'';
+  const actionReason=String($('productionActionReason')?.value||'');
+  try{
+    state.overview=null;state.users=[];state.access={premiumGrants:[],trialOverrides:[],reviewAccess:[]};
+    await Promise.all([loadOverview(true),loadUsers(true),loadAccess(true)]);
+    if(selectedUid){
+      const data=await callProduction('user-detail',{uid:selectedUid});
+      state.selectedUserDetail=data;
+      renderUserDrawer(data);
+      if(state.action?.uid===selectedUid){
+        if(actionKind==='premium')renderPremiumAction();
+        if(actionKind==='review')renderReviewAction();
+        if(actionKind==='trial')renderTrialAction();
+        if($('productionActionReason'))$('productionActionReason').value=actionReason;
+      }
+    }
+  }catch(error){showProdToast(error.message,'error');}
+  finally{scheduleProductionExpiryRefresh();}
 }
 
 async function loadAudit(force=false){
@@ -284,17 +325,17 @@ async function openUser(uid){
   if(drawer){drawer.classList.add('is-open');drawer.setAttribute('aria-hidden','false');} if(back)back.hidden=false;
   try{
     const data=await callProduction('user-detail',{uid}); state.selectedUser=uid; state.selectedUserDetail=data;
-    renderUserDrawer(data);
+    renderUserDrawer(data); scheduleProductionExpiryRefresh();
   }catch(error){if(content)content.innerHTML=`<div class="admin-empty-inline">${esc(error.message)}</div>`;}
 }
-function closeUserDrawer(){ $('productionDrawerBackdrop').hidden=true; $('productionAdminDrawer')?.classList.remove('is-open'); $('productionAdminDrawer')?.setAttribute('aria-hidden','true'); state.selectedUser=null;state.selectedUserDetail=null; }
+function closeUserDrawer(){ $('productionDrawerBackdrop').hidden=true; $('productionAdminDrawer')?.classList.remove('is-open'); $('productionAdminDrawer')?.setAttribute('aria-hidden','true'); state.selectedUser=null;state.selectedUserDetail=null; scheduleProductionExpiryRefresh(); }
 function renderUserDrawer(data){
   const u=data.user||{}; const devices=data.devices||[]; const pg=data.premiumGrant||null; const ro=data.reviewAccess||null; const re=data.reviewAccessEffective||null; const reviewSources=data.reviewAccessSources||[]; const trial=data.trial||{}; const identity=data.identity||{};
   if($('productionDrawerTitle'))$('productionDrawerTitle').textContent=u.name||u.email||'Production User';
   if($('productionDrawerKicker'))$('productionDrawerKicker').textContent='Production User';
-  const plusText=pg?.active?(pg.indefinite?'Complimentary · Indefinite':`Complimentary · Until ${fmtDate(pg.expiresAt)}`):(u.premiumActive?`${u.premiumSource||'Store'} entitlement`:re?.active?`App Review access · ${re.source||'Active'}`:'No Rebatify+ access');
+  const plusText=pg?.active?(pg.indefinite?'Complimentary · Indefinite':`Complimentary · Until ${fmtExactDateTime(pg.expiresAt)}`):(u.premiumActive?`${u.premiumSource||'Store'} entitlement`:re?.active?`App Review access · ${re.source||'Active'}`:'No Rebatify+ access');
   const trialDeviceLabel=trial.deviceId?` · device ${shortId(trial.deviceId)}`:'';
-  const trialText=trial.override?.active?`Admin reissue until ${fmtDateTime(trial.override.expiresAt)}${trialDeviceLabel}`:trial.active?`Active until ${fmtDateTime(trial.expiresAt)}${trialDeviceLabel}`:`Expired / unavailable${trialDeviceLabel}`;
+  const trialText=trial.override?.active?`Admin reissue until ${fmtExactDateTime(trial.override.expiresAt)}${trialDeviceLabel}`:trial.active?`Active until ${fmtExactDateTime(trial.expiresAt)}${trialDeviceLabel}`:`Expired / unavailable${trialDeviceLabel}`;
   const reviewText=reviewSources.length?`${reviewSources.length} active source${reviewSources.length===1?'':'s'} · ${reviewSources.map(x=>x.source).join(' + ')}`:'Not granted';
   const authEmail=data.auth?.email||u.email||'';
   const authStatus=data.auth?.disabled?'Disabled':'Active';
@@ -321,16 +362,24 @@ function openAccessAction(kind,uid){
 }
 function reasonField(placeholder){return `<div class="beta-field"><label for="productionActionReason">Reason <span class="admin-required-inline">*</span></label><textarea id="productionActionReason" maxlength="1000" required placeholder="${esc(placeholder)}"></textarea><small class="admin-email-change-help">Required for the production audit log.</small></div>`;}
 function durationFields(){return `<div class="production-duration-grid">${durationButtons()}</div><div class="production-custom-duration" id="productionCustomDuration" ${state.durationPreset==='custom'?'':'hidden'}><div class="beta-field"><label for="productionCustomAmount">Custom amount</label><input id="productionCustomAmount" min="1" max="3650" inputmode="numeric" type="number" value="30"/></div><div class="beta-field"><label for="productionCustomUnit">Unit</label><select id="productionCustomUnit"><option value="minutes">Minutes</option><option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option></select></div></div>`;}
+function currentAccessStatusHtml(label,record){
+  if(!record?.active)return '';
+  const expiry=record.indefinite?'Does not expire':fmtExactDateTime(record.expiresAt);
+  return `<div class="production-current-access-status"><div class="production-current-access-icon">✓</div><div class="production-current-access-copy"><span>${esc(label)}</span><strong>Active</strong></div><div class="production-current-access-expiry"><span>${record.indefinite?'Expiration':'Expires'}</span><strong>${esc(expiry)}</strong></div></div>`;
+}
+
 function renderPremiumAction(){
   const d=state.selectedUserDetail, grant=d.premiumGrant||null;
   $('productionActionKicker').textContent='Complimentary Rebatify+';$('productionActionTitle').textContent=grant?.active?'Manage Rebatify+ Grant':'Grant Rebatify+ Access';
-  $('productionActionBody').innerHTML=`<div class="production-action-note">This creates a server-issued complimentary-access record for this Firebase UID only. It follows this account across authorized devices, never transfers to another account on the same device, and does not forge or overwrite an App Store / Google Play subscription. A new one-time in-app grant notice is created so the user can be greeted on their next app open with the grant timeline and confetti where motion is allowed.</div>${durationFields()}${reasonField('Example: Beta reward, support goodwill, promotion, internal testing')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button>${grant?.active?'<button class="production-action-button red" data-production-revoke="premium" type="button">Revoke Current Grant</button>':''}<button class="admin-primary-button" data-production-submit="premium" type="button">${grant?.active?'Replace Grant':'Grant Rebatify+'}</button></div>`;
+  const currentStatus=currentAccessStatusHtml('Current Grant',grant);
+  $('productionActionBody').innerHTML=`<div class="production-action-note">This creates a server-issued complimentary-access record for this Firebase UID only. It follows this account across authorized devices, never transfers to another account on the same device, and does not forge or overwrite an App Store / Google Play subscription. A new one-time in-app grant notice is created so the user can be greeted on their next app open with the grant timeline and confetti where motion is allowed.</div>${currentStatus}${durationFields()}${reasonField('Example: Beta reward, support goodwill, promotion, internal testing')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button>${grant?.active?'<button class="production-action-button red" data-production-revoke="premium" type="button">Revoke Current Grant</button>':''}<button class="admin-primary-button" data-production-submit="premium" type="button">${grant?.active?'Replace Grant':'Grant Rebatify+'}</button></div>`;
 }
 function renderReviewAction(){
   const d=state.selectedUserDetail, grant=d.reviewAccess||null, sources=d.reviewAccessSources||[];
   $('productionActionKicker').textContent='App Review Access';$('productionActionTitle').textContent=sources.length?'Manage App Review Access':'Grant App Review Access';
-  const sourceRows=sources.length?`<div class="production-integration-notice"><strong>Active account-scoped sources</strong><span>${sources.map(source=>{let revoke='';if(source.sourceType==='admin')revoke='<button class="production-action-button red" data-production-revoke="review" data-review-source="admin" type="button">Revoke Admin Grant</button>';else if(source.sourceType==='legacy-user')revoke='<button class="production-action-button red" data-production-revoke="review" data-review-source="legacy-user" type="button">Revoke Legacy Firebase Access</button>';else if(source.sourceType==='legacy-collection')revoke=`<button class="production-action-button red" data-production-revoke="review" data-review-source="legacy-collection:${esc(source.collection||'')}" type="button">Revoke Legacy Record</button>`;else if(source.sourceType==='auth-claim')revoke='<button class="production-action-button red" data-production-revoke="review" data-review-source="auth-claim" type="button">Remove Review Claim</button>';return `<span><b>${esc(source.source||'App Review access')}</b>${source.key?` · ${esc(source.key)}`:''}${source.expiresAt?` · until ${esc(fmtDate(source.expiresAt))}`:''}</span>${revoke}`;}).join('')}</span></div>`:'';
-  $('productionActionBody').innerHTML=`${sourceRows}<div class="production-action-note"><strong>Account scoped.</strong> Admin reviewer access is tied to this Firebase UID only. It follows this account across authorized devices and never transfers to another account because the accounts share a device. A new one-time in-app grant notice is created so the user can be greeted on their next app open with the access timeline and confetti where motion is allowed.</div>${durationFields()}${reasonField('Example: Apple App Review, Google Play review, internal review validation')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button><button class="admin-primary-button" data-production-submit="review" type="button">${grant?.active?'Replace Admin Grant':sources.length?'Add Admin Grant':'Grant Access'}</button></div>`;
+  const currentStatus=currentAccessStatusHtml('Current Admin App Review Grant',grant);
+  const sourceRows=sources.length?`<div class="production-integration-notice"><strong>Active account-scoped sources</strong><span>${sources.map(source=>{let revoke='';if(source.sourceType==='admin')revoke='<button class="production-action-button red" data-production-revoke="review" data-review-source="admin" type="button">Revoke Admin Grant</button>';else if(source.sourceType==='legacy-user')revoke='<button class="production-action-button red" data-production-revoke="review" data-review-source="legacy-user" type="button">Revoke Legacy Firebase Access</button>';else if(source.sourceType==='legacy-collection')revoke=`<button class="production-action-button red" data-production-revoke="review" data-review-source="legacy-collection:${esc(source.collection||'')}" type="button">Revoke Legacy Record</button>`;else if(source.sourceType==='auth-claim')revoke='<button class="production-action-button red" data-production-revoke="review" data-review-source="auth-claim" type="button">Remove Review Claim</button>';return `<span><b>${esc(source.source||'App Review access')}</b>${source.key?` · ${esc(source.key)}`:''}${source.expiresAt?` · until ${esc(fmtExactDateTime(source.expiresAt))}`:''}</span>${revoke}`;}).join('')}</span></div>`:'';
+  $('productionActionBody').innerHTML=`${sourceRows}<div class="production-action-note"><strong>Account scoped.</strong> Admin reviewer access is tied to this Firebase UID only. It follows this account across authorized devices and never transfers to another account because the accounts share a device. A new one-time in-app grant notice is created so the user can be greeted on their next app open with the access timeline and confetti where motion is allowed.</div>${currentStatus}${durationFields()}${reasonField('Example: Apple App Review, Google Play review, internal review validation')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button><button class="admin-primary-button" data-production-submit="review" type="button">${grant?.active?'Replace Admin Grant':sources.length?'Add Admin Grant':'Grant Access'}</button></div>`;
 }
 function renderIdentityAction(prefillUid=''){
   const d=state.selectedUserDetail||{}, u=d.user||{}, identity=d.identity||{};
