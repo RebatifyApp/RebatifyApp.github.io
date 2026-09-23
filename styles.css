@@ -2211,7 +2211,10 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .production-identity-suggestion:hover,.production-identity-member:hover,.production-linked-account-open:hover{filter:brightness(.985)}
 @media(max-width:680px){.production-summary-card-heading{flex-direction:column}.production-summary-card-heading .production-action-button{width:100%}.production-linked-account-row{align-items:flex-start}.production-identity-suggestion{align-items:flex-start;flex-direction:column}.production-identity-suggestion>span{align-self:flex-end}}
 
-/* Website Build 102 — live timed-access status inside Production Admin grant dialogs. */
+/* Website Build 102+ — live timed-access status inside Production Admin grant dialogs. */
 .production-current-access-status{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(230px,auto);align-items:center;gap:14px;margin:12px 0 14px;padding:13px 15px;border:1px solid rgba(59,158,74,.30);border-radius:14px;background:rgba(59,158,74,.065)}
 .production-current-access-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:#3B9E4A;color:#fff;font-size:1rem;font-weight:900}.production-current-access-copy,.production-current-access-expiry{display:flex;flex-direction:column;gap:2px}.production-current-access-copy span,.production-current-access-expiry span{color:#6d8096;font-size:.64rem;font-weight:750}.production-current-access-copy strong,.production-current-access-expiry strong{color:#2F7E3B;font-size:.76rem;font-weight:900}.production-current-access-expiry{padding-left:14px;border-left:1px solid rgba(59,158,74,.22)}
 @media(max-width:680px){.production-current-access-status{grid-template-columns:auto 1fr}.production-current-access-expiry{grid-column:1/-1;padding:10px 0 0;border-left:0;border-top:1px solid rgba(59,158,74,.18)}}
+
+/* Build 104: custom grant/trial exact-expiration control spans the full duration form. */
+.production-custom-duration .production-custom-exact{grid-column:1/-1}
