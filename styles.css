@@ -2131,7 +2131,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 @media(max-width:760px){.admin-notification-panel{right:-4px;width:min(360px,calc(100vw - 20px))}}
 
 /* ================================================================
-   Rebatify Admin — Website Build 97 dual Beta / Production console
+   Rebatify Admin — Website Build 98 dual Beta / Production console
    ================================================================ */
 .admin-scope-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 12px 10px;padding:5px;border:1px solid rgba(130,154,188,.18);border-radius:14px;background:rgba(255,255,255,.045)}
 .admin-scope-switch button{min-width:0;border:0;border-radius:10px;padding:9px 8px;background:transparent;color:#9fb1ca;font:inherit;font-size:.68rem;font-weight:850;cursor:pointer;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
@@ -2160,7 +2160,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .production-integration-notice{display:flex;align-items:flex-start;gap:10px;margin:0 0 18px;padding:13px 15px;border:1px solid rgba(33,113,181,.18);border-radius:14px;background:rgba(33,113,181,.055);color:#294761}.production-integration-notice strong{flex:0 0 auto;color:#174f80;font-size:.76rem}.production-integration-notice span{font-size:.72rem;line-height:1.5;font-weight:650}@media(max-width:680px){.production-integration-notice{flex-direction:column;gap:4px}}
 
 
-/* Website Build 97 - Production account security */
+/* Website Build 98 - Production account security */
 .production-account-security-row{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:18px;padding-top:16px;border-top:1px solid #e6edf6}
 .production-account-security-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
 .production-account-security-row>div>strong{color:#10233b;font-size:.9rem}
@@ -2175,7 +2175,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .admin-live-chip.admin-live-offline span{background:#98a6b8;box-shadow:0 0 0 4px rgba(120,137,158,.10)}
 .admin-live-chip.admin-live-offline{color:#68798e}
 
-/* Website Build 97 - interactive Production overview access controls */
+/* Website Build 98 - interactive Production overview access controls */
 .production-capability-list{display:flex;flex-direction:column;gap:10px}
 .production-capability-list>div{display:none}
 .production-capability-link{width:100%;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:11px;align-items:center;padding:12px;border:1px solid #e7edf5;border-radius:14px;background:#fbfdff;color:inherit;text-align:left;font:inherit;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease}
@@ -2190,7 +2190,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .production-access-target.is-focused{border-color:rgba(59,158,74,.34);box-shadow:0 0 0 4px rgba(59,158,74,.08)}
 @media(max-width:620px){.production-capability-link{grid-template-columns:38px minmax(0,1fr);align-items:start}.production-capability-arrow{display:none}}
 
-/* Build 97 — linked production identities */
+/* Build 98 — automatic same-device + manual production relationships */
 .production-linked-note{display:inline-flex;width:max-content;max-width:100%;padding:3px 7px;border-radius:999px;background:rgba(33,113,181,.08);color:#2171B5;font-size:.66rem;font-weight:800;line-height:1.3}
 .production-identity-members{display:flex;flex-wrap:wrap;gap:7px;min-width:220px}
 .production-identity-member{display:flex;flex-direction:column;align-items:flex-start;gap:1px;max-width:240px;padding:7px 9px;border:1px solid #e3ebf4;border-radius:11px;background:#fbfdff;color:#17314d;text-align:left;cursor:pointer}
