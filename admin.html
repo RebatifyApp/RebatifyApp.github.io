@@ -8,19 +8,19 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="robots"/>
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Admin</title>
-<link href="app-icon.png?v=99" rel="icon"/><link href="apple-touch-icon.png?v=99" rel="apple-touch-icon"/><link href="favicon-32.png?v=99" rel="icon" sizes="32x32"/><link href="favicon-16.png?v=99" rel="icon" sizes="16x16"/>
-<link href="styles.css?v=99" rel="stylesheet"/>
+<link href="app-icon.png?v=106" rel="icon"/><link href="apple-touch-icon.png?v=106" rel="apple-touch-icon"/><link href="favicon-32.png?v=106" rel="icon" sizes="32x32"/><link href="favicon-16.png?v=106" rel="icon" sizes="16x16"/>
+<link href="styles.css?v=106" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
-<div class="admin-loading-mark"><img alt="" src="app-icon.png?v=99"/></div>
+<div class="admin-loading-mark"><img alt="" src="app-icon.png?v=106"/></div>
 <div class="portal-spinner"></div>
 <p id="adminLoadingStatus">Checking administrator access…</p>
 </div>
 <div class="admin-shell" hidden="" id="adminApp">
 <aside class="admin-sidebar">
 <div class="admin-sidebar-brand">
-<img alt="Rebatify app icon" src="app-icon.png?v=99"/>
+<img alt="Rebatify app icon" src="app-icon.png?v=106"/>
 <div><strong>Rebatify</strong><span id="adminBrandScope">Beta Admin</span></div>
 </div>
 <div class="admin-scope-switch" role="group" aria-label="Admin workspace">
@@ -286,11 +286,11 @@ setTimeout(function(){
   var loading=document.getElementById('adminLoading');
   if(!loading || loading.hidden) return;
   if(!boot.moduleLoaded){
-    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=99" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not start</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">The Firebase admin module did not finish loading. Hard refresh the page and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button><a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a></div></div>';
+    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=106" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not start</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">The Firebase admin module did not finish loading. Hard refresh the page and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button><a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a></div></div>';
   } else if(!boot.authResolved){
-    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=99" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Administrator sign-in is taking too long</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">Firebase Authentication did not finish restoring your session. Return to sign in and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a href="admin-login.html" class="admin-primary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a><button type="button" onclick="location.reload()" class="admin-secondary-button">Try Again</button></div></div>';
+    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=106" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Administrator sign-in is taking too long</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">Firebase Authentication did not finish restoring your session. Return to sign in and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a href="admin-login.html" class="admin-primary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a><button type="button" onclick="location.reload()" class="admin-secondary-button">Try Again</button></div></div>';
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=99"></script><script src="admin-firebase.js?v=99" type="module"></script><script src="production-admin.js?v=99" type="module"></script></body>
+<script src="firebase-config.js?v=106"></script><script src="admin-firebase.js?v=106" type="module"></script><script src="production-admin.js?v=106" type="module"></script></body>
 </html>

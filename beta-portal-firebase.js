@@ -253,20 +253,22 @@ function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/
 function renderPortalTaskSummary(){
   const section=document.getElementById('portalTaskSummary');if(!section)return;
   const pending=allTaskAssignments.filter(t=>t.status==='Pending').sort((a,b)=>(timestampToDate(a.dueAt)?.getTime()||0)-(timestampToDate(b.dueAt)?.getTime()||0));
-  const retests=feedbackHistory.filter(f=>String(f.status||'')==='Needs Retest'&&!f.retestedAt);
-  const total=pending.length+retests.length;
+  const retests=feedbackHistory.filter(f=>!isSupportConversation(f)&&String(f.status||'')==='Needs Retest'&&!f.retestedAt);
+  const supportActions=feedbackHistory.filter(f=>isSupportConversation(f)&&(String(f.status||'')==='Waiting for Tester'||conversationIsUnread(f))).sort((a,b)=>conversationActivityMs(b)-conversationActivityMs(a));
+  const total=pending.length+retests.length+supportActions.length;
   const mobileCount=document.getElementById('portalMobileActionCount');if(mobileCount){mobileCount.textContent=total;mobileCount.hidden=total===0;}
   if(!total){section.hidden=true;return;}
   section.hidden=false;
   document.getElementById('portalTaskSummaryCount').textContent=total;
-  document.getElementById('portalTaskSummaryTitle').textContent=total===1?'You have 1 required action to complete.':`You have ${total} required actions to complete.`;
-  document.getElementById('portalTaskSummaryText').textContent=retests.length?'A reported issue is ready for retesting. Complete retests and required Beta Program tasks as soon as possible.':'Complete every required task by its deadline to keep your Beta Program access active. Reminder emails are sent as deadlines approach.';
+  document.getElementById('portalTaskSummaryTitle').textContent=total===1?'You have 1 outstanding item.':`You have ${total} outstanding items.`;
+  const kinds=[];if(retests.length)kinds.push(`${retests.length} retest${retests.length===1?'':'s'}`);if(pending.length)kinds.push(`${pending.length} required task${pending.length===1?'':'s'}`);if(supportActions.length)kinds.push(`${supportActions.length} support update${supportActions.length===1?'':'s'}`);
+  document.getElementById('portalTaskSummaryText').textContent=`Needs your attention: ${kinds.join(', ')}. Open an item below to go directly to it.`;
   const list=document.getElementById('portalTaskSummaryList');
+  const retestRows=retests.slice(0,6).map(f=>`<button class="portal-required-summary-item portal-required-retest" data-retest-feedback="${escapeHtml(f.id)}" type="button"><strong>Retest: ${escapeHtml(f.subject||'Reported issue')}</strong><span>Retest required</span></button>`);
   const taskRows=pending.slice(0,6).map(t=>`<button class="portal-required-summary-item" data-open-required-task="${escapeHtml(t.id)}" type="button"><strong>${escapeHtml(t.taskTitle||'Required task')}</strong><span>${escapeHtml(formatTaskDue(t.dueAt))}</span></button>`);
-  const retestRows=retests.slice(0,6).map(f=>`<button class="portal-required-summary-item portal-required-retest" data-retest-feedback="${escapeHtml(f.id)}" type="button"><strong>Retest: ${escapeHtml(f.subject||'Reported issue')}</strong><span>Action required</span></button>`);
-  list.innerHTML=[...retestRows,...taskRows].slice(0,8).join('');
+  const supportRows=supportActions.slice(0,6).map(f=>`<button class="portal-required-summary-item portal-required-support" data-open-conversation="${escapeHtml(f.id)}" type="button"><strong>${escapeHtml(f.subject||'Support conversation')}</strong><span>${String(f.status||'')==='Waiting for Tester'?'Reply needed':'New support update'}</span></button>`);
+  list.innerHTML=[...retestRows,...supportRows,...taskRows].slice(0,10).join('');
 }
-
 function renderRequiredTask(){
   if(!taskBackdrop)return;
   if(!requiredTasks.length){activeTask=null;taskBackdrop.hidden=true;document.body.classList.remove('portal-task-open');return;}
@@ -383,6 +385,14 @@ function formatPortalMessageTime(value){
   return sameDay?d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 }
 function conversationMessageHtml(message){
+  const eventType=String(message.eventType||'');
+  if(eventType==='retest-request'){
+    const pending=activeConversation&&String(activeConversation.status||'')==='Needs Retest'&&!activeConversation.retestedAt;
+    return `<div class="portal-chat-event"><div class="portal-chat-message-head"><strong>Rebatify · Retest requested</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'Rebatify has requested a retest for this issue.')}</p>${pending&&activeConversation?`<button class="portal-chat-event-action" data-retest-feedback="${escapeHtml(activeConversation.id)}" type="button">Open Retest</button>`:''}</div>`;
+  }
+  if(eventType==='retest-submitted'){
+    return `<div class="portal-chat-event is-complete"><div class="portal-chat-message-head"><strong>You · Retest submitted</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.retestResult||message.body||'Retest submitted')}</p>${message.retestNotes?`<span class="portal-chat-event-detail">${escapeHtml(message.retestNotes)}</span>`:''}</div>`;
+  }
   const admin=String(message.authorRole||'').toLowerCase()==='admin';
   return `<div class="portal-chat-message ${admin?'from-rebatify':'from-tester'}"><div class="portal-chat-message-head"><strong>${admin?'Rebatify':'You'}</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'')}</p></div>`;
 }
@@ -403,11 +413,14 @@ function renderOpenConversationThread(messages=[]){
   const f=activeConversation;
   const original=`<div class="portal-chat-message from-tester initial"><div class="portal-chat-message-head"><strong>You <span class="portal-chat-original-label">Original</span></strong><time>${escapeHtml(formatPortalMessageTime(f.submittedAt))}</time></div><p>${escapeHtml(f.details||'')}</p><div class="portal-chat-meta-list">${f.supportAccountEmail?`<span>Account: ${escapeHtml(f.supportAccountEmail)}</span>`:''}${f.appVersion?`<span>${escapeHtml(f.appVersion)}</span>`:''}${f.pageFeature?`<span>${escapeHtml(f.pageFeature)}</span>`:''}</div></div>`;
   const replies=messages.map(conversationMessageHtml).join('');
-  const retest=f.retestedAt?`<div class="portal-chat-system"><strong>Retest submitted: ${escapeHtml(f.retestResult||'Retest submitted')}</strong>${f.retestNotes?`<span>${escapeHtml(f.retestNotes)}</span>`:''}</div>`:'';
-  const nextCount=messages.length+(f.retestedAt?1:0)+1;
+  const hasRetestRequest=messages.some(m=>m.eventType==='retest-request');
+  const hasRetestSubmission=messages.some(m=>m.eventType==='retest-submitted');
+  const legacyRequest=!isSupportConversation(f)&&String(f.status||'')==='Needs Retest'&&!f.retestedAt&&!hasRetestRequest?`<div class="portal-chat-event"><div class="portal-chat-message-head"><strong>Rebatify · Retest requested</strong><time>${escapeHtml(formatPortalMessageTime(f.updatedAt))}</time></div><p>Rebatify has requested a retest for this issue. Please test the latest fix and submit your retest result.</p><button class="portal-chat-event-action" data-retest-feedback="${escapeHtml(f.id)}" type="button">Open Retest</button></div>`:'';
+  const legacySubmission=f.retestedAt&&!hasRetestSubmission?`<div class="portal-chat-event is-complete"><div class="portal-chat-message-head"><strong>You · Retest submitted</strong><time>${escapeHtml(formatPortalMessageTime(f.retestedAt))}</time></div><p>${escapeHtml(f.retestResult||'Retest submitted')}</p>${f.retestNotes?`<span class="portal-chat-event-detail">${escapeHtml(f.retestNotes)}</span>`:''}</div>`:'';
+  const nextCount=messages.length+(legacyRequest?1:0)+(legacySubmission?1:0)+1;
   const animate=conversationMessageCount>0&&nextCount>conversationMessageCount;
   conversationMessageCount=nextCount;
-  thread.innerHTML=original+replies+retest;
+  thread.innerHTML=original+replies+legacyRequest+legacySubmission;
   scrollConversationToLatest(animate?'smooth':'auto');
 }
 function subscribeConversationMessages(feedbackId){
@@ -470,13 +483,15 @@ async function submitRetest(){
   if(!result){message.textContent='Choose what happened when you retested.';message.className='portal-task-message error';return;}
   const btn=document.getElementById('portalRetestSubmit');const original=btn.innerHTML;btn.disabled=true;btn.innerHTML='Submitting…';message.textContent='';
   try{
-    const retestCount=(Number(activeRetestFeedback.retestCount)||0)+1;
-    await updateDoc(doc(db,'betaFeedback',activeRetestFeedback.id),{retestResult:result,retestNotes:notes,retestedAt:serverTimestamp(),retestCount,updatedAt:serverTimestamp()});
-    const feedbackId=activeRetestFeedback.id;activeRetestFeedback.retestResult=result;activeRetestFeedback.retestNotes=notes;activeRetestFeedback.retestedAt=new Date();activeRetestFeedback.retestCount=retestCount;renderFeedbackHistory();renderPortalTaskSummary();closeRetestFeedback();setFeedbackMessage('Retest submitted. Thank you for checking the fix.','success');workerPostAuthorized('feedback-retest-submitted',{feedbackId}).catch(err=>console.warn('Retest email notification failed:',err));
+    const feedbackId=activeRetestFeedback.id;const retestCount=(Number(activeRetestFeedback.retestCount)||0)+1;
+    const feedbackRef=doc(db,'betaFeedback',feedbackId);const messageRef=doc(collection(db,'betaFeedback',feedbackId,'messages'));const batch=writeBatch(db);
+    batch.update(feedbackRef,{retestResult:result,retestNotes:notes,retestedAt:serverTimestamp(),retestCount,lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',updatedAt:serverTimestamp()});
+    batch.set(messageRef,{authorUid:auth.currentUser.uid,authorRole:'Tester',authorName:currentProfile?.name||'Tester',eventType:'retest-submitted',retestResult:result,retestNotes:notes,body:`Retest submitted: ${result}`,createdAt:serverTimestamp()});
+    await batch.commit();
+    activeRetestFeedback.retestResult=result;activeRetestFeedback.retestNotes=notes;activeRetestFeedback.retestedAt=new Date();activeRetestFeedback.retestCount=retestCount;activeRetestFeedback.lastMessageAt=new Date();activeRetestFeedback.lastMessageBy='Tester';renderFeedbackHistory();renderPortalTaskSummary();closeRetestFeedback();setFeedbackMessage('Retest submitted. Thank you for checking the fix.','success');workerPostAuthorized('feedback-retest-submitted',{feedbackId}).catch(err=>console.warn('Retest email notification failed:',err));
   }catch(error){message.textContent='We could not submit your retest. '+friendlyFirebaseError(error);message.className='portal-task-message error';}
   finally{btn.disabled=false;btn.innerHTML=original;}
 }
-
 function collectTaskResponse(task){
   if(task.responseType==='Short Answer')return String(document.getElementById('portalTaskShortAnswer')?.value||'').trim();
   if(task.responseType==='Long Answer')return String(document.getElementById('portalTaskLongAnswer')?.value||'').trim();
@@ -846,7 +861,7 @@ const retestSubmit=document.getElementById('portalRetestSubmit');if(retestSubmit
 const conversationClose=document.getElementById('portalConversationClose');if(conversationClose)conversationClose.addEventListener('click',closeConversation);
 const conversationBackdrop=document.getElementById('portalConversationBackdrop');if(conversationBackdrop)conversationBackdrop.addEventListener('click',event=>{if(event.target===conversationBackdrop)closeConversation();});
 const conversationSend=document.getElementById('portalConversationSend');if(conversationSend)conversationSend.addEventListener('click',sendConversationReply);
-const conversationReplyInput=document.getElementById('portalConversationReply');if(conversationReplyInput){conversationReplyInput.addEventListener('input',resizeConversationComposer);conversationReplyInput.addEventListener('compositionend',resizeConversationComposer);}
+const conversationReplyInput=document.getElementById('portalConversationReply');if(conversationReplyInput){conversationReplyInput.addEventListener('input',resizeConversationComposer);conversationReplyInput.addEventListener('compositionend',resizeConversationComposer);conversationReplyInput.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();sendConversationReply();}});}
 const feedbackTypeSelect=document.getElementById('feedbackType');if(feedbackTypeSelect)feedbackTypeSelect.addEventListener('change',updateHelpFormForType);updateHelpFormForType();installTextEntryCompatibility();
 
 if (feedbackForm) {

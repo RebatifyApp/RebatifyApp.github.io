@@ -692,11 +692,26 @@ function renderTesters(){
   renderTesterActivityMetrics();
   updateTimelineSelectionUI();
 }
+function testingAccessSentEmailCopy(t){
+  const platform=String(t.platform||'');
+  if(platform==='iOS')return {title:'Your Rebatify TestFlight invitation has been sent',message:'Your Rebatify iOS testing invitation has been sent. Check the Apple Account email you confirmed during Testing Setup and open the TestFlight invitation to install or update Rebatify.'};
+  if(platform==='Android')return {title:'Your Rebatify Google Play testing access has been sent',message:'Your Rebatify Android testing access has been sent. Check the Google account email you confirmed during Testing Setup and follow the Google Play testing invitation/link to install or update Rebatify.'};
+  return {title:'Your Rebatify beta testing access has been sent',message:'Your Rebatify beta testing access has been sent. Check the account you confirmed during Testing Setup for the invitation or testing link.'};
+}
+async function sendTestingAccessSentNotification(t){
+  const copy=testingAccessSentEmailCopy(t);
+  return callWorkerAdminAction('portal-announcement',{email:String(t.email||'').toLowerCase(),name:t.name||'Tester',platform:t.platform||'',announcementTitle:copy.title,announcementMessage:copy.message,important:true,requiresAcknowledgement:false});
+}
 async function setTesterTimelineStage(t,stage){
-  const normalized=normalizeTimelineStage(stage);
+  const normalized=normalizeTimelineStage(stage);const previous=normalizeTimelineStage(t.timelineStage);
   await updateDoc(doc(db,'betaUsers',t.uid),{timelineStage:normalized,timelineUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()});
   t.timelineStage=normalized;t.timelineUpdatedAt=new Date();t.updatedAt=new Date();
-  renderTesters();
+  let emailSent=false,emailFailed=false,emailError='';
+  if(normalized==='inviteSent'&&previous!=='inviteSent'){
+    try{await sendTestingAccessSentNotification(t);emailSent=true;}
+    catch(error){emailFailed=true;emailError=friendlyFirebaseError(error);console.warn('Testing access sent email failed:',error);}
+  }
+  renderTesters();return {emailSent,emailFailed,emailError};
 }
 async function bulkSetTimelineStage(stage){
   const selected=[...selectedTimelineTesters].map(uid=>findTester(uid)).filter(Boolean).filter(t=>t.accessStatus==='Enabled'&&['Approved','Active'].includes(t.status));
@@ -706,13 +721,16 @@ async function bulkSetTimelineStage(stage){
   const prompt=backwards.length
     ? `Update ${selected.length} selected tester${selected.length===1?'':'s'} to "${timelineStageLabel(normalized)}"? ${backwards.length} timeline${backwards.length===1?'':'s'} will move backward.`
     : `Update ${selected.length} selected tester${selected.length===1?'':'s'} to "${timelineStageLabel(normalized)}"?`;
-  if(!(await confirmAction(prompt,backwards.length?'danger':'')))return {cancelled:true,count:0};
+  if(!(await confirmAction(prompt,backwards.length?'danger':'')))return {cancelled:true,count:0,emailSent:0,emailFailed:0};
+  const notify=normalized==='inviteSent'?selected.filter(t=>normalizeTimelineStage(t.timelineStage)!=='inviteSent'):[];
   const batch=writeBatch(db);
   selected.forEach(t=>batch.update(doc(db,'betaUsers',t.uid),{timelineStage:normalized,timelineUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
   await batch.commit();
   const now=new Date();selected.forEach(t=>{t.timelineStage=normalized;t.timelineUpdatedAt=now;t.updatedAt=now;});
+  let emailSent=0,emailFailed=0,emailErrors=[];
+  for(const t of notify){try{await sendTestingAccessSentNotification(t);emailSent++;}catch(error){emailFailed++;emailErrors.push(friendlyFirebaseError(error));console.warn('Testing access sent email failed:',error);}}
   selectedTimelineTesters.clear();renderTesters();
-  return {cancelled:false,count:selected.length};
+  return {cancelled:false,count:selected.length,emailSent,emailFailed,emailErrors};
 }
 function feedbackFiltered(){
   const q=document.getElementById('feedbackSearch').value.trim().toLowerCase();const status=document.getElementById('feedbackStatusFilter').value;const type=document.getElementById('feedbackTypeFilter').value;
@@ -1048,7 +1066,12 @@ function feedbackWorkflowOptions(f){
   const workflow=isSupportConversation(f)?SUPPORT_WORKFLOW:FEEDBACK_WORKFLOW;const status=canonicalFeedbackStatus(f.status);
   return workflow.map(x=>`<option${x===status?' selected':''}>${x}</option>`).join('');
 }
-function adminConversationMessageHtml(m){const admin=String(m.authorRole||'').toLowerCase()==='admin';return `<div class="admin-chat-message ${admin?'from-admin':'from-tester'}"><div><strong>${admin?'Rebatify':'Tester'}</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'')}</p></div>`;}
+function adminConversationMessageHtml(m){
+  const eventType=String(m.eventType||'');
+  if(eventType==='retest-request')return `<div class="admin-chat-message admin-chat-event"><div><strong>Rebatify · Retest requested</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'Retest requested.')}</p></div>`;
+  if(eventType==='retest-submitted')return `<div class="admin-chat-message admin-chat-event is-complete"><div><strong>Tester · Retest submitted</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.retestResult||m.body||'Retest submitted')}</p>${m.retestNotes?`<small>${esc(m.retestNotes)}</small>`:''}</div>`;
+  const admin=String(m.authorRole||'').toLowerCase()==='admin';return `<div class="admin-chat-message ${admin?'from-admin':'from-tester'}"><div><strong>${admin?'Rebatify':'Tester'}</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'')}</p></div>`;
+}
 function subscribeAdminConversationMessages(feedbackId){
   if(adminConversationUnsubscribe){adminConversationUnsubscribe();adminConversationUnsubscribe=null;}
   const list=document.getElementById('drawerConversationThread');if(!list)return;
@@ -1331,7 +1354,21 @@ document.addEventListener('click',async e=>{
   const reopenFeedbackBtn=e.target.closest('[data-reopen-feedback]');if(reopenFeedbackBtn){const f=await ensureFeedbackLoaded(reopenFeedbackBtn.dataset.reopenFeedback);if(!f)return;const support=isSupportConversation(f);const status=support?'Waiting for Rebatify':'Reviewing';reopenFeedbackBtn.disabled=true;const original=reopenFeedbackBtn.textContent;reopenFeedbackBtn.textContent='Reopening…';try{await updateDoc(doc(db,'betaFeedback',f.id),{status,updatedAt:serverTimestamp()});f.status=status;f.updatedAt=new Date();state.loaded.feedback=false;await loadFeedback(true);renderFeedback();const fresh=state.feedback.find(x=>x.id===f.id)||f;openFeedbackRecord(fresh);showToast('Conversation reopened. Messaging is available again.');}catch(err){showToast(friendlyFirebaseError(err),'error');reopenFeedbackBtn.disabled=false;reopenFeedbackBtn.textContent=original;}return;}
   const deleteFeedbackBtn=e.target.closest('[data-delete-feedback]');if(deleteFeedbackBtn){const f=await ensureFeedbackLoaded(deleteFeedbackBtn.dataset.deleteFeedback);if(!f)return;const label=isSupportConversation(f)?'support conversation':'feedback conversation';if(!(await confirmAction(`Permanently delete this ${label}? All replies and private admin notes will also be deleted. The tester account and beta application will remain. This cannot be undone.`,'danger')))return;deleteFeedbackBtn.disabled=true;const original=deleteFeedbackBtn.textContent;deleteFeedbackBtn.textContent='Deleting…';try{await deleteFeedbackConversation(f);closeDrawer();showToast('Conversation deleted.');}catch(err){showToast(friendlyFirebaseError(err),'error');deleteFeedbackBtn.disabled=false;deleteFeedbackBtn.textContent=original;}return;}
   const convoReply=e.target.closest('[data-send-conversation-reply]');if(convoReply){const f=await ensureFeedbackLoaded(convoReply.dataset.sendConversationReply);if(!f)return;if(adminConversationIsClosed(f)){showToast('Reopen this conversation before replying.','error');openFeedbackRecord(f);return;}const input=document.getElementById('drawerConversationReply');const body=String(input?.value||'').trim();if(!body){showToast('Write a reply before sending.','error');return;}convoReply.disabled=true;const original=convoReply.textContent;convoReply.textContent='Sending…';try{const ref=await addDoc(collection(db,'betaFeedback',f.id,'messages'),{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'Rebatify',body,createdAt:serverTimestamp()});const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Admin',updatedAt:serverTimestamp()};if(isSupportConversation(f))update.status='Waiting for Tester';await updateDoc(doc(db,'betaFeedback',f.id),update);f.lastMessageAt=new Date();f.lastMessageBy='Admin';f.updatedAt=new Date();if(isSupportConversation(f))f.status='Waiting for Tester';let emailFailed=false;try{await callWorkerAdminAction('conversation-reply-added',{feedbackId:f.id,messageId:ref.id});}catch(emailErr){emailFailed=true;console.warn('Conversation reply email failed:',emailErr);}if(input){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));}renderFeedback();syncOpenAdminFeedbackState(f);showToast(emailFailed?'Reply saved, but the tester email could not be sent.':'Reply sent to tester.',emailFailed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{convoReply.disabled=false;convoReply.textContent=original;}return;}
-  const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=String(document.getElementById('drawerFeedbackStatus').value||'').trim();const notes=document.getElementById('drawerFeedbackNotes').value;const support=isSupportConversation(f);const oldStatus=canonicalFeedbackStatus(f.status);const oldPublic=testerFacingFeedbackStatus(f);try{if(support&&!SUPPORT_WORKFLOW.includes(status))throw new Error('Choose a valid support status.');if(!support&&!FEEDBACK_WORKFLOW.includes(status))throw new Error('Choose a valid feedback status.');const update={status,adminNotes:'',updatedAt:serverTimestamp()};if(!support&&status==='Needs Retest'&&oldStatus!=='Needs Retest'&&f.retestedAt){update.retestedAt=null;update.retestResult='';update.retestNotes='';}const batch=writeBatch(db);batch.update(doc(db,'betaFeedback',f.id),update);batch.set(doc(db,'betaFeedbackAdmin',f.id),{feedbackId:f.id,adminNotes:notes,updatedAt:serverTimestamp(),updatedBy:adminEmail},{merge:true});await batch.commit();f.status=status;f.adminNotes=notes;f.updatedAt=new Date();if('retestedAt' in update){f.retestedAt=null;f.retestResult='';f.retestNotes='';}const newPublic=testerFacingFeedbackStatus(f);let emailFailed=false;if(newPublic!==oldPublic){const meaningful=support?['Waiting for you','Resolved'].includes(newPublic):['Reviewing','Fix in progress','Needs retest','Resolved'].includes(newPublic);if(meaningful){try{await callWorkerAdminAction('feedback-status-update',{feedbackId:f.id});}catch(emailErr){emailFailed=true;console.warn('Conversation status email failed:',emailErr);}}}state.loaded.feedback=false;await loadFeedback(true);await loadMetrics();renderMetrics();renderOverview();if(state.loaded.testers)renderTesters();const base=!support&&status==='Needs Retest'?'Feedback updated. The tester is now required to retest this issue.':support?'Support conversation updated.':'Feedback updated.';showToast(emailFailed?base+' The status was saved, but the tester email could not be sent.':base,emailFailed?'error':'success');const fresh=state.feedback.find(x=>x.id===f.id)||f;openFeedbackRecord(fresh);}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
+  const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){
+    const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=String(document.getElementById('drawerFeedbackStatus').value||'').trim();const notes=document.getElementById('drawerFeedbackNotes').value;const support=isSupportConversation(f);const oldStatus=canonicalFeedbackStatus(f.status);const oldPublic=testerFacingFeedbackStatus(f);
+    try{
+      if(support&&!SUPPORT_WORKFLOW.includes(status))throw new Error('Choose a valid support status.');if(!support&&!FEEDBACK_WORKFLOW.includes(status))throw new Error('Choose a valid feedback status.');
+      const enteringRetest=!support&&status==='Needs Retest'&&oldStatus!=='Needs Retest';
+      const update={status,adminNotes:'',updatedAt:serverTimestamp()};
+      if(enteringRetest){update.lastMessageAt=serverTimestamp();update.lastMessageBy='Admin';if(f.retestedAt){update.retestedAt=null;update.retestResult='';update.retestNotes='';}}
+      const batch=writeBatch(db);batch.update(doc(db,'betaFeedback',f.id),update);batch.set(doc(db,'betaFeedbackAdmin',f.id),{feedbackId:f.id,adminNotes:notes,updatedAt:serverTimestamp(),updatedBy:adminEmail},{merge:true});
+      if(enteringRetest){const messageRef=doc(collection(db,'betaFeedback',f.id,'messages'));batch.set(messageRef,{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'Rebatify',eventType:'retest-request',body:'Rebatify has requested a retest for this issue. Please test the latest fix and submit your retest result.',createdAt:serverTimestamp()});}
+      await batch.commit();
+      f.status=status;f.adminNotes=notes;f.updatedAt=new Date();if(enteringRetest){f.lastMessageAt=new Date();f.lastMessageBy='Admin';if('retestedAt' in update){f.retestedAt=null;f.retestResult='';f.retestNotes='';}}
+      const newPublic=testerFacingFeedbackStatus(f);let emailFailed=false;if(newPublic!==oldPublic){const meaningful=support?['Waiting for you','Resolved'].includes(newPublic):['Reviewing','Fix in progress','Needs retest','Resolved'].includes(newPublic);if(meaningful){try{await callWorkerAdminAction('feedback-status-update',{feedbackId:f.id});}catch(emailErr){emailFailed=true;console.warn('Conversation status email failed:',emailErr);}}}
+      state.loaded.feedback=false;await loadFeedback(true);await loadMetrics();renderMetrics();renderOverview();if(state.loaded.testers)renderTesters();const base=enteringRetest?'Feedback updated. A retest request was added to the tester conversation.':support?'Support conversation updated.':'Feedback updated.';showToast(emailFailed?base+' The status was saved, but the tester email could not be sent.':base,emailFailed?'error':'success');const fresh=state.feedback.find(x=>x.id===f.id)||f;openFeedbackRecord(fresh);
+    }catch(err){showToast(friendlyFirebaseError(err),'error');}return;
+  }
   const emailSave=e.target.closest('[data-save-email-worker]');if(emailSave){emailSave.disabled=true;const original=emailSave.textContent;emailSave.textContent='Saving…';try{await saveEmailServiceSettings();showToast('Cloudflare email service connected.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{emailSave.disabled=false;emailSave.textContent=original;}return;}
   const remindAssignmentBtn=e.target.closest('[data-remind-assignment]');if(remindAssignmentBtn){
     const a=state.taskAssignments.find(x=>x.id===remindAssignmentBtn.dataset.remindAssignment);if(!a)return;
@@ -1378,14 +1415,14 @@ document.addEventListener('click',async e=>{
     const movingBack=timelineStageRank(t.timelineStage)>timelineStageRank(stage);
     if(movingBack&&!(await confirmAction(`Move ${t.name||'this tester'} backward to "${timelineStageLabel(stage,t.platform)}"?`,'danger')))return;
     saveTimelineBtn.disabled=true;const original=saveTimelineBtn.textContent;saveTimelineBtn.textContent='Saving…';
-    try{await setTesterTimelineStage(t,stage);showToast('Tester timeline updated.');openTesterRecord(t);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{saveTimelineBtn.disabled=false;saveTimelineBtn.textContent=original;}
+    try{const result=await setTesterTimelineStage(t,stage);showToast(result.emailFailed?'Tester timeline updated, but the testing-access email could not be sent.':result.emailSent?'Tester timeline updated and the testing-access email was sent.':'Tester timeline updated.',result.emailFailed?'error':'success');openTesterRecord(t);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{saveTimelineBtn.disabled=false;saveTimelineBtn.textContent=original;}
     return;
   }
   const advanceTimelineBtn=e.target.closest('[data-advance-timeline]');if(advanceTimelineBtn){
     const t=findTester(advanceTimelineBtn.dataset.advanceTimeline);if(!t)return;
     const stage=normalizeTimelineStage(advanceTimelineBtn.dataset.nextStage);
     advanceTimelineBtn.disabled=true;const original=advanceTimelineBtn.textContent;advanceTimelineBtn.textContent='Advancing…';
-    try{await setTesterTimelineStage(t,stage);showToast('Timeline advanced to '+timelineStageLabel(stage,t.platform)+'.');openTesterRecord(t);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{advanceTimelineBtn.disabled=false;advanceTimelineBtn.textContent=original;}
+    try{const result=await setTesterTimelineStage(t,stage);const base='Timeline advanced to '+timelineStageLabel(stage,t.platform)+'.';showToast(result.emailFailed?base+' The testing-access email could not be sent.':result.emailSent?base+' Email notification sent.':base,result.emailFailed?'error':'success');openTesterRecord(t);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{advanceTimelineBtn.disabled=false;advanceTimelineBtn.textContent=original;}
     return;
   }
   const testerActionBtn=e.target.closest('[data-tester-action]');if(testerActionBtn){
@@ -1473,6 +1510,7 @@ if(emailChangeSubmit)emailChangeSubmit.addEventListener('click',async()=>{
   }finally{emailChangeSubmit.disabled=false;emailChangeSubmit.textContent=original;}
 });
 
+document.addEventListener('keydown',event=>{if(event.target&&event.target.id==='drawerConversationReply'&&event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();const button=document.querySelector('[data-send-conversation-reply]');if(button&&!button.disabled)button.click();}});
 document.getElementById('adminDrawerClose').addEventListener('click',closeDrawer);
 document.getElementById('adminDrawerBackdrop').addEventListener('click',closeDrawer);
 document.getElementById('adminRefresh').addEventListener('click',refreshActiveView);
@@ -1485,7 +1523,7 @@ const timelineSelectIOS=document.getElementById('timelineSelectIOS');if(timeline
 const timelineSelectAndroid=document.getElementById('timelineSelectAndroid');if(timelineSelectAndroid)timelineSelectAndroid.addEventListener('click',()=>selectTimelineTesters('Android'));
 const timelineClearSelection=document.getElementById('timelineClearSelection');if(timelineClearSelection)timelineClearSelection.addEventListener('click',()=>{selectedTimelineTesters.clear();updateTimelineSelectionUI();});
 const testersTableBody=document.getElementById('testersTableBody');if(testersTableBody)testersTableBody.addEventListener('change',e=>{if(!e.target.matches('[data-timeline-tester]'))return;const uid=e.target.dataset.timelineTester;if(e.target.checked)selectedTimelineTesters.add(uid);else selectedTimelineTesters.delete(uid);updateTimelineSelectionUI();});
-const bulkTimelineApply=document.getElementById('bulkTimelineApply');if(bulkTimelineApply)bulkTimelineApply.addEventListener('click',async()=>{const original=bulkTimelineApply.textContent;bulkTimelineApply.disabled=true;bulkTimelineApply.textContent='Updating…';try{const stage=document.getElementById('bulkTimelineStage').value;const result=await bulkSetTimelineStage(stage);if(!result.cancelled)showToast(`${result.count} tester timeline${result.count===1?'':'s'} updated.`);}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{bulkTimelineApply.textContent=original;updateTimelineSelectionUI();}});
+const bulkTimelineApply=document.getElementById('bulkTimelineApply');if(bulkTimelineApply)bulkTimelineApply.addEventListener('click',async()=>{const original=bulkTimelineApply.textContent;bulkTimelineApply.disabled=true;bulkTimelineApply.textContent='Updating…';try{const stage=document.getElementById('bulkTimelineStage').value;const result=await bulkSetTimelineStage(stage);if(!result.cancelled){let msg=`${result.count} tester timeline${result.count===1?'':'s'} updated.`;if(result.emailSent)msg+=` ${result.emailSent} testing-access email${result.emailSent===1?'':'s'} sent.`;if(result.emailFailed)msg+=` ${result.emailFailed} email${result.emailFailed===1?'':'s'} failed.`;showToast(msg,result.emailFailed?'error':'success');}}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{bulkTimelineApply.textContent=original;updateTimelineSelectionUI();}});
 document.getElementById('taskTemplateSelect').addEventListener('change',e=>applyTaskTemplate(e.target.value));
 document.getElementById('taskSelectAll').addEventListener('click',()=>selectTaskRecipients('All'));
 document.getElementById('taskSelectIOS').addEventListener('click',()=>selectTaskRecipients('iOS'));
