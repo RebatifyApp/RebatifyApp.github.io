@@ -2243,3 +2243,21 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .upgrade-guide-gallery.public{grid-template-columns:repeat(3,minmax(0,1fr));margin:14px 0}.upgrade-guide-gallery.public figure{padding:8px}.upgrade-guide-gallery.public figcaption{font-size:.72rem}
 @media(max-width:820px){.upgrade-path-card{grid-template-columns:1fr}.upgrade-guide-gallery.public{grid-template-columns:1fr 1fr}.upgrade-guide-gallery.public figure:last-child{grid-column:1/-1;max-width:380px}}
 @media(max-width:560px){.upgrade-path-card{padding:14px}.upgrade-guide-gallery.two,.upgrade-guide-gallery.public{grid-template-columns:1fr}.upgrade-guide-gallery.public figure:last-child{grid-column:auto;max-width:none}.upgrade-guide-gallery figure{padding:7px}.upgrade-guide-gallery figcaption{font-size:.66rem}}
+
+/* ===== Website Build 109: Android Google Play closed-test distribution ===== */
+@media(min-width:1100px){.admin-activity-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.admin-android-invite-panel{margin:0 0 16px;background:linear-gradient(135deg,rgba(59,158,74,.055),rgba(20,92,242,.035),#fff);border-color:rgba(59,158,74,.16)}
+.admin-android-invite-panel .admin-panel-heading{align-items:flex-start}
+.admin-android-invite-panel .admin-panel-heading p{margin:.35rem 0 0;color:var(--admin-muted);font-size:.8rem;line-height:1.55;max-width:830px}
+.admin-android-invite-config{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.admin-android-invite-url-field{margin:0}
+.admin-android-invite-url-field input{width:100%;min-height:48px;border:1px solid var(--admin-line);border-radius:14px;background:#f9fbfe;color:var(--admin-deep);padding:0 13px;font:inherit;font-size:.82rem;outline:0}
+.admin-android-invite-url-field input:focus{border-color:rgba(59,158,74,.42);box-shadow:0 0 0 4px rgba(59,158,74,.08)}
+.admin-android-invite-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;margin-top:15px;padding-top:15px;border-top:1px solid var(--admin-line)}
+.admin-android-invite-action-buttons{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.admin-android-invite-guide{margin-top:14px}
+.admin-android-link-status{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:.62rem;font-weight:900;white-space:nowrap}
+.admin-android-link-status.sent{background:#eaf7ed;color:#2c7c39;border:1px solid #d0ead6}
+.admin-android-link-status.pending{background:#f3f5f8;color:#718095;border:1px solid #e2e7ee}
+@media(max-width:900px){.admin-android-invite-config,.admin-android-invite-actions{grid-template-columns:1fr}.admin-android-invite-action-buttons{justify-content:flex-start}}
+@media(max-width:620px){.admin-android-invite-action-buttons{display:grid;grid-template-columns:1fr}.admin-android-invite-action-buttons button{width:100%}}

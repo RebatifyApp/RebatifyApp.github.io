@@ -8,19 +8,19 @@
 <meta content="noindex,nofollow,noarchive,nosnippet" name="robots"/>
 <meta content="noindex,nofollow,noarchive,nosnippet" name="googlebot"/>
 <title>Rebatify Admin</title>
-<link href="app-icon.png?v=107" rel="icon"/><link href="apple-touch-icon.png?v=107" rel="apple-touch-icon"/><link href="favicon-32.png?v=107" rel="icon" sizes="32x32"/><link href="favicon-16.png?v=107" rel="icon" sizes="16x16"/>
-<link href="styles.css?v=107" rel="stylesheet"/>
+<link href="app-icon.png?v=109" rel="icon"/><link href="apple-touch-icon.png?v=109" rel="apple-touch-icon"/><link href="favicon-32.png?v=109" rel="icon" sizes="32x32"/><link href="favicon-16.png?v=109" rel="icon" sizes="16x16"/>
+<link href="styles.css?v=109" rel="stylesheet"/>
 </head>
 <body class="admin-body">
 <div class="admin-loading-screen" id="adminLoading">
-<div class="admin-loading-mark"><img alt="" src="app-icon.png?v=107"/></div>
+<div class="admin-loading-mark"><img alt="" src="app-icon.png?v=109"/></div>
 <div class="portal-spinner"></div>
 <p id="adminLoadingStatus">Checking administrator access…</p>
 </div>
 <div class="admin-shell" hidden="" id="adminApp">
 <aside class="admin-sidebar">
 <div class="admin-sidebar-brand">
-<img alt="Rebatify app icon" src="app-icon.png?v=107"/>
+<img alt="Rebatify app icon" src="app-icon.png?v=109"/>
 <div><strong>Rebatify</strong><span id="adminBrandScope">Beta Admin</span></div>
 </div>
 <div class="admin-scope-switch" role="group" aria-label="Admin workspace">
@@ -127,8 +127,21 @@
 <article><span>Needs Attention</span><strong id="testerActivityAttention">0</strong><small>7–13 days without portal activity</small></article>
 <article><span>Inactive Review</span><strong id="testerActivityInactive">0</strong><small>14+ days; review access manually</small></article>
 <article><span>Enabled Testers</span><strong id="testerActivityEnabled">0</strong><small>Access currently enabled</small></article>
+<article><span>Android Links Sent</span><strong id="testerAndroidLinksSent">0</strong><small>Google Play closed-test links successfully sent</small></article>
 </div>
 <div class="admin-activity-policy"><strong>Automatic inactivity flagging:</strong> testers are marked <b>Needs Attention</b> after 7 days and <b>Inactive</b> after 14 days without portal activity. Access is never disabled automatically by these activity flags.</div>
+<article class="admin-panel admin-android-invite-panel">
+<div class="admin-panel-heading"><div><span class="admin-section-kicker">Android Distribution</span><h3>Google Play closed-test invite</h3><p>Paste the Google Play closed-testing opt-in link once, then send it to one tester, a selected group, or all eligible Android testers. Successful sends automatically update each tester to <strong>Google Play Testing Link Sent</strong>.</p></div><span class="admin-subtle-chip admin-service-disconnected" id="androidInviteConfigStatus">Link not saved</span></div>
+<div class="admin-android-invite-config">
+<div class="beta-field admin-android-invite-url-field"><label for="androidTestingInviteUrl">Google Play closed-test invite URL</label><input autocomplete="off" id="androidTestingInviteUrl" inputmode="url" placeholder="https://play.google.com/apps/testing/com.example.app" type="url"/><small class="portal-field-help">Use the opt-in link from Play Console → Test and release → Testing → Closed testing → Testers. The link is copied into each tester's portal record only after their email is successfully sent.</small></div>
+<button class="admin-secondary-button" id="androidInviteSave" type="button">Save Link</button>
+</div>
+<div class="admin-android-invite-actions">
+<div class="admin-timeline-select-tools"><span class="admin-detail-label">Recipients</span><div><button class="admin-text-button" id="androidInviteSelectAll" type="button">Select all Android</button><button class="admin-text-button" id="androidInviteClearSelection" type="button">Clear</button></div></div>
+<div class="admin-android-invite-action-buttons"><button class="admin-primary-button" id="androidInviteSendSelected" type="button">Send to Selected Android Testers</button><button class="admin-secondary-button" id="androidInviteSendAll" type="button">Send to All Eligible Android Testers</button></div>
+</div>
+<div class="admin-timeline-stage-guide admin-android-invite-guide"><strong>Email steps included automatically:</strong><span><b>1.</b> Sign in to Google Play with the approved beta Google Account</span><span><b>2.</b> Open the closed-test link</span><span><b>3.</b> Join / become a tester</span><span><b>4.</b> Open the Google Play listing and install Rebatify</span><span><b>5.</b> Return to the Beta Portal and begin testing</span></div>
+</article>
 <article class="admin-panel admin-timeline-bulk-panel">
 <div class="admin-panel-heading"><div><span class="admin-section-kicker">Program Timeline</span><h3>Progress tester timelines</h3><p>Move one tester or a selected group to the milestone they have reached. The tester portal will show all earlier milestones as complete and the next action as current.</p></div><span class="admin-subtle-chip" id="timelineSelectionCount">0 selected</span></div>
 <div class="admin-timeline-bulk-controls">
@@ -286,11 +299,11 @@ setTimeout(function(){
   var loading=document.getElementById('adminLoading');
   if(!loading || loading.hidden) return;
   if(!boot.moduleLoaded){
-    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=107" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not start</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">The Firebase admin module did not finish loading. Hard refresh the page and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button><a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a></div></div>';
+    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=109" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not start</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">The Firebase admin module did not finish loading. Hard refresh the page and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button><a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a></div></div>';
   } else if(!boot.authResolved){
-    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=107" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Administrator sign-in is taking too long</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">Firebase Authentication did not finish restoring your session. Return to sign in and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a href="admin-login.html" class="admin-primary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a><button type="button" onclick="location.reload()" class="admin-secondary-button">Try Again</button></div></div>';
+    loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=109" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Administrator sign-in is taking too long</h2><p style="margin:0 0 18px;color:#5f6f86;font-weight:700">Firebase Authentication did not finish restoring your session. Return to sign in and try again.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a href="admin-login.html" class="admin-primary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a><button type="button" onclick="location.reload()" class="admin-secondary-button">Try Again</button></div></div>';
   }
 }, 12000);
 </script>
-<script src="firebase-config.js?v=107"></script><script src="admin-firebase.js?v=107" type="module"></script><script src="production-admin.js?v=107" type="module"></script></body>
+<script src="firebase-config.js?v=109"></script><script src="admin-firebase.js?v=109" type="module"></script><script src="production-admin.js?v=109" type="module"></script></body>
 </html>
