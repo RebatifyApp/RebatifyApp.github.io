@@ -293,7 +293,8 @@ function renderUserDrawer(data){
   if($('productionDrawerTitle'))$('productionDrawerTitle').textContent=u.name||u.email||'Production User';
   if($('productionDrawerKicker'))$('productionDrawerKicker').textContent='Production User';
   const plusText=pg?.active?(pg.indefinite?'Complimentary · Indefinite':`Complimentary · Until ${fmtDate(pg.expiresAt)}`):(u.premiumActive?`${u.premiumSource||'Store'} entitlement`:re?.active?`App Review access · ${re.source||'Active'}`:'No Rebatify+ access');
-  const trialText=trial.override?.active?`Admin reissue until ${fmtDate(trial.override.expiresAt)}`:trial.active?`Active until ${fmtDate(trial.expiresAt)}`:'Expired / unavailable';
+  const trialDeviceLabel=trial.deviceId?` · device ${shortId(trial.deviceId)}`:'';
+  const trialText=trial.override?.active?`Admin reissue until ${fmtDateTime(trial.override.expiresAt)}${trialDeviceLabel}`:trial.active?`Active until ${fmtDateTime(trial.expiresAt)}${trialDeviceLabel}`:`Expired / unavailable${trialDeviceLabel}`;
   const reviewText=reviewSources.length?`${reviewSources.length} active source${reviewSources.length===1?'':'s'} · ${reviewSources.map(x=>x.source).join(' + ')}`:'Not granted';
   const authEmail=data.auth?.email||u.email||'';
   const authStatus=data.auth?.disabled?'Disabled':'Active';
@@ -319,7 +320,7 @@ function openAccessAction(kind,uid){
   if(kind==='identity')renderIdentityAction();
 }
 function reasonField(placeholder){return `<div class="beta-field"><label for="productionActionReason">Reason <span class="admin-required-inline">*</span></label><textarea id="productionActionReason" maxlength="1000" required placeholder="${esc(placeholder)}"></textarea><small class="admin-email-change-help">Required for the production audit log.</small></div>`;}
-function durationFields(){return `<div class="production-duration-grid">${durationButtons()}</div><div class="production-custom-duration" id="productionCustomDuration" ${state.durationPreset==='custom'?'':'hidden'}><div class="beta-field"><label for="productionCustomAmount">Custom amount</label><input id="productionCustomAmount" min="1" max="3650" inputmode="numeric" type="number" value="30"/></div><div class="beta-field"><label for="productionCustomUnit">Unit</label><select id="productionCustomUnit"><option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option></select></div></div>`;}
+function durationFields(){return `<div class="production-duration-grid">${durationButtons()}</div><div class="production-custom-duration" id="productionCustomDuration" ${state.durationPreset==='custom'?'':'hidden'}><div class="beta-field"><label for="productionCustomAmount">Custom amount</label><input id="productionCustomAmount" min="1" max="3650" inputmode="numeric" type="number" value="30"/></div><div class="beta-field"><label for="productionCustomUnit">Unit</label><select id="productionCustomUnit"><option value="minutes">Minutes</option><option value="days">Days</option><option value="weeks">Weeks</option><option value="months">Months</option><option value="years">Years</option></select></div></div>`;}
 function renderPremiumAction(){
   const d=state.selectedUserDetail, grant=d.premiumGrant||null;
   $('productionActionKicker').textContent='Complimentary Rebatify+';$('productionActionTitle').textContent=grant?.active?'Manage Rebatify+ Grant':'Grant Rebatify+ Access';
@@ -352,7 +353,8 @@ function openIdentityUnlinkAction(baseUid,otherUid){
 function renderTrialAction(){
   const d=state.selectedUserDetail, devices=d.devices||[], current=d.trial?.override||null;
   $('productionActionKicker').textContent='Trial Administration';$('productionActionTitle').textContent='Reset 14-Day Trial';
-  const opts=devices.map(x=>`<option value="${esc(x.deviceId)}" ${x.isPrimary?'selected':''}>${esc(x.deviceName||x.deviceModel||x.platform||'Device')} · ${esc(shortId(x.deviceId))}${x.isPrimary?' · Primary':''}</option>`).join('');
+  const preferredDevice=d.user?.activeDeviceID||d.trial?.deviceId||d.user?.homeDeviceID||'';
+  const opts=devices.map(x=>`<option value="${esc(x.deviceId)}" ${x.deviceId===preferredDevice?'selected':''}>${esc(x.deviceName||x.deviceModel||x.platform||'Device')} · ${esc(shortId(x.deviceId))}${x.deviceId===preferredDevice?' · Current/Active':x.isPrimary?' · Primary':''}${x.trialOverrideActive?' · Admin reissue active':''}</option>`).join('');
   $('productionActionBody').innerHTML=`<div class="production-warning"><strong>Original trial history is preserved.</strong>This action does not delete or rewrite the device’s original anti-abuse trial record. It issues a separate 14-day admin reissue window that automatically expires.</div><div class="beta-field"><label for="productionTrialDevice">Device <span class="admin-required-inline">*</span></label><select id="productionTrialDevice">${opts}</select></div>${reasonField('Example: Support exception, review testing, verified trial reset request')}<div class="production-action-footer"><button class="admin-secondary-button" data-production-cancel-action type="button">Cancel</button>${current?.active?'<button class="production-action-button red" data-production-revoke="trial" type="button">End Current Reissue</button>':''}<button class="admin-primary-button" data-production-submit="trial" type="button">Issue New 14-Day Trial</button></div>`;
 }
 function renderPasswordResetAction(){
