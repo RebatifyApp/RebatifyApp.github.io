@@ -497,7 +497,11 @@ async function completeRequiredTask(){
 }
 
 function timelineStep(number,status,title,body,actionHtml=''){
-  const statusLabel={complete:'Completed',now:'Action Needed',waiting:'Upcoming',next:'Upcoming',ongoing:'In Progress'}[status]||status;
+  const isInvitationWait=status==='now'&&(
+    title==='Watch for your Rebatify TestFlight invitation'||
+    title==='Prepare your Android phone & watch for testing access'
+  );
+  const statusLabel=isInvitationWait?'Waiting':({complete:'Completed',now:'Action Needed',waiting:'Upcoming',next:'Upcoming',ongoing:'In Progress'}[status]||status);
   const marker=status==='complete'
     ? `<span class="portal-timeline-complete-marker" aria-label="Step ${number} completed"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 7"/></svg></span>`
     : `<span>${number}</span>`;
