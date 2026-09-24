@@ -739,7 +739,8 @@ async function sendAndroidTestingInvite(t,url){
       name:t.name||'Tester',
       platform:'Android',
       approvedGoogleAccount:copy.approvedGoogleAccount,
-      testingUrl:copy.testingUrl
+      testingUrl:copy.testingUrl,
+      emailTemplateVersion:'android-beta-access-v2'
     });
     const currentStage=normalizeTimelineStage(t.timelineStage);
     const nextStage=timelineStageRank(currentStage)<timelineStageRank('inviteSent')?'inviteSent':currentStage;
