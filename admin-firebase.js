@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 109
+// Rebatify Beta Admin — Website Build 110
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -699,7 +699,7 @@ function renderTesters(){
 function testingAccessSentEmailCopy(t){
   const platform=String(t.platform||'');
   if(platform==='iOS')return {title:'Your Rebatify TestFlight invitation has been sent',message:'Your Rebatify iOS testing invitation has been sent. Check the Apple Account email you confirmed during Testing Setup and open the TestFlight invitation to install or update Rebatify.'};
-  if(platform==='Android')return {title:'Your Rebatify Google Play testing access has been sent',message:'Your Rebatify Android closed-testing link has been sent. Open your Beta Program Portal to use the saved Google Play link and follow the installation steps.'};
+  if(platform==='Android')return {title:'Your Rebatify Google Play testing access has been sent',message:'Your Rebatify Android beta-testing link has been sent. Open your Beta Program Portal to use the saved Google Play link and follow the installation steps.'};
   return {title:'Your Rebatify beta testing access has been sent',message:'Your Rebatify beta testing access has been sent. Check the account you confirmed during Testing Setup for the invitation or testing link.'};
 }
 async function sendTestingAccessSentNotification(t){
@@ -715,17 +715,15 @@ function androidInviteRecipientList(mode='selected'){
   return [...selectedTimelineTesters].map(uid=>findTester(uid)).filter(Boolean).filter(androidInviteEligible);
 }
 function androidInviteEmailCopy(t,url){
-  const approved=String(t.email||'').trim().toLowerCase();
-  const accountLine=approved?`Approved Google Account: ${approved}\n\n`:'';
   return {
-    title:'Your Rebatify Android beta download link is ready',
-    message:`Your Google Play closed-test access is ready.\n\n${accountLine}Before opening the link, make sure Google Play on the Android device you will use for testing is signed in to this same approved Google Account.\n\n1. Open the Google Play Store on your Android phone.\n2. Tap your profile picture and confirm the selected Google Account matches your approved Rebatify Beta email${approved?` (${approved})`:''}. If it does not match, switch accounts before continuing.\n3. Open this Rebatify closed-testing link on that Android device while signed in to the same Google Account:\n${url}\n4. On Google's testing page, choose the option to join / become a tester.\n5. After Google confirms you joined, open the Google Play listing from the testing page and install Rebatify.\n6. Open Rebatify and create or sign in to your Rebatify account using your approved beta email.\n7. Return to the Rebatify Beta Program Portal for required testing tasks, updates, and Help & Feedback.\n\nIf Google says the test is unavailable, first confirm that Google Play and the browser opening the link are using the approved Google Account. Do not submit a second beta application; use Help & Feedback in the portal if the approved Google Account needs to be corrected.`
+    approvedGoogleAccount:String(t.email||'').trim().toLowerCase(),
+    testingUrl:url
   };
 }
 async function resolveAndroidInviteUrlForSend(){
   const input=document.getElementById('androidTestingInviteUrl');
   const entered=normalizeAndroidTestingInviteUrl(input&&input.value);
-  if(!entered)throw new Error('Paste the Google Play closed-testing opt-in URL before sending.');
+  if(!entered)throw new Error('Paste the Google Play beta-testing opt-in URL before sending.');
   if(entered!==androidTestingInviteUrl){
     await setDoc(doc(db,'betaSystem','emailService'),{androidTestingInviteUrl:entered,androidTestingInviteUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
     androidTestingInviteUrl=entered;renderAndroidInviteSettings();
@@ -736,9 +734,12 @@ async function sendAndroidTestingInvite(t,url){
   if(!androidInviteEligible(t))throw new Error(`${t.name||t.email||'This tester'} has not completed Android Testing Setup yet or does not have enabled beta access.`);
   const copy=androidInviteEmailCopy(t,url);
   try{
-    await callWorkerAdminAction('portal-announcement',{
-      email:String(t.email||'').toLowerCase(),name:t.name||'Tester',platform:'Android',
-      announcementTitle:copy.title,announcementMessage:copy.message,important:true,requiresAcknowledgement:false
+    await callWorkerAdminAction('android-testing-invite',{
+      email:String(t.email||'').toLowerCase(),
+      name:t.name||'Tester',
+      platform:'Android',
+      approvedGoogleAccount:copy.approvedGoogleAccount,
+      testingUrl:copy.testingUrl
     });
     const currentStage=normalizeTimelineStage(t.timelineStage);
     const nextStage=timelineStageRank(currentStage)<timelineStageRank('inviteSent')?'inviteSent':currentStage;
@@ -1271,7 +1272,7 @@ async function saveEmailServiceSettings(){
 async function saveAndroidTestingInviteSettings(){
   const input=document.getElementById('androidTestingInviteUrl');
   const value=normalizeAndroidTestingInviteUrl(input&&input.value);
-  if(!value)throw new Error('Enter the Google Play closed-testing opt-in URL from Play Console. It should begin with https://play.google.com/apps/testing/.');
+  if(!value)throw new Error('Enter the Google Play beta-testing opt-in URL from Play Console. It should begin with https://play.google.com/apps/testing/.');
   await setDoc(doc(db,'betaSystem','emailService'),{androidTestingInviteUrl:value,androidTestingInviteUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
   androidTestingInviteUrl=value;
   renderAndroidInviteSettings();
@@ -1642,11 +1643,11 @@ const timelineSelectAll=document.getElementById('timelineSelectAll');if(timeline
 const timelineSelectIOS=document.getElementById('timelineSelectIOS');if(timelineSelectIOS)timelineSelectIOS.addEventListener('click',()=>selectTimelineTesters('iOS'));
 const timelineSelectAndroid=document.getElementById('timelineSelectAndroid');if(timelineSelectAndroid)timelineSelectAndroid.addEventListener('click',()=>selectTimelineTesters('Android'));
 const timelineClearSelection=document.getElementById('timelineClearSelection');if(timelineClearSelection)timelineClearSelection.addEventListener('click',()=>{selectedTimelineTesters.clear();updateTimelineSelectionUI();});
-const androidInviteSave=document.getElementById('androidInviteSave');if(androidInviteSave)androidInviteSave.addEventListener('click',async()=>{const original=androidInviteSave.textContent;androidInviteSave.disabled=true;androidInviteSave.textContent='Saving…';try{await saveAndroidTestingInviteSettings();showToast('Google Play closed-test link saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{androidInviteSave.disabled=false;androidInviteSave.textContent=original;}});
+const androidInviteSave=document.getElementById('androidInviteSave');if(androidInviteSave)androidInviteSave.addEventListener('click',async()=>{const original=androidInviteSave.textContent;androidInviteSave.disabled=true;androidInviteSave.textContent='Saving…';try{await saveAndroidTestingInviteSettings();showToast('Google Play beta-testing link saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{androidInviteSave.disabled=false;androidInviteSave.textContent=original;}});
 const androidInviteSelectAll=document.getElementById('androidInviteSelectAll');if(androidInviteSelectAll)androidInviteSelectAll.addEventListener('click',()=>selectTimelineTesters('Android'));
 const androidInviteClearSelection=document.getElementById('androidInviteClearSelection');if(androidInviteClearSelection)androidInviteClearSelection.addEventListener('click',()=>{selectedTimelineTesters.clear();updateTimelineSelectionUI();});
-const androidInviteSendSelected=document.getElementById('androidInviteSendSelected');if(androidInviteSendSelected)androidInviteSendSelected.addEventListener('click',async()=>{const recipients=androidInviteRecipientList('selected');if(!recipients.length){showToast('Select at least one eligible Android tester who has completed Testing Setup.','error');return;}if(!(await confirmAction(`Send the Google Play closed-test link and full installation instructions to ${recipients.length} selected Android tester${recipients.length===1?'':'s'}?`,'')))return;const original=androidInviteSendSelected.textContent;androidInviteSendSelected.disabled=true;androidInviteSendSelected.textContent='Sending…';try{const url=await resolveAndroidInviteUrlForSend();const result=await sendAndroidTestingInvites(recipients,url);selectedTimelineTesters.clear();updateTimelineSelectionUI();showToast(result.failed?`${result.sent} Android link${result.sent===1?'':'s'} sent; ${result.failed} failed.${result.errors[0]?' '+result.errors[0]:''}`:`Google Play link and instructions sent to ${result.sent} Android tester${result.sent===1?'':'s'}.`,result.failed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{androidInviteSendSelected.disabled=false;androidInviteSendSelected.textContent=original;}});
-const androidInviteSendAll=document.getElementById('androidInviteSendAll');if(androidInviteSendAll)androidInviteSendAll.addEventListener('click',async()=>{const recipients=androidInviteRecipientList('all');if(!recipients.length){showToast('There are no eligible Android testers who have completed Testing Setup.','error');return;}if(!(await confirmAction(`Send the Google Play closed-test link and full installation instructions to all ${recipients.length} eligible Android tester${recipients.length===1?'':'s'}?`,'')))return;const original=androidInviteSendAll.textContent;androidInviteSendAll.disabled=true;androidInviteSendAll.textContent='Sending to All…';try{const url=await resolveAndroidInviteUrlForSend();const result=await sendAndroidTestingInvites(recipients,url);showToast(result.failed?`${result.sent} Android link${result.sent===1?'':'s'} sent; ${result.failed} failed.${result.errors[0]?' '+result.errors[0]:''}`:`Google Play link and instructions sent to all ${result.sent} eligible Android tester${result.sent===1?'':'s'}.`,result.failed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{androidInviteSendAll.disabled=false;androidInviteSendAll.textContent=original;}});
+const androidInviteSendSelected=document.getElementById('androidInviteSendSelected');if(androidInviteSendSelected)androidInviteSendSelected.addEventListener('click',async()=>{const recipients=androidInviteRecipientList('selected');if(!recipients.length){showToast('Select at least one eligible Android tester who has completed Testing Setup.','error');return;}if(!(await confirmAction(`Send the Google Play beta-testing link and full installation instructions to ${recipients.length} selected Android tester${recipients.length===1?'':'s'}?`,'')))return;const original=androidInviteSendSelected.textContent;androidInviteSendSelected.disabled=true;androidInviteSendSelected.textContent='Sending…';try{const url=await resolveAndroidInviteUrlForSend();const result=await sendAndroidTestingInvites(recipients,url);selectedTimelineTesters.clear();updateTimelineSelectionUI();showToast(result.failed?`${result.sent} Android link${result.sent===1?'':'s'} sent; ${result.failed} failed.${result.errors[0]?' '+result.errors[0]:''}`:`Google Play link and instructions sent to ${result.sent} Android tester${result.sent===1?'':'s'}.`,result.failed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{androidInviteSendSelected.disabled=false;androidInviteSendSelected.textContent=original;}});
+const androidInviteSendAll=document.getElementById('androidInviteSendAll');if(androidInviteSendAll)androidInviteSendAll.addEventListener('click',async()=>{const recipients=androidInviteRecipientList('all');if(!recipients.length){showToast('There are no eligible Android testers who have completed Testing Setup.','error');return;}if(!(await confirmAction(`Send the Google Play beta-testing link and full installation instructions to all ${recipients.length} eligible Android tester${recipients.length===1?'':'s'}?`,'')))return;const original=androidInviteSendAll.textContent;androidInviteSendAll.disabled=true;androidInviteSendAll.textContent='Sending to All…';try{const url=await resolveAndroidInviteUrlForSend();const result=await sendAndroidTestingInvites(recipients,url);showToast(result.failed?`${result.sent} Android link${result.sent===1?'':'s'} sent; ${result.failed} failed.${result.errors[0]?' '+result.errors[0]:''}`:`Google Play link and instructions sent to all ${result.sent} eligible Android tester${result.sent===1?'':'s'}.`,result.failed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{androidInviteSendAll.disabled=false;androidInviteSendAll.textContent=original;}});
 const testersTableBody=document.getElementById('testersTableBody');if(testersTableBody)testersTableBody.addEventListener('change',e=>{if(!e.target.matches('[data-timeline-tester]'))return;const uid=e.target.dataset.timelineTester;if(e.target.checked)selectedTimelineTesters.add(uid);else selectedTimelineTesters.delete(uid);updateTimelineSelectionUI();});
 const bulkTimelineApply=document.getElementById('bulkTimelineApply');if(bulkTimelineApply)bulkTimelineApply.addEventListener('click',async()=>{const original=bulkTimelineApply.textContent;bulkTimelineApply.disabled=true;bulkTimelineApply.textContent='Updating…';try{const stage=document.getElementById('bulkTimelineStage').value;const result=await bulkSetTimelineStage(stage);if(!result.cancelled){let msg=`${result.count} tester timeline${result.count===1?'':'s'} updated.`;if(result.emailSent)msg+=` ${result.emailSent} testing-access email${result.emailSent===1?'':'s'} sent.`;if(result.emailFailed)msg+=` ${result.emailFailed} email${result.emailFailed===1?'':'s'} failed.`;showToast(msg,result.emailFailed?'error':'success');}}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{bulkTimelineApply.textContent=original;updateTimelineSelectionUI();}});
 document.getElementById('taskTemplateSelect').addEventListener('change',e=>applyTaskTemplate(e.target.value));

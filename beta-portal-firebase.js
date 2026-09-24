@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 109
+// Rebatify Beta Tester Portal - Website Build 110
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -598,7 +598,12 @@ function renderProgramTimeline(profile){
   const ios=profile.platform==='iOS';const stage=normalizeProgramTimelineStage(profile.timelineStage);const setupDone=testingSetupComplete(profile);const tfDone=testFlightPrepared(profile);
   const accessCopy=ios
     ? (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>Rebatify TestFlight invitation has been sent</strong> to your approved beta email. Open it on the same iPhone or iPad where TestFlight is installed, accept it, and install Rebatify.':'TestFlight and Testing Setup are complete. Watch your approved beta email for the Rebatify TestFlight invitation. Rebatify will advance this stage when testing access is released.')
-    : (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>Google Play closed-testing link has been sent</strong> to your approved beta email. Open it on your Android phone, opt in, and install Rebatify.':'Make sure Google Play uses the Google Account that matches your approved beta email, then watch for the closed-testing link. Rebatify will advance this stage when testing access is released.');
+    : (stage==='inviteSent'||stage==='activeTesting'
+      ? 'Your <strong>Google Play beta-testing link has been sent</strong> to your approved beta email. Open it on your Android phone, opt in, and install Rebatify.'
+      : 'Make sure Google Play uses the Google Account that matches your approved beta email, then watch for the beta-testing link. If your Google Play account email is different than your approved Rebatify Beta program email, click here for help.');
+  const androidAccessHelpAction=!ios&&!(stage==='inviteSent'||stage==='activeTesting')
+    ? '<div class="portal-timeline-actions portal-timeline-account-mismatch"><button class="portal-account-help-button" data-account-mismatch type="button"><span>My Google Play email is different</span></button><small>Rebatify will notify you via email and advance this stage when testing access is released to you.</small></div>'
+    : '';
   const setupAction=setupDone
     ? '<div class="portal-timeline-completed-note">Testing Setup is complete. You can update your saved device details later from <strong>Settings</strong>.</div>'
     : (ios&&!tfDone
@@ -623,7 +628,7 @@ function renderProgramTimeline(profile){
     content=[
       ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
       ['Complete Testing Setup','Confirm the device, operating-system version, automatically detected screen size, and the Google Play account you will use to receive and install the beta build.',setupAction],
-      ['Prepare your Android phone & watch for testing access',accessCopy,''],
+      ['Prepare your Android phone & watch for testing access',accessCopy,androidAccessHelpAction],
       ['Install Rebatify, create your account & begin testing','After opting in through Google Play, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
     ];
     if(!setupDone){visuals=['complete','now','waiting','waiting'];currentLabel='Testing Setup Required';}
@@ -700,7 +705,7 @@ function renderProfile(profile) {
     if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction){installAction.innerHTML=actionHtml;bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
     const testingUrl=safeAndroidTestingInviteUrl(profile.androidTestingInviteUrl);
-    const copy=!setupDone?'Complete Testing Setup first, then prepare the correct Google Play account.':({approved:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the closed-testing link.',setupComplete:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the closed-testing link.',inviteSent:'Your Google Play testing link has been sent. Use the button below on your Android phone, join the test, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage]);
+    const copy=!setupDone?'Complete Testing Setup first, then prepare the correct Google Play account.':({approved:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the beta-testing link.',setupComplete:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the beta-testing link.',inviteSent:'Your Google Play testing link has been sent. Use the button below on your Android phone, join the test, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage]);
     const meta=!setupDone?'Complete the required Testing Setup from Step 2 of your timeline.':({approved:'Google Play must be signed into the Google Account that matches your approved beta email.',setupComplete:'Google Play must be signed into the Google Account that matches your approved beta email.',inviteSent:'Before opening the link, confirm Google Play is using the Google Account that matches your approved beta email.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
     let actionHtml='';
     if(testingUrl&&(stage==='inviteSent'||stage==='activeTesting')){
