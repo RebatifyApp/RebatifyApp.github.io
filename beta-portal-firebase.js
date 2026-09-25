@@ -613,7 +613,7 @@ function renderProgramTimeline(profile){
   let content,visuals,currentLabel;
   if(ios){
     content=[
-      ['Approved for the RebataTrack Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+      ['Approved for the RebataTrack Beta Program','Your application is approved and your private Beta Portal access is active.',''],
       ['Install TestFlight','Install Apple’s TestFlight app on the iPhone or iPad you will use for RebataTrack beta testing. Use the shortcut below, then confirm when TestFlight is installed.',testFlightActionHtml(profile)],
       ['Complete Testing Setup','Confirm the device, iOS/iPadOS version, automatically detected screen size, and that the Apple Account on that device matches your approved beta email.',setupAction],
       ['Watch for your RebataTrack TestFlight invitation',accessCopy,''],
@@ -626,7 +626,7 @@ function renderProgramTimeline(profile){
     else{visuals=['complete','complete','complete','complete','ongoing'];currentLabel='Active Beta Testing';}
   }else{
     content=[
-      ['Approved for the RebataTrack Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+      ['Approved for the RebataTrack Beta Program','Your application is approved and your private Beta Portal access is active.',''],
       ['Complete Testing Setup','Confirm the device, operating-system version, automatically detected screen size, and the Google Play account you will use to receive and install the beta build.',setupAction],
       ['Prepare your Android phone & watch for testing access',accessCopy,androidAccessHelpAction],
       ['Install RebataTrack, create your account & begin testing','After opting in through Google Play, install RebataTrack and create your RebataTrack app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
@@ -764,7 +764,7 @@ function installTextEntryCompatibility(root=document){
 }
 
 if (!firebaseConfigured) {
-  loading.innerHTML = '<div class="portal-alert warning">The beta portal is not connected yet. Please check back shortly.</div>';
+  loading.innerHTML = '<div class="portal-alert warning">The Beta Portal is not connected yet. Please check back shortly.</div>';
 } else {
   onAuthStateChanged(auth, async user => {
     if (initialized) return;

@@ -1,0 +1,38 @@
+RebataTrack Website Build 115 - Deployment Steps
+
+PURPOSE
+- Correct the portal label split: staff/owner administration is Admin Portal; approved tester/customer access is Beta Portal.
+- Preserve all Website Build 114 screenshot and branding updates.
+
+DEPLOYMENT ORDER
+1. Deploy RebataTrack Beta Email Worker Build 115 first.
+   Cloudflare > Workers & Pages > rebatify-beta-email > Edit Code.
+   Replace the current Worker source with worker.js from the Build 115 package.
+   Keep all existing Variables, Secrets, bindings, and routes unchanged.
+   Save and Deploy.
+
+2. Deploy Website Build 115 to the existing GitHub Pages repository.
+   Use the smaller RebataTrack Website Build 115 GitHub Update.zip and replace the matching files.
+   Or use the complete Website Build 115 package as the full baseline.
+
+3. Wait for GitHub Pages to publish, then hard refresh.
+
+4. Verify tester/customer surfaces say Beta Portal:
+   - beta application
+   - beta sign-in
+   - beta activation
+   - beta portal
+   - beta settings
+   - tester support/help copy
+   - Privacy and Terms beta references
+   - tester emails and CTA buttons
+
+5. Verify staff surfaces remain Admin Portal:
+   - admin-login.html
+   - admin.html
+   - Production Admin navigation and controls
+
+6. Verify existing functionality remains intact: tester sign-in codes, Beta Program timeline, Help & Feedback, Production Admin, Support, Privacy, Terms, Delete Account, and Reset Password.
+
+NO INFRASTRUCTURE MIGRATION IN THIS BUILD
+- Do not rename Firebase project IDs, Firestore paths, Worker names, Android package IDs, iOS bundle IDs, subscription product IDs, or technical routes.

@@ -320,7 +320,7 @@ function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({
 function showFatal(message,detail=''){
   const safeMessage=esc(message||'The admin portal could not open.');
   const safeDetail=esc(detail||'');
-  loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=92" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not open</h2><p style="margin:0 0 8px;color:#5f6f86;font-weight:700">'+safeMessage+'</p>'+(safeDetail?'<p style="margin:0 0 18px;color:#7c8798;font-size:.92rem">'+safeDetail+'</p>':'')+'<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button><a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a></div></div>';
+  loading.innerHTML='<div class="admin-loading-mark"><img src="app-icon.png?v=115" alt=""></div><div style="max-width:620px;text-align:center;padding:0 24px"><h2 style="margin:10px 0 8px;color:#0b1831">Admin portal could not open</h2><p style="margin:0 0 8px;color:#5f6f86;font-weight:700">'+safeMessage+'</p>'+(safeDetail?'<p style="margin:0 0 18px;color:#7c8798;font-size:.92rem">'+safeDetail+'</p>':'')+'<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" onclick="location.reload()" class="admin-primary-button">Try Again</button><a href="admin-login.html" class="admin-secondary-button" style="text-decoration:none;display:inline-flex;align-items:center">Return to Sign In</a></div></div>';
 }
 function showToast(message,type='success'){
   toast.textContent=message;
@@ -699,7 +699,7 @@ function renderTesters(){
 function testingAccessSentEmailCopy(t){
   const platform=String(t.platform||'');
   if(platform==='iOS')return {title:'Your RebataTrack TestFlight invitation has been sent',message:'Your RebataTrack iOS testing invitation has been sent. Check the Apple Account email you confirmed during Testing Setup and open the TestFlight invitation to install or update RebataTrack.'};
-  if(platform==='Android')return {title:'Your RebataTrack Google Play testing access has been sent',message:'Your RebataTrack Android beta-testing link has been sent. Open your Beta Program Portal to use the saved Google Play link and follow the installation steps.'};
+  if(platform==='Android')return {title:'Your RebataTrack Google Play testing access has been sent',message:'Your RebataTrack Android beta-testing link has been sent. Open your Beta Portal to use the saved Google Play link and follow the installation steps.'};
   return {title:'Your RebataTrack beta testing access has been sent',message:'Your RebataTrack beta testing access has been sent. Check the account you confirmed during Testing Setup for the invitation or testing link.'};
 }
 async function sendTestingAccessSentNotification(t){
@@ -1504,7 +1504,7 @@ document.addEventListener('click',async e=>{
     const a=state.taskAssignments.find(x=>x.id===removeTaskAssignmentBtn.dataset.removeTaskAssignment);if(!a)return;
     const alreadyRemoved=String(a.status||'').toLowerCase().includes('removed');
     const warning=alreadyRemoved?' This deletes the task assignment record only; it will not automatically restore beta access that was already removed.':'';
-    if(!(await confirmAction(`Remove "${a.taskTitle||'this task'}" from ${a.name||a.email||'this tester'}? The task will disappear from their Beta Program Portal.${warning}`,'danger')))return;
+    if(!(await confirmAction(`Remove "${a.taskTitle||'this task'}" from ${a.name||a.email||'this tester'}? The task will disappear from their Beta Portal.${warning}`,'danger')))return;
     removeTaskAssignmentBtn.disabled=true;
     try{await removeTaskAssignment(a);showToast('Task removed from tester.');const t=findTask(a.taskId);if(t&&document.getElementById('adminDrawer')?.getAttribute('aria-hidden')==='false')openTaskRecord(t);else closeDrawer();}
     catch(err){showToast(friendlyFirebaseError(err),'error');}
@@ -1573,10 +1573,10 @@ document.addEventListener('click',async e=>{
     const notification=(emailAutomationEnabled&&emailWorkerEndpoint)?' and notify them':'';
     const deleteNote=' This also deletes the tester portal profile and Firebase Authentication login for this email so the address can be used again later.';
     const confirmation={
-      approve:'Approve this tester, enable passwordless Beta Program Portal access, and send the branded invitation?',
+      approve:'Approve this tester, enable passwordless Beta Portal access, and send the branded invitation?',
       waitlist:'Move this applicant to the waitlist'+notification+'?',
       decline:'Decline this application'+notification+'?',
-      resend:'Send the branded RebataTrack Beta Program Portal invitation again?',
+      resend:'Send the branded RebataTrack Beta Portal invitation again?',
       inactive:'Disable this tester’s portal access'+notification+'?',
       active:'Enable access and mark this tester active?',
       delete:'Permanently delete this RebataTrack Beta Program application?'+deleteNote+' Any duplicate tester records using the same email will also be removed.'
@@ -1592,7 +1592,7 @@ document.addEventListener('click',async e=>{
       if(task==='active')result=await statusAction(a,'Active','Enabled');
       if(task==='resend')result=await resendInvite(a);
       if(task==='delete')result=await deleteApplication(a);
-      const messages={approve:'Tester approved and portal access enabled.',resend:'RebataTrack Beta Program Portal invitation processed.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester access restored and marked active.',delete:'Application, matching tester profiles, task assignments, and login deleted.'};
+      const messages={approve:'Tester approved and portal access enabled.',resend:'RebataTrack Beta Portal invitation processed.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester access restored and marked active.',delete:'Application, matching tester profiles, task assignments, and login deleted.'};
       const emailNote=result&&result.emailError?' The record was updated, but the email notification could not be sent.':'';
       showToast((messages[task]||'Tester record updated.')+emailNote,result&&result.emailError?'error':'success');closeDrawer();
     }catch(err){

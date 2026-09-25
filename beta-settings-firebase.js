@@ -63,7 +63,7 @@ function installSettingsTextEntryCompatibility(){
   });
 }
 
-if(!firebaseConfigured){loading.innerHTML='<div class="portal-alert warning">The beta portal is not connected yet. Please check back shortly.</div>';}
+if(!firebaseConfigured){loading.innerHTML='<div class="portal-alert warning">The Beta Portal is not connected yet. Please check back shortly.</div>';}
 else onAuthStateChanged(auth,async user=>{
   if(!user){fail('session');return;}
   const last=Number(sessionStorage.getItem(PORTAL_ACTIVITY_KEY)||0);if(last&&Date.now()-last>=PORTAL_INACTIVITY_MS){fail('inactive');return;}

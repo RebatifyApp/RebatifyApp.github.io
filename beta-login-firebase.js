@@ -61,10 +61,10 @@ async function workerPost(payload){
 if (!firebaseConfigured || !validWorkerUrl()) {
   if (notConnected) {
     notConnected.hidden = false;
-    notConnected.textContent = 'The RebataTrack Beta Program Portal sign-in service is not connected yet. Please check back shortly.';
+    notConnected.textContent = 'The RebataTrack Beta Portal sign-in service is not connected yet. Please check back shortly.';
   }
   if (form) form.querySelector('button[type="submit"]').disabled = true;
-  console.warn('Missing beta portal configuration:', firebaseMissingFields);
+  console.warn('Missing Beta Portal configuration:', firebaseMissingFields);
 } else {
   onAuthStateChanged(auth, user => {
     if (user && !isCompletingSignIn && location.pathname.endsWith('/beta-login.html')) {
@@ -76,7 +76,7 @@ if (!firebaseConfigured || !validWorkerUrl()) {
 const params = new URLSearchParams(location.search);
 const prefill = String(params.get('email') || '').trim().toLowerCase();
 if (prefill && emailInput) emailInput.value = prefill;
-if (params.get('error') === 'access') showError('Your RebataTrack Beta Program Portal access is currently disabled.');
+if (params.get('error') === 'access') showError('Your RebataTrack Beta Portal access is currently disabled.');
 if (params.get('error') === 'session') showError('Your portal session ended. Enter your approved beta email to sign in again.');
 if (params.get('error') === 'inactive') showError('For your security, you were signed out after 6 hours of inactivity. Enter your approved beta email to sign in again.');
 if (params.get('notice') === 'email-changed') showError('Your RebataTrack Beta email was updated. Your previous portal session ended. Sign in again using the new approved beta email shown below.', 'success');

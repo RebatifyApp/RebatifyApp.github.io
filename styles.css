@@ -540,7 +540,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 .portal-timeline-footnote{margin-top:14px;padding:14px 16px;border-radius:16px;background:#f7f9fc;border:1px solid var(--line);color:#60738a;font-size:.84rem;line-height:1.55}
 @media(max-width:620px){.portal-timeline-step{grid-template-columns:44px 1fr;padding:19px 17px}.portal-timeline-step-top{align-items:flex-start;flex-direction:column;gap:6px}.portal-timeline-marker span{width:31px;height:31px}.portal-timeline-step:not(:last-child) .portal-timeline-marker:after{left:15px;top:31px;bottom:-20px}}
 
-/* Build 40 - session-isolated Firebase authentication for Admin and Beta Portal tabs. */
+/* Build 40 - session-isolated Firebase authentication for Admin and Admin Portal tabs. */
 
 /* Build 42 — tester cleanup and duplicate-record deletion */
 .portal-auth-card h1{line-height:1.04}
@@ -567,7 +567,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 /* Build 47 - task removal controls */
 .admin-task-remove-button{color:#9d2f38!important;border-color:rgba(183,48,58,.22)!important;background:rgba(255,246,246,.95)!important}.admin-task-remove-button:hover{background:#fff0f0!important;border-color:rgba(183,48,58,.34)!important}
 
-/* Build 49 — Beta Portal session security and feedback form label */
+/* Build 49 — Admin Portal session security and feedback form label */
 .portal-auth-security-note{margin:-8px 0 18px;color:#7b8ca2;font-size:.84rem;line-height:1.5}
 .portal-feedback-form-kicker{margin:28px 0 12px;color:var(--green);font-size:clamp(1.65rem,3vw,2.15rem);font-weight:900;letter-spacing:-.035em;text-transform:none;line-height:1.12}
 
@@ -610,7 +610,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   box-shadow:0 8px 20px rgba(59,158,74,.10),inset 0 1px 0 rgba(255,255,255,.9);
 }
 
-/* Premium form surface used consistently across Admin + Beta Portal. */
+/* Premium form surface used consistently across Admin + Admin Portal. */
 .beta-field input:not([type="checkbox"]):not([type="radio"]),
 .beta-field select,
 .beta-field textarea,
@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== RebataTrack Beta Portal refinements — Website Build 74 ===== */
+/* ===== RebataTrack Admin Portal refinements — Website Build 74 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1848,7 +1848,7 @@ body.portal-conversation-active{overflow:hidden!important}
 }
 
 
-/* ===== Website Build 75: universal Beta Portal navigation + in-place email changes ===== */
+/* ===== Website Build 75: universal Admin Portal navigation + in-place email changes ===== */
 .portal-mobile-nav{display:block!important;position:sticky;top:67px;z-index:58;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.10);backdrop-filter:blur(14px)}
 .portal-mobile-nav-scroll{display:flex;justify-content:center;gap:9px;overflow-x:auto;scrollbar-width:none;padding-top:9px;padding-bottom:9px}
 .portal-mobile-nav-scroll::-webkit-scrollbar{display:none}
@@ -1874,7 +1874,7 @@ body.portal-conversation-active{overflow:hidden!important}
 .admin-support-identity-action{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:#f7f9fc;border:1px solid #dfe8f3}.admin-support-identity-action span{color:#6c7f95;font-size:.72rem;line-height:1.45;font-weight:700}
 .admin-confirm-backdrop{z-index:420}
 
-/* Website Build 85: keep Beta Portal section headings clear of sticky navigation. */
+/* Website Build 85: keep Admin Portal section headings clear of sticky navigation. */
 #program-timeline,
 #submit-feedback,
 #feedback-history,
