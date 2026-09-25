@@ -52,7 +52,7 @@ if (form) {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       if (!isAdminUser(credential.user)) {
         await signOut(auth);
-        showError('This account is not authorized for Rebatify Beta Program administration.');
+        showError('This account is not authorized for RebataTrack Beta Program administration.');
         return;
       }
       location.replace('admin.html');
@@ -75,7 +75,7 @@ if (resetButton) {
     resetButton.textContent = 'Sending…';
     try {
       await sendPasswordResetEmail(auth, adminEmail);
-      showError('A password-reset email has been requested for the Rebatify support account.', 'warning');
+      showError('A password-reset email has been requested for the RebataTrack support account.', 'warning');
     } catch (error) {
       showError(friendlyFirebaseError(error));
     } finally {

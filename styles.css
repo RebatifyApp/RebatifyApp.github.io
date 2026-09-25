@@ -223,7 +223,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
   .compare-status:nth-child(3){border-left:1px solid rgba(20,92,242,.07)}
   .compare-status:before{display:block;font-size:.68rem;font-weight:900;color:#7a8798;text-transform:uppercase;letter-spacing:.07em;margin-right:2px}
   .compare-status:nth-child(2):before{content:'14-Day Trial'}
-  .compare-status:nth-child(3):before{content:'Rebatify+'}
+  .compare-status:nth-child(3):before{content:'RebataTrack+'}
 }
 @media(max-width:760px){
   .hero-grid,.grid2,.grid3,.grid4,.screenshot-grid,.support-grid,.compact-feature-grid{grid-template-columns:1fr}
@@ -385,7 +385,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 }
 
 
-/* Build 19 - stronger bottom-chip centering and Rebatify+ wording consistency */
+/* Build 19 - stronger bottom-chip centering and RebataTrack+ wording consistency */
 .float-chip.b{
   left:50% !important;
   right:auto !important;
@@ -409,7 +409,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
   }
 }
 
-/* Build 25 - Rebatify Beta landing page */
+/* Build 25 - RebataTrack Beta landing page */
 .nav-beta{color:var(--green)!important;font-weight:850!important}
 .beta-hero{padding:76px 0 64px}
 .beta-hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(380px,.92fr);gap:42px;align-items:start}
@@ -458,7 +458,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 @media(max-width:900px){.beta-hero-grid{grid-template-columns:1fr}.beta-apply-card{position:relative;top:auto}.beta-bento-row{max-width:680px}.beta-expectation-grid{grid-template-columns:1fr}.beta-info-card.beta-wide{grid-column:auto}.beta-check-list{columns:1}}
 @media(max-width:560px){.beta-hero{padding-top:50px}.beta-hero-copy h1{font-size:2.85rem}.beta-bento-row{grid-template-columns:1fr}.beta-apply-card{padding:20px}.beta-os-options{grid-template-columns:1fr 1fr}.beta-info-card{padding:20px;gap:13px}.beta-info-icon{flex-basis:40px;width:40px;height:40px}.beta-brand-lockup img{width:58px;height:58px}.beta-brand-name{font-size:1.5rem}}
 
-/* Build 27 - Rebatify Beta Tester Portal */
+/* Build 27 - RebataTrack Beta Tester Portal */
 .beta-tester-signin{margin:10px 4px 0;text-align:center;font-size:.78rem;color:#66758b}
 .beta-tester-signin a{font-weight:800}
 .portal-body{min-height:100vh;background:radial-gradient(circle at 10% 0%,rgba(20,92,242,.12),transparent 32rem),radial-gradient(circle at 100% 10%,rgba(30,184,184,.11),transparent 30rem),linear-gradient(180deg,#f7fbff 0%,#f2f8fc 60%,#f5fbf9 100%)}
@@ -484,7 +484,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 @media(max-width:900px){.portal-hero-grid,.portal-feedback-layout{grid-template-columns:1fr}.portal-password-card{grid-template-columns:auto 1fr}.portal-password-form{grid-column:1/-1}.portal-bento{grid-template-columns:1fr 1fr}.portal-tile-accent{grid-row:auto;grid-column:1/-1}}
 @media(max-width:620px){.portal-auth-card{padding:24px}.portal-nav{align-items:center}.portal-brand span{display:none}.portal-hero{padding-top:48px}.portal-bento{grid-template-columns:1fr}.portal-tile-accent{grid-column:auto}.portal-two-fields{grid-template-columns:1fr}.portal-password-card{grid-template-columns:1fr}.portal-lock-icon{width:46px;height:46px}.portal-feedback-form{padding:20px}}
 
-/* Build 28 - Rebatify Beta Admin Portal */
+/* Build 28 - RebataTrack Beta Admin Portal */
 .admin-auth-body,.admin-body{--admin-deep:#07132e;--admin-blue:#145cf2;--admin-green:#3b9e4a;--admin-teal:#1ab7b4;--admin-muted:#66758b;--admin-line:rgba(20,92,242,.10);--admin-panel:rgba(255,255,255,.93);background:#f4f8fc;color:var(--admin-deep)}
 .admin-auth-body{min-height:100vh;background:radial-gradient(circle at 14% 8%,rgba(20,92,242,.17),transparent 28rem),radial-gradient(circle at 90% 16%,rgba(26,183,180,.13),transparent 26rem),linear-gradient(180deg,#f8fbff 0%,#eff6fc 100%)}
 .admin-auth-shell{min-height:100vh;display:grid;place-items:center;padding:44px 20px}.admin-auth-card{width:min(100%,560px);padding:38px;border-radius:34px;background:rgba(255,255,255,.94);border:1px solid rgba(20,92,242,.12);box-shadow:0 28px 80px rgba(7,31,95,.16);backdrop-filter:blur(20px)}
@@ -518,7 +518,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 .beta-activate-body{min-height:100vh;background:radial-gradient(circle at 15% 10%,rgba(20,92,242,.10),transparent 35%),radial-gradient(circle at 90% 15%,rgba(59,158,74,.11),transparent 34%),#f5f8fc}.beta-activate-shell{min-height:100vh;display:grid;place-items:center;padding:40px 20px}.beta-activate-card{width:min(620px,100%);background:rgba(255,255,255,.96);border:1px solid rgba(20,92,242,.12);border-radius:30px;box-shadow:0 24px 70px rgba(7,31,95,.12);padding:30px}.beta-activate-brand{display:flex;align-items:center;gap:14px;margin-bottom:24px}.beta-activate-brand img{width:58px;height:58px;border-radius:15px}.beta-activate-brand strong{display:block;font-size:1.22rem}.beta-activate-brand span{display:block;color:#6d7c91;font-size:.78rem;margin-top:2px}.beta-activate-card h1{font-size:clamp(2rem,6vw,3rem);letter-spacing:-.045em;margin:0 0 10px}.beta-activate-card>.lead{margin:0 0 22px}.beta-activate-invite{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 22px}.beta-activate-invite div{padding:14px;border-radius:16px;background:#f7f9fc;border:1px solid rgba(20,92,242,.08)}.beta-activate-invite span{display:block;color:#8290a1;font-size:.68rem;font-weight:850;text-transform:uppercase;letter-spacing:.05em}.beta-activate-invite strong{display:block;margin-top:4px;font-size:.88rem;word-break:break-word}.beta-activate-message{margin:0 0 14px;padding:12px 14px;border-radius:14px;font-size:.8rem;font-weight:750;line-height:1.45}.beta-activate-message.error{background:#fff0f1;color:#a9251d;border:1px solid #f6c7cb}.beta-activate-message.success{background:#ebf8ed;color:#287337;border:1px solid #c7e8cc}.beta-activate-expired{text-align:center;padding:14px 0}.beta-activate-expired h2{margin-bottom:8px}.beta-activate-expired p{color:#6d7c91}.beta-activate-footer{text-align:center;margin-top:16px;color:#8190a4;font-size:.74rem}.beta-activate-footer a{font-weight:850}.beta-activate-mode-note{margin:10px 0 0;color:#738297;font-size:.75rem;line-height:1.45}
 @media(max-width:700px){.admin-email-service-row{grid-template-columns:1fr}.beta-activate-card{padding:22px;border-radius:24px}.beta-activate-invite{grid-template-columns:1fr}}
 
-/* Build 39 - Rebatify Beta Program timeline */
+/* Build 39 - RebataTrack Beta Program timeline */
 .portal-timeline-section{padding-top:34px;padding-bottom:28px;background:linear-gradient(180deg,rgba(241,247,255,.62),rgba(255,255,255,0))}
 .portal-timeline-heading{margin-bottom:20px}
 .portal-program-timeline{display:grid;gap:0;border:1px solid var(--line);border-radius:26px;background:rgba(255,255,255,.92);box-shadow:var(--softshadow);overflow:hidden}
@@ -572,7 +572,7 @@ footer{padding:32px 0 44px;border-top:1px solid var(--line);color:var(--muted);f
 .portal-feedback-form-kicker{margin:28px 0 12px;color:var(--green);font-size:clamp(1.65rem,3vw,2.15rem);font-weight:900;letter-spacing:-.035em;text-transform:none;line-height:1.12}
 
 
-/* Build 51 — premium controls/buttons, visible current-page navigation, Rebatify+ consistency */
+/* Build 51 — premium controls/buttons, visible current-page navigation, RebataTrack+ consistency */
 .rebatify-plus-text{color:var(--green)!important;font-weight:900!important}
 
 /* Public navigation now behaves like a clear menu picker. */
@@ -1040,7 +1040,7 @@ header nav a[href="index.html#plus"][aria-current="true"]{
   .portal-feedback-history-top{flex-direction:column}
 }
 
-/* ===== Rebatify Beta Portal refinements — Website Build 74 ===== */
+/* ===== RebataTrack Beta Portal refinements — Website Build 74 ===== */
 .portal-settings-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border:1px solid rgba(20,92,242,.16);border-radius:14px;background:#fff;color:#0c2b69;text-decoration:none;font-weight:850;font-size:.82rem;box-shadow:0 7px 20px rgba(20,92,242,.06)}
 .portal-nav{gap:12px}.portal-nav .portal-settings-link{margin-left:auto}.portal-nav .portal-logout{margin-left:0}
 .portal-mobile-nav{display:none;background:rgba(247,251,255,.97);border-bottom:1px solid rgba(20,92,242,.1);backdrop-filter:blur(14px);position:sticky;top:0;z-index:90}
@@ -1308,7 +1308,7 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
   .portal-conversation-send{width:100%;min-height:45px;margin-top:10px}
 }
 
-/* ===== Build 73 locked Rebatify button standard ===== */
+/* ===== Build 73 locked RebataTrack button standard ===== */
 :root{
   --rebatify-action-green:#3B9E4A;
   --rebatify-action-green-text:#2F7E3B;
@@ -1345,7 +1345,7 @@ body.portal-setup-open,body.portal-retest-open,body.portal-task-open{overflow:hi
 }
 .portal-settings-link,.portal-logout{gap:10px}
 
-/* Shared geometry + typography for normal Rebatify web buttons. */
+/* Shared geometry + typography for normal RebataTrack web buttons. */
 .btn,
 .beta-submit,
 .admin-primary-button,
@@ -1884,7 +1884,7 @@ body.portal-conversation-active{overflow:hidden!important}
 }
 
 
-/* Build 83 — compact setup cards and stronger Rebatify+ contrast */
+/* Build 83 — compact setup cards and stronger RebataTrack+ contrast */
 .build154-grid{align-items:start;gap:18px}
 .build154-grid .card{padding:19px 20px;border-radius:24px}
 .build154-grid .icon-bubble{width:40px;height:40px;border-radius:13px;margin-bottom:11px;font-size:1rem}
@@ -2131,7 +2131,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 @media(max-width:760px){.admin-notification-panel{right:-4px;width:min(360px,calc(100vw - 20px))}}
 
 /* ================================================================
-   Rebatify Admin — Website Build 99 dual Beta / Production console
+   RebataTrack Admin — Website Build 99 dual Beta / Production console
    ================================================================ */
 .admin-scope-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 12px 10px;padding:5px;border:1px solid rgba(130,154,188,.18);border-radius:14px;background:rgba(255,255,255,.045)}
 .admin-scope-switch button{min-width:0;border:0;border-radius:10px;padding:9px 8px;background:transparent;color:#9fb1ca;font:inherit;font-size:.68rem;font-weight:850;cursor:pointer;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
@@ -2224,7 +2224,7 @@ body.portal-conversation-active .portal-support-launcher{opacity:0;pointer-event
 .admin-chat-event{align-self:stretch;max-width:100%!important;background:linear-gradient(145deg,#f8fbff,#eef5ff)!important;border-color:#cfe0fb!important}.admin-chat-event.is-complete{background:linear-gradient(145deg,#f6fcf7,#edf8ef)!important;border-color:#cde7d2!important}.admin-chat-event small{display:block;margin-top:6px;color:#697d93;font-size:.68rem;white-space:pre-wrap}
 
 
-/* ===== Website Build 108: Rebatify+ screenshot upgrade guide ===== */
+/* ===== Website Build 108: RebataTrack+ screenshot upgrade guide ===== */
 .upgrade-guide-intro{margin:0 0 14px;color:#52677e;line-height:1.6}
 .upgrade-path-card{display:grid;grid-template-columns:minmax(230px,.78fr) minmax(0,1.22fr);gap:18px;padding:18px;margin-top:14px;border:1px solid #dfe8f4;border-radius:20px;background:#f8fbff;align-items:start}
 .upgrade-path-card.expired{background:#f7fbf7;border-color:rgba(59,158,74,.20)}

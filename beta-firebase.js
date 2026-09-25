@@ -80,7 +80,7 @@ if (form) {
         lastDecisionEmail: null
       });
 
-      // Best-effort private notification to the Rebatify owner. The application
+      // Best-effort private notification to the RebataTrack owner. The application
       // is already safely stored before this runs, so an email-delivery issue
       // never causes the applicant to see a failed submission.
       try {
@@ -105,7 +105,7 @@ if (form) {
     } catch (error) {
       const code = String(error && error.code || '');
       if (code === 'permission-denied') {
-        setMessage('An application for that email may already exist. If you believe this is an error, contact Rebatify Support.', 'error');
+        setMessage('An application for that email may already exist. If you believe this is an error, contact RebataTrack Support.', 'error');
       } else {
         setMessage('We could not submit your application right now. ' + friendlyFirebaseError(error), 'error');
       }

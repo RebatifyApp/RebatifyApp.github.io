@@ -1,4 +1,4 @@
-// Rebatify Beta Tester Portal - Website Build 110
+// RebataTrack Beta Tester Portal - Website Build 110
 import { firebaseConfigured, auth, db, timestampToDate, friendlyFirebaseError } from './firebase-core.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
@@ -101,7 +101,7 @@ function applyTestingSetupPlatformCopy(profile=currentProfile||{}){
   const input=document.getElementById('testerDistributionEmail');if(input)input.value=email;
   const help=document.getElementById('testerDistributionEmailHelp');if(help)help.textContent=ios?'This approved beta email must match the Apple Account signed in for the App Store/TestFlight on the iPhone or iPad where you installed TestFlight.':'Confirm the Google Account currently selected in Google Play on the Android device you will use for testing.';
   const confirmText=document.getElementById('testerDistributionConfirmText');if(confirmText)confirmText.textContent=ios?'I confirm this approved beta email matches the Apple Account signed in on this testing iPhone or iPad.':'I confirm this is the Google Account selected in Google Play on my testing Android device.';
-  const intro=document.getElementById('portalSetupIntro');if(intro)intro.textContent=ios?'TestFlight is already installed. Now confirm the iPhone or iPad, iOS/iPadOS version, detected screen size, and matching Apple Account you will use for Rebatify beta testing.':'Confirm the Android device, Android version, and Google Play account you will use for Rebatify beta testing.';
+  const intro=document.getElementById('portalSetupIntro');if(intro)intro.textContent=ios?'TestFlight is already installed. Now confirm the iPhone or iPad, iOS/iPadOS version, detected screen size, and matching Apple Account you will use for RebataTrack beta testing.':'Confirm the Android device, Android version, and Google Play account you will use for RebataTrack beta testing.';
 }
 function distributionAccountConfirmed(profile=currentProfile||{}){
   return !!String(profile.distributionAccountEmail||'').trim() && !!profile.distributionAccountConfirmedAt;
@@ -145,15 +145,15 @@ function renderSupportLauncher(){
   const count=unreadConversationCount();
   const badge=document.getElementById('portalSupportUnreadBadge');const inline=document.getElementById('portalSupportLauncherInlineBadge');const meta=document.getElementById('portalSupportLauncherConversationMeta');const status=document.getElementById('portalSupportLauncherStatus');
   [badge,inline].forEach(el=>{if(!el)return;el.hidden=count<1;el.textContent=count>9?'9+':String(count);});
-  if(meta)meta.textContent=count?`${count} new ${count===1?'update':'updates'} from Rebatify`:'View your support and feedback history';
-  if(status)status.textContent=count?`You have ${count} unread conversation ${count===1?'update':'updates'}.`:'Start a new conversation or check updates from the Rebatify team.';
+  if(meta)meta.textContent=count?`${count} new ${count===1?'update':'updates'} from RebataTrack`:'View your support and feedback history';
+  if(status)status.textContent=count?`You have ${count} unread conversation ${count===1?'update':'updates'}.`:'Start a new conversation or check updates from the RebataTrack team.';
 }
 function feedbackPublicStatus(f){
   if(isSupportConversation(f)){
-    const status=String(f.status||'Waiting for Rebatify');
+    const status=String(f.status||'Waiting for RebataTrack');
     if(status==='Resolved'||status==='Closed')return {label:'Resolved',className:'resolved'};
     if(status==='Waiting for Tester')return {label:'Waiting for you',className:'testing'};
-    return {label:'Waiting for Rebatify',className:'reviewing'};
+    return {label:'Waiting for RebataTrack',className:'reviewing'};
   }
   const raw=String(f.status||'New');const status=raw==='Planned'?'Confirmed':raw==='Declined'?'Closed':raw;
   if(status==='Closed')return {label:'Resolved',className:'resolved'};
@@ -283,7 +283,7 @@ function renderRequiredTask(){
   const overdue=taskIsOverdue(activeTask);
   const modal=taskBackdrop.querySelector('.portal-task-modal');if(modal)modal.classList.toggle('is-overdue',overdue);
   setTaskMessage('');
-  if(overdue){response.innerHTML='<div class="portal-task-overdue">This required task deadline has passed. Your Rebatify Beta Program access is scheduled for automatic removal because the task was not completed on time.</div>';}
+  if(overdue){response.innerHTML='<div class="portal-task-overdue">This required task deadline has passed. Your RebataTrack Beta Program access is scheduled for automatic removal because the task was not completed on time.</div>';}
   else if(activeTask.responseType==='Short Answer')response.innerHTML='<label for="portalTaskShortAnswer">Your response</label><input id="portalTaskShortAnswer" type="text" maxlength="500" placeholder="Enter your response"/>';
   else if(activeTask.responseType==='Long Answer')response.innerHTML='<label for="portalTaskLongAnswer">Your response</label><textarea id="portalTaskLongAnswer" maxlength="5000" placeholder="Enter your response"></textarea>';
   else if(activeTask.responseType==='Yes / No')response.innerHTML='<label for="portalTaskYesNo">Your response</label><select id="portalTaskYesNo"><option value="">Choose one</option><option value="Yes">Yes</option><option value="No">No</option></select>';
@@ -309,7 +309,7 @@ function renderPortalAnnouncements(){
   list.innerHTML=portalAnnouncements.map(a=>{
     const requires=!!a.requiresAcknowledgement;const acknowledged=a.status==='Acknowledged'&&!!a.acknowledgedAt;
     const action=requires?(acknowledged?`<span class="portal-announcement-acknowledged">✓ Acknowledged ${escapeHtml(formatPortalDate(a.acknowledgedAt))}</span>`:`<button class="portal-announcement-ack" data-ack-announcement="${escapeHtml(a.id)}" type="button">Acknowledge</button>`):'<span class="portal-announcement-info">For your information</span>';
-    return `<article class="portal-announcement-card${a.announcementImportant?' is-important':''}"><div class="portal-announcement-meta"><span><b class="portal-announcement-icon" aria-hidden="true">!</b>${a.announcementImportant?'Important Beta Update':'Beta Update'}</span><time>${escapeHtml(formatPortalDate(a.publishedAt||a.assignedAt))}</time></div><h3>${escapeHtml(a.announcementTitle||'Rebatify Beta Update')}</h3><p>${escapeHtml(a.announcementMessage||'')}</p><div class="portal-announcement-footer">${requires?'<small>Rebatify asks you to confirm that you have read this update.</small>':'<small>No acknowledgement is required.</small>'}${action}</div></article>`;
+    return `<article class="portal-announcement-card${a.announcementImportant?' is-important':''}"><div class="portal-announcement-meta"><span><b class="portal-announcement-icon" aria-hidden="true">!</b>${a.announcementImportant?'Important Beta Update':'Beta Update'}</span><time>${escapeHtml(formatPortalDate(a.publishedAt||a.assignedAt))}</time></div><h3>${escapeHtml(a.announcementTitle||'RebataTrack Beta Update')}</h3><p>${escapeHtml(a.announcementMessage||'')}</p><div class="portal-announcement-footer">${requires?'<small>RebataTrack asks you to confirm that you have read this update.</small>':'<small>No acknowledgement is required.</small>'}${action}</div></article>`;
   }).join('');
 }
 async function acknowledgeAnnouncement(id,button){
@@ -346,7 +346,7 @@ function syncConversationComposerState(f=activeConversation){
   const closed=conversationIsClosed(f);
   if(composer)composer.hidden=closed;
   if(notice)notice.hidden=!closed;
-  if(text&&closed)text.textContent=isSupportConversation(f)?'This support conversation has been resolved and is now closed. Rebatify can reopen it if more follow-up is needed.':'This feedback conversation has been resolved and is now closed. Rebatify can reopen it if more follow-up is needed.';
+  if(text&&closed)text.textContent=isSupportConversation(f)?'This support conversation has been resolved and is now closed. RebataTrack can reopen it if more follow-up is needed.':'This feedback conversation has been resolved and is now closed. RebataTrack can reopen it if more follow-up is needed.';
 }
 
 async function loadFeedbackHistory(uid){
@@ -388,13 +388,13 @@ function conversationMessageHtml(message){
   const eventType=String(message.eventType||'');
   if(eventType==='retest-request'){
     const pending=activeConversation&&String(activeConversation.status||'')==='Needs Retest'&&!activeConversation.retestedAt;
-    return `<div class="portal-chat-event"><div class="portal-chat-message-head"><strong>Rebatify · Retest requested</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'Rebatify has requested a retest for this issue.')}</p>${pending&&activeConversation?`<button class="portal-chat-event-action" data-retest-feedback="${escapeHtml(activeConversation.id)}" type="button">Open Retest</button>`:''}</div>`;
+    return `<div class="portal-chat-event"><div class="portal-chat-message-head"><strong>RebataTrack · Retest requested</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'RebataTrack has requested a retest for this issue.')}</p>${pending&&activeConversation?`<button class="portal-chat-event-action" data-retest-feedback="${escapeHtml(activeConversation.id)}" type="button">Open Retest</button>`:''}</div>`;
   }
   if(eventType==='retest-submitted'){
     return `<div class="portal-chat-event is-complete"><div class="portal-chat-message-head"><strong>You · Retest submitted</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.retestResult||message.body||'Retest submitted')}</p>${message.retestNotes?`<span class="portal-chat-event-detail">${escapeHtml(message.retestNotes)}</span>`:''}</div>`;
   }
   const admin=String(message.authorRole||'').toLowerCase()==='admin';
-  return `<div class="portal-chat-message ${admin?'from-rebatify':'from-tester'}"><div class="portal-chat-message-head"><strong>${admin?'Rebatify':'You'}</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'')}</p></div>`;
+  return `<div class="portal-chat-message ${admin?'from-rebatify':'from-tester'}"><div class="portal-chat-message-head"><strong>${admin?'RebataTrack':'You'}</strong><time>${escapeHtml(formatPortalMessageTime(message.createdAt))}</time></div><p>${escapeHtml(message.body||'')}</p></div>`;
 }
 function scrollConversationToLatest(behavior='auto'){
   const thread=document.getElementById('portalConversationThread');
@@ -415,7 +415,7 @@ function renderOpenConversationThread(messages=[]){
   const replies=messages.map(conversationMessageHtml).join('');
   const hasRetestRequest=messages.some(m=>m.eventType==='retest-request');
   const hasRetestSubmission=messages.some(m=>m.eventType==='retest-submitted');
-  const legacyRequest=!isSupportConversation(f)&&String(f.status||'')==='Needs Retest'&&!f.retestedAt&&!hasRetestRequest?`<div class="portal-chat-event"><div class="portal-chat-message-head"><strong>Rebatify · Retest requested</strong><time>${escapeHtml(formatPortalMessageTime(f.updatedAt))}</time></div><p>Rebatify has requested a retest for this issue. Please test the latest fix and submit your retest result.</p><button class="portal-chat-event-action" data-retest-feedback="${escapeHtml(f.id)}" type="button">Open Retest</button></div>`:'';
+  const legacyRequest=!isSupportConversation(f)&&String(f.status||'')==='Needs Retest'&&!f.retestedAt&&!hasRetestRequest?`<div class="portal-chat-event"><div class="portal-chat-message-head"><strong>RebataTrack · Retest requested</strong><time>${escapeHtml(formatPortalMessageTime(f.updatedAt))}</time></div><p>RebataTrack has requested a retest for this issue. Please test the latest fix and submit your retest result.</p><button class="portal-chat-event-action" data-retest-feedback="${escapeHtml(f.id)}" type="button">Open Retest</button></div>`:'';
   const legacySubmission=f.retestedAt&&!hasRetestSubmission?`<div class="portal-chat-event is-complete"><div class="portal-chat-message-head"><strong>You · Retest submitted</strong><time>${escapeHtml(formatPortalMessageTime(f.retestedAt))}</time></div><p>${escapeHtml(f.retestResult||'Retest submitted')}</p>${f.retestNotes?`<span class="portal-chat-event-detail">${escapeHtml(f.retestNotes)}</span>`:''}</div>`:'';
   const nextCount=messages.length+(legacyRequest?1:0)+(legacySubmission?1:0)+1;
   const animate=conversationMessageCount>0&&nextCount>conversationMessageCount;
@@ -460,7 +460,7 @@ async function sendConversationReply(){
     const feedbackId=activeConversation.id;
     const ref=await addDoc(collection(db,'betaFeedback',feedbackId,'messages'),{authorUid:auth.currentUser.uid,authorRole:'Tester',authorName:currentProfile?.name||'Tester',body,createdAt:serverTimestamp()});
     const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',updatedAt:serverTimestamp()};
-    if(isSupportConversation(activeConversation))update.status='Waiting for Rebatify';
+    if(isSupportConversation(activeConversation))update.status='Waiting for RebataTrack';
     await updateDoc(doc(db,'betaFeedback',feedbackId),update);
     input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));resizeConversationComposer();message.textContent='';message.className='portal-task-message';scrollConversationToLatest('smooth');
     workerPostAuthorized('conversation-reply-added',{feedbackId,messageId:ref.id}).catch(err=>console.warn('Conversation reply email failed:',err));
@@ -513,7 +513,7 @@ async function completeRequiredTask(){
 
 function timelineStep(number,status,title,body,actionHtml=''){
   const isInvitationWait=status==='now'&&(
-    title==='Watch for your Rebatify TestFlight invitation'||
+    title==='Watch for your RebataTrack TestFlight invitation'||
     title==='Prepare your Android phone & watch for testing access'
   );
   const statusLabel=isInvitationWait?'Waiting':({complete:'Completed',now:'Action Needed',waiting:'Upcoming',next:'Upcoming',ongoing:'In Progress'}[status]||status);
@@ -597,12 +597,12 @@ function renderProgramTimeline(profile){
   const timeline=document.getElementById('portalProgramTimeline');const footnote=document.getElementById('portalTimelineFootnote');if(!timeline)return;
   const ios=profile.platform==='iOS';const stage=normalizeProgramTimelineStage(profile.timelineStage);const setupDone=testingSetupComplete(profile);const tfDone=testFlightPrepared(profile);
   const accessCopy=ios
-    ? (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>Rebatify TestFlight invitation has been sent</strong> to your approved beta email. Open it on the same iPhone or iPad where TestFlight is installed, accept it, and install Rebatify.':'TestFlight and Testing Setup are complete. Watch your approved beta email for the Rebatify TestFlight invitation. Rebatify will advance this stage when testing access is released.')
+    ? (stage==='inviteSent'||stage==='activeTesting'?'Your <strong>RebataTrack TestFlight invitation has been sent</strong> to your approved beta email. Open it on the same iPhone or iPad where TestFlight is installed, accept it, and install RebataTrack.':'TestFlight and Testing Setup are complete. Watch your approved beta email for the RebataTrack TestFlight invitation. RebataTrack will advance this stage when testing access is released.')
     : (stage==='inviteSent'||stage==='activeTesting'
-      ? 'Your <strong>Google Play beta-testing link has been sent</strong> to your approved beta email. Open it on your Android phone, opt in, and install Rebatify.'
-      : 'Make sure Google Play uses the Google Account that matches your approved beta email, then watch for the beta-testing link. If your Google Play account email is different than your approved Rebatify Beta program email, click here for help.');
+      ? 'Your <strong>Google Play beta-testing link has been sent</strong> to your approved beta email. Open it on your Android phone, opt in, and install RebataTrack.'
+      : 'Make sure Google Play uses the Google Account that matches your approved beta email, then watch for the beta-testing link. If your Google Play account email is different than your approved RebataTrack Beta program email, click here for help.');
   const androidAccessHelpAction=!ios&&!(stage==='inviteSent'||stage==='activeTesting')
-    ? '<div class="portal-timeline-actions portal-timeline-account-mismatch"><button class="portal-account-help-button" data-account-mismatch type="button"><span>My Google Play email is different</span></button><small>Rebatify will notify you via email and advance this stage when testing access is released to you.</small></div>'
+    ? '<div class="portal-timeline-actions portal-timeline-account-mismatch"><button class="portal-account-help-button" data-account-mismatch type="button"><span>My Google Play email is different</span></button><small>RebataTrack will notify you via email and advance this stage when testing access is released to you.</small></div>'
     : '';
   const setupAction=setupDone
     ? '<div class="portal-timeline-completed-note">Testing Setup is complete. You can update your saved device details later from <strong>Settings</strong>.</div>'
@@ -613,11 +613,11 @@ function renderProgramTimeline(profile){
   let content,visuals,currentLabel;
   if(ios){
     content=[
-      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
-      ['Install TestFlight','Install Apple’s TestFlight app on the iPhone or iPad you will use for Rebatify beta testing. Use the shortcut below, then confirm when TestFlight is installed.',testFlightActionHtml(profile)],
+      ['Approved for the RebataTrack Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+      ['Install TestFlight','Install Apple’s TestFlight app on the iPhone or iPad you will use for RebataTrack beta testing. Use the shortcut below, then confirm when TestFlight is installed.',testFlightActionHtml(profile)],
       ['Complete Testing Setup','Confirm the device, iOS/iPadOS version, automatically detected screen size, and that the Apple Account on that device matches your approved beta email.',setupAction],
-      ['Watch for your Rebatify TestFlight invitation',accessCopy,''],
-      ['Install Rebatify, create your account & begin testing','After accepting the Rebatify TestFlight invitation, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
+      ['Watch for your RebataTrack TestFlight invitation',accessCopy,''],
+      ['Install RebataTrack, create your account & begin testing','After accepting the RebataTrack TestFlight invitation, install RebataTrack and create your RebataTrack app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
     ];
     if(!tfDone){visuals=['complete','now','waiting','waiting','waiting'];currentLabel='TestFlight Installation Required';}
     else if(!setupDone){visuals=['complete','complete','now','waiting','waiting'];currentLabel='Testing Setup Required';}
@@ -626,10 +626,10 @@ function renderProgramTimeline(profile){
     else{visuals=['complete','complete','complete','complete','ongoing'];currentLabel='Active Beta Testing';}
   }else{
     content=[
-      ['Approved for the Rebatify Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
+      ['Approved for the RebataTrack Beta Program','Your application is approved and your private Beta Program Portal access is active.',''],
       ['Complete Testing Setup','Confirm the device, operating-system version, automatically detected screen size, and the Google Play account you will use to receive and install the beta build.',setupAction],
       ['Prepare your Android phone & watch for testing access',accessCopy,androidAccessHelpAction],
-      ['Install Rebatify, create your account & begin testing','After opting in through Google Play, install Rebatify and create your Rebatify app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
+      ['Install RebataTrack, create your account & begin testing','After opting in through Google Play, install RebataTrack and create your RebataTrack app account. Then use real rebate activity when possible, complete required Beta Program tasks, and send feedback through this portal.','']
     ];
     if(!setupDone){visuals=['complete','now','waiting','waiting'];currentLabel='Testing Setup Required';}
     else if(stage==='approved'||stage==='setupComplete'){visuals=['complete','complete','now','waiting'];currentLabel='Waiting for Testing Access';}
@@ -641,8 +641,8 @@ function renderProgramTimeline(profile){
   timeline.querySelectorAll('[data-open-testing-setup]').forEach(btn=>btn.addEventListener('click',openTestingSetup));
   if(footnote){
     footnote.innerHTML=(ios
-      ? '<strong>How progress works:</strong> Approval completes Step 1 automatically. Install and confirm TestFlight in Step 2, then complete Testing Setup in Step 3. Rebatify controls the invitation and later testing-access stages.'
-      : '<strong>How progress works:</strong> Approval completes Step 1 automatically. Completing Testing Setup marks Step 2 complete. Rebatify controls the later Google Play testing-access stages.')+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
+      ? '<strong>How progress works:</strong> Approval completes Step 1 automatically. Install and confirm TestFlight in Step 2, then complete Testing Setup in Step 3. RebataTrack controls the invitation and later testing-access stages.'
+      : '<strong>How progress works:</strong> Approval completes Step 1 automatically. Completing Testing Setup marks Step 2 complete. RebataTrack controls the later Google Play testing-access stages.')+`<br><span class="portal-timeline-current"><strong>Current program stage:</strong> ${currentLabel}</span>`;
   }
 }
 
@@ -691,25 +691,25 @@ function renderProfile(profile) {
     let copy,meta,actionHtml;
     if(!tfDone){
       copy='Install TestFlight first, then return to your Beta Program timeline and confirm Step 2.';
-      meta='TestFlight must be installed on the iPhone or iPad you will use for Rebatify.';
+      meta='TestFlight must be installed on the iPhone or iPad you will use for RebataTrack.';
       actionHtml='<button class="portal-tile-testflight-button" data-open-testflight type="button">Install / Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Step 2.</strong> Confirm installation from the Progress timeline after TestFlight is installed.</small>';
     }else if(!setupDone){
       copy='TestFlight is installed. Complete Testing Setup in Step 3 to confirm your device and matching Apple Account.';
       meta='Testing Setup is separate from the TestFlight installation step.';
       actionHtml='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Complete Step 3 from your Progress timeline.</small>';
     }else{
-      copy=({approved:'Testing Setup is complete. Watch your approved beta email for your Rebatify TestFlight invitation.',setupComplete:'Testing Setup is complete. Watch your approved beta email for your Rebatify TestFlight invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through TestFlight.'}[stage]);
-      meta=({approved:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',setupComplete:'Shortcut only: opening TestFlight does not change your Beta Program status. Rebatify updates testing-access stages.',inviteSent:'Use TestFlight to accept your invitation and install Rebatify. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
+      copy=({approved:'Testing Setup is complete. Watch your approved beta email for your RebataTrack TestFlight invitation.',setupComplete:'Testing Setup is complete. Watch your approved beta email for your RebataTrack TestFlight invitation.',inviteSent:'Your TestFlight invitation has been sent. Open it on your iPhone, accept it, and install RebataTrack.',activeTesting:'You are in active beta testing. Keep RebataTrack updated through TestFlight.'}[stage]);
+      meta=({approved:'Shortcut only: opening TestFlight does not change your Beta Program status. RebataTrack updates testing-access stages.',setupComplete:'Shortcut only: opening TestFlight does not change your Beta Program status. RebataTrack updates testing-access stages.',inviteSent:'Use TestFlight to accept your invitation and install RebataTrack. This shortcut does not change your timeline status.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
       actionHtml='<button class="portal-tile-testflight-button" data-open-testflight type="button">Open TestFlight <span aria-hidden="true">↗</span></button><small class="portal-tile-shortcut-note"><strong>Shortcut only.</strong> Does not advance your Beta Program status.</small>';
     }
     if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction){installAction.innerHTML=actionHtml;bindTestFlightButtons(installAction);}
   } else if (profile.platform === 'Android') {
     const testingUrl=safeAndroidTestingInviteUrl(profile.androidTestingInviteUrl);
-    const copy=!setupDone?'Complete Testing Setup first, then prepare the correct Google Play account.':({approved:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the beta-testing link.',setupComplete:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the beta-testing link.',inviteSent:'Your Google Play testing link has been sent. Use the button below on your Android phone, join the test, and install Rebatify.',activeTesting:'You are in active beta testing. Keep Rebatify updated through Google Play.'}[stage]);
+    const copy=!setupDone?'Complete Testing Setup first, then prepare the correct Google Play account.':({approved:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the beta-testing link.',setupComplete:'Testing Setup is complete. Confirm the correct Google Play account and watch your approved beta email for the beta-testing link.',inviteSent:'Your Google Play testing link has been sent. Use the button below on your Android phone, join the test, and install RebataTrack.',activeTesting:'You are in active beta testing. Keep RebataTrack updated through Google Play.'}[stage]);
     const meta=!setupDone?'Complete the required Testing Setup from Step 2 of your timeline.':({approved:'Google Play must be signed into the Google Account that matches your approved beta email.',setupComplete:'Google Play must be signed into the Google Account that matches your approved beta email.',inviteSent:'Before opening the link, confirm Google Play is using the Google Account that matches your approved beta email.',activeTesting:'Complete periodic Beta Program tasks, test real workflows, and keep sending meaningful feedback.'}[stage]);
     let actionHtml='';
     if(testingUrl&&(stage==='inviteSent'||stage==='activeTesting')){
-      actionHtml=`<a class="portal-tile-testflight-button" href="${escapeHtml(testingUrl)}" target="_blank" rel="noopener noreferrer">Open Google Play Testing Link <span aria-hidden="true">↗</span></a><small class="portal-tile-shortcut-note"><strong>Android steps:</strong> use your approved Google Account → join the test → open the Play listing → install Rebatify.</small>`;
+      actionHtml=`<a class="portal-tile-testflight-button" href="${escapeHtml(testingUrl)}" target="_blank" rel="noopener noreferrer">Open Google Play Testing Link <span aria-hidden="true">↗</span></a><small class="portal-tile-shortcut-note"><strong>Android steps:</strong> use your approved Google Account → join the test → open the Play listing → install RebataTrack.</small>`;
     }
     if(installCopy)installCopy.textContent=copy;if(installMeta)installMeta.textContent=meta;if(installAction)installAction.innerHTML=actionHtml;
   }
@@ -794,7 +794,7 @@ if (!firebaseConfigured) {
     } catch (error) {
       console.error('Could not load beta assignments:', error);
       const summaryText = document.getElementById('portalTaskSummaryText');
-      if (summaryText) summaryText.textContent = 'Required tasks and Beta News could not be loaded right now. Refresh the portal in a moment or contact Rebatify Support if this continues.';
+      if (summaryText) summaryText.textContent = 'Required tasks and Beta News could not be loaded right now. Refresh the portal in a moment or contact RebataTrack Support if this continues.';
     }
     try { await loadFeedbackHistory(user.uid); }
     catch (error) { console.error('Could not load tester feedback history:', error); const history=document.getElementById('portalFeedbackHistory');if(history)history.innerHTML='<div class="portal-feedback-history-empty">Your conversations could not be loaded right now. You can still start a new Help & Feedback conversation below.</div>'; }
@@ -827,7 +827,7 @@ if(deviceForm){deviceForm.addEventListener('submit',async event=>{
   const button=deviceForm.querySelector('button[type="submit"]');const original=button.innerHTML;button.disabled=true;button.innerHTML='Saving…';setDeviceMessage('');
   const deviceModel=String(document.getElementById('testerDeviceModel').value||'').trim();const osVersion=String(document.getElementById('testerOsVersion').value||'').trim();const screenSize=detectedScreenSize()||String(document.getElementById('testerScreenSize').value||'').trim();
   const distributionAccountEmail=String(currentProfile.email||auth.currentUser.email||'').trim();const distributionConfirm=document.getElementById('testerDistributionConfirm');const ios=String(currentProfile.platform||'')==='iOS';
-  if(!distributionAccountEmail){setDeviceMessage('Your approved beta email could not be loaded. Contact Rebatify Support before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
+  if(!distributionAccountEmail){setDeviceMessage('Your approved beta email could not be loaded. Contact RebataTrack Support before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
   if(ios&&!testFlightPrepared(currentProfile)){setDeviceMessage('Complete Step 2 first by installing and confirming TestFlight.','error');button.disabled=false;button.innerHTML=original;return;}
   if(!distributionConfirm||!distributionConfirm.checked){setDeviceMessage(ios?'Confirm that the Apple Account signed in on this iPhone or iPad matches your approved beta email before continuing.':'Confirm the Google Play account you use for beta distribution before continuing.','error');button.disabled=false;button.innerHTML=original;return;}
   const stage=normalizeProgramTimelineStage(currentProfile.timelineStage);const firstSetup=stage==='approved';const needsAccountConfirmation=!distributionAccountConfirmed(currentProfile);
@@ -895,7 +895,7 @@ if (feedbackForm) {
       ownerUid:auth.currentUser.uid,name:currentProfile.name||'',email:currentProfile.email||auth.currentUser.email||'',platform:currentProfile.platform||'',
       workflowType:support?'Support':'Feedback',type,subject:String(data.get('subject')||'').trim(),details:String(data.get('details')||'').trim(),appVersion,deviceDetails,
       deviceModel:String(currentProfile.deviceModel||'').trim(),osVersion:String(currentProfile.osVersion||'').trim(),screenSize:String(currentProfile.screenSize||detectedScreenSize()||'').trim(),pageFeature:support?'':String(data.get('pageFeature')||'').trim(),
-      supportAccountEmail:support?String(data.get('supportAccountEmail')||'').trim():'',status:support?'Waiting for Rebatify':'New',adminNotes:'',lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',submittedAt:serverTimestamp(),updatedAt:serverTimestamp()
+      supportAccountEmail:support?String(data.get('supportAccountEmail')||'').trim():'',status:support?'Waiting for RebataTrack':'New',adminNotes:'',lastMessageAt:serverTimestamp(),lastMessageBy:'Tester',submittedAt:serverTimestamp(),updatedAt:serverTimestamp()
     };
     try{
       const ref=await addDoc(collection(db,'betaFeedback'),payload);const local={id:ref.id,...payload,submittedAt:new Date(),updatedAt:new Date(),lastMessageAt:new Date()};feedbackHistory.unshift(local);renderFeedbackHistory();
@@ -905,7 +905,7 @@ if (feedbackForm) {
       }else{
         await updateDoc(doc(db,'betaUsers',auth.currentUser.uid),{lastFeedbackSubmittedAt:serverTimestamp(),lastPortalActivity:serverTimestamp(),currentBuild:appVersion,updatedAt:serverTimestamp()}).catch(()=>{});
       }
-      feedbackForm.reset();feedbackForm.classList.remove('is-validation-attempted');updateHelpFormForType();renderDeviceProfile(currentProfile);setFeedbackMessage(support?'Your support conversation was started. Rebatify has been notified.':'Thank you — your feedback conversation was started.','success');
+      feedbackForm.reset();feedbackForm.classList.remove('is-validation-attempted');updateHelpFormForType();renderDeviceProfile(currentProfile);setFeedbackMessage(support?'Your support conversation was started. RebataTrack has been notified.':'Thank you — your feedback conversation was started.','success');
       workerPostAuthorized('feedback-submitted',{feedbackId:ref.id}).catch(err=>console.warn('Help & Feedback email notification failed:',err));
       setTimeout(()=>openConversation(ref.id),300);
     }catch(error){setFeedbackMessage('We could not start your conversation right now. '+friendlyFirebaseError(error),'error');}

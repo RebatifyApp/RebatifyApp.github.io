@@ -1,4 +1,4 @@
-/* Rebatify Beta Firebase configuration.
+/* RebataTrack Beta Firebase configuration.
    Firebase Web API keys are intended to be public; access is enforced by Firebase Authentication and Firestore Security Rules. */
 window.REBATIFY_FIREBASE_CONFIG = {
   apiKey: "AIzaSyCtOITprwIUbTH3DI3TXJwDYAUIOIrASf4",

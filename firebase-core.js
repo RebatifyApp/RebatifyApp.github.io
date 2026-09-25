@@ -67,8 +67,8 @@ export function friendlyFirebaseError(error) {
     'auth/unauthorized-continue-uri': 'The password email could not open the requested return page. Refresh the website and try again.',
     'permission-denied': 'This action could not be completed because access is not permitted.',
     'failed-precondition': 'This feature is not fully configured yet.',
-    'rebatify/email-not-configured': 'The Rebatify email service has not been connected yet.',
-    'rebatify/email-send-failed': 'The Rebatify invitation email could not be sent.',
+    'rebatify/email-not-configured': 'The RebataTrack email service has not been connected yet.',
+    'rebatify/email-send-failed': 'The RebataTrack invitation email could not be sent.',
     'rebatify/invite-expired': 'This beta invitation has expired.',
     'rebatify/invite-invalid': 'This beta invitation is invalid or has already been used.'
   };
@@ -76,7 +76,7 @@ export function friendlyFirebaseError(error) {
 }
 
 // Build 73 — make native text replacement, composition, dictation, paste, and autofill
-// visible to all Rebatify Beta/Admin form logic without depending on key events.
+// visible to all RebataTrack Beta/Admin form logic without depending on key events.
 function isCompatibleTextField(target) {
   if (!(target instanceof HTMLElement)) return false;
   if (target instanceof HTMLTextAreaElement) return true;

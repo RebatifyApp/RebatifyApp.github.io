@@ -1,0 +1,11 @@
+REBATATRACK WEBSITE BUILD 113 - DEPLOYMENT ORDER
+
+1. Back up the currently published GitHub Pages repository.
+2. Deploy RebataTrack Production Admin Worker Build 106. Preserve all Variables/Secrets/bindings.
+3. Deploy RebataTrack Beta Email Worker Build 113. Preserve all Variables/Secrets/bindings.
+4. Deploy RebataTrack Main Email Worker Build 5. Preserve all Variables/Secrets/bindings.
+5. Upload the contents of `RebataTrack Website Build 113 GitHub Update.zip` to the CURRENT GitHub Pages repository and commit.
+6. Wait for GitHub Pages to publish, then hard-refresh and test Home, Beta, Beta Login, Beta Portal, Beta Settings, Admin Login, Admin, Support, Privacy, Terms, Delete Account, and Reset Password.
+7. Only after Build 113 is verified, migrate the GitHub Pages address. If the target is `https://rebatatrack.github.io/`, the GitHub account/organization must own the `rebatatrack` namespace and the Pages repository must be named `rebatatrack.github.io`.
+8. After the new address is live, update Worker public URLs/allowed origins, Firebase Auth authorized domains, Cloudflare CORS origins, Google Play URLs, App Store Connect URLs, and app Website/Support/Privacy/Terms links in one controlled migration.
+9. Do not rename Firebase project IDs, Android package IDs, iOS bundle IDs, Firestore paths, or subscription product IDs merely for branding.

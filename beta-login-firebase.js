@@ -50,7 +50,7 @@ async function workerPost(payload){
     let data = {};
     try { data = await response.json(); } catch (_) {}
     if (!response.ok || data.ok !== true) {
-      const error = new Error(data.error || 'The Rebatify Beta Program sign-in service could not complete this request.');
+      const error = new Error(data.error || 'The RebataTrack Beta Program sign-in service could not complete this request.');
       error.retryAfter = data.retryAfter || 0;
       throw error;
     }
@@ -61,7 +61,7 @@ async function workerPost(payload){
 if (!firebaseConfigured || !validWorkerUrl()) {
   if (notConnected) {
     notConnected.hidden = false;
-    notConnected.textContent = 'The Rebatify Beta Program Portal sign-in service is not connected yet. Please check back shortly.';
+    notConnected.textContent = 'The RebataTrack Beta Program Portal sign-in service is not connected yet. Please check back shortly.';
   }
   if (form) form.querySelector('button[type="submit"]').disabled = true;
   console.warn('Missing beta portal configuration:', firebaseMissingFields);
@@ -76,10 +76,10 @@ if (!firebaseConfigured || !validWorkerUrl()) {
 const params = new URLSearchParams(location.search);
 const prefill = String(params.get('email') || '').trim().toLowerCase();
 if (prefill && emailInput) emailInput.value = prefill;
-if (params.get('error') === 'access') showError('Your Rebatify Beta Program Portal access is currently disabled.');
+if (params.get('error') === 'access') showError('Your RebataTrack Beta Program Portal access is currently disabled.');
 if (params.get('error') === 'session') showError('Your portal session ended. Enter your approved beta email to sign in again.');
 if (params.get('error') === 'inactive') showError('For your security, you were signed out after 6 hours of inactivity. Enter your approved beta email to sign in again.');
-if (params.get('notice') === 'email-changed') showError('Your Rebatify Beta email was updated. Your previous portal session ended. Sign in again using the new approved beta email shown below.', 'success');
+if (params.get('notice') === 'email-changed') showError('Your RebataTrack Beta email was updated. Your previous portal session ended. Sign in again using the new approved beta email shown below.', 'success');
 
 if (form) {
   form.addEventListener('submit', async event => {
@@ -96,7 +96,7 @@ if (form) {
       const result = await workerPost({ type: 'beta-login-request', email: pendingEmail });
       form.hidden = true;
       codeForm.hidden = false;
-      codeSent.textContent = `If ${pendingEmail} has active Rebatify Beta Program access, a 6-digit verification code has been sent. The code expires in 10 minutes.`;
+      codeSent.textContent = `If ${pendingEmail} has active RebataTrack Beta Program access, a 6-digit verification code has been sent. The code expires in 10 minutes.`;
       codeInput.value = '';
       codeInput.focus();
       if (result.retryAfter) showError(`A verification code was sent recently. Wait ${result.retryAfter} seconds before requesting another.`, 'success');
@@ -191,7 +191,7 @@ if (supportForm) {
         issue: String(supportIssue?.value || '').trim(),
         details: String(supportDetails?.value || '').trim()
       });
-      setSupportMessage('Your request was submitted. If this email matches your Rebatify Beta application or tester account, you will receive a confirmation email and the Rebatify team has been notified.', 'success');
+      setSupportMessage('Your request was submitted. If this email matches your RebataTrack Beta application or tester account, you will receive a confirmation email and the RebataTrack team has been notified.', 'success');
       supportIssue.value = '';
       supportDetails.value = '';
     } catch (error) {

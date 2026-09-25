@@ -1,4 +1,4 @@
-// Rebatify Beta Admin — Website Build 110
+// RebataTrack Beta Admin — Website Build 110
 import {
   firebaseConfigured,
   firebaseMissingFields,
@@ -215,8 +215,8 @@ function timelineStageOptions(platform,current){
 const TASK_TEMPLATES = {
   walkthrough: {
     label:'Walkthrough & first-time setup', platform:'All', responseType:'Long Answer', suggestedHours:48,
-    objective:'Confirm the guided walkthrough is clear, complete, and gives a brand-new Rebatify user enough confidence to start using the app without outside help.',
-    instructions:`1. Open the latest Rebatify beta build and complete the guided walkthrough from beginning to end. If you have already completed it, use the in-app walkthrough/replay option when available.
+    objective:'Confirm the guided walkthrough is clear, complete, and gives a brand-new RebataTrack user enough confidence to start using the app without outside help.',
+    instructions:`1. Open the latest RebataTrack beta build and complete the guided walkthrough from beginning to end. If you have already completed it, use the in-app walkthrough/replay option when available.
 2. Follow each step in order and avoid skipping ahead.
 3. Pay attention to wording, button labels, icons, screen transitions, layout, and anything that feels unclear or out of order.
 4. When you finish, decide whether you would know how to add and track your first rebate order without asking for help.
@@ -225,7 +225,7 @@ const TASK_TEMPLATES = {
   'add-order': {
     label:'Add and track a rebate order', platform:'All', responseType:'Long Answer', suggestedHours:48,
     objective:'Validate the complete order-entry experience, saved values, calculations, and the Order Details screen.',
-    instructions:`1. Create a temporary test order in the latest Rebatify beta build using an available Source of Rebate Deals.
+    instructions:`1. Create a temporary test order in the latest RebataTrack beta build using an available Source of Rebate Deals.
 2. Suggested test data: Item/description “Beta Task Test Order”; order number “BETA-1001”; purchase amount $79.99; expected refund $50.00. Use reasonable test values for any other required fields.
 3. Save the order, reopen it from Orders, and verify the values, refund timing, status/timeline, and next-action information look correct.
 4. Edit one field, save again, and confirm the change persists.
@@ -233,10 +233,10 @@ const TASK_TEMPLATES = {
   },
   'refund-workflow': {
     label:'Partial + final refund workflow', platform:'All', responseType:'Long Answer', suggestedHours:48,
-    objective:'Confirm Rebatify correctly handles a partial refund, preserves the remaining shortfall, and then completes the order after the final refund.',
+    objective:'Confirm RebataTrack correctly handles a partial refund, preserves the remaining shortfall, and then completes the order after the final refund.',
     instructions:`1. Create or use a test order that has not yet received its full expected refund.
 2. Record a partial refund that is less than the expected refund.
-3. Reopen the order and verify Rebatify still shows the remaining amount correctly instead of treating the order as fully refunded.
+3. Reopen the order and verify RebataTrack still shows the remaining amount correctly instead of treating the order as fully refunded.
 4. Record the remaining refund amount.
 5. Verify the order moves to the correct completed/refunded state and the totals are correct in Order Details and Reports.
 6. Tell us anything that was unclear or incorrect, or respond “No issues.”`
@@ -246,7 +246,7 @@ const TASK_TEMPLATES = {
     objective:'Validate the multi-order refund workflow, including the single-order guardrail, selecting multiple eligible orders, and allocation/results after saving.',
     instructions:`1. Make sure at least two eligible test orders are available for a refund.
 2. Open Record a Multi-Order Refund.
-3. First try to continue with only one order selected. Confirm Rebatify blocks the action and clearly explains that multiple orders are required.
+3. First try to continue with only one order selected. Confirm RebataTrack blocks the action and clearly explains that multiple orders are required.
 4. Select at least two eligible orders and complete a test multi-order refund.
 5. Reopen each affected order and verify the refund amounts and remaining balances are correct.
 6. Report any confusing message, incorrect allocation, duplicate record, or unexpected result. If everything worked, say “No issues.”`
@@ -263,7 +263,7 @@ const TASK_TEMPLATES = {
   'shared-profiles': {
     label:'Shared Profiles collaboration', platform:'All', responseType:'Long Answer', suggestedHours:72,
     objective:'Validate creating or joining a Shared Profile and confirm shared data behaves consistently between participating accounts.',
-    instructions:`1. Use two test Rebatify accounts when possible.
+    instructions:`1. Use two test RebataTrack accounts when possible.
 2. Create a Shared Profile or join one using the normal invitation flow.
 3. Confirm the second account can access the shared profile.
 4. Add or edit a temporary test record from one participant and confirm the other participant sees the expected update.
@@ -272,8 +272,8 @@ const TASK_TEMPLATES = {
   },
   'cloud-sync': {
     label:'Cloud sync across two clients', platform:'All', responseType:'Long Answer', suggestedHours:72,
-    objective:'Confirm the same Rebatify account stays consistent across two authorized clients without duplicates, missing edits, or confusing cloud status.',
-    instructions:`1. Sign in to the same Rebatify test account on two authorized clients, such as your phone plus the Rebatify Web App or another trusted device.
+    objective:'Confirm the same RebataTrack account stays consistent across two authorized clients without duplicates, missing edits, or confusing cloud status.',
+    instructions:`1. Sign in to the same RebataTrack test account on two authorized clients, such as your phone plus the RebataTrack Web App or another trusted device.
 2. Create or edit a temporary test order on the first client.
 3. Wait for cloud sync to finish and confirm the record appears exactly once on the second client with the same values.
 4. Edit that record from the second client and confirm the first client receives the updated values.
@@ -281,33 +281,33 @@ const TASK_TEMPLATES = {
 6. Report duplicates, missing edits, stale values, unexpected device-limit behavior, or unclear sync status. If no issue occurred, say “No issues.”`
   },
   'plus-ios': {
-    label:'Rebatify+ test purchase — iOS / TestFlight', platform:'iOS', responseType:'Long Answer', suggestedHours:48,
-    objective:'Validate the complete Rebatify+ purchase and entitlement experience from the TestFlight build without using a real-money production purchase.',
+    label:'RebataTrack+ test purchase — iOS / TestFlight', platform:'iOS', responseType:'Long Answer', suggestedHours:48,
+    objective:'Validate the complete RebataTrack+ purchase and entitlement experience from the TestFlight build without using a real-money production purchase.',
     adminNote:'iOS only. TestFlight In-App Purchases run in Apple’s sandbox and do not charge real money. Do not send this objective to someone using the production App Store build.',
-    instructions:`1. Make sure you are using the latest Rebatify build installed through TestFlight — not a production App Store build.
-2. Open the Rebatify+ paywall/upgrade screen and review the plan wording, pricing display, trial wording (if shown), and purchase buttons.
-3. Start a Rebatify+ subscription purchase and complete the Apple purchase sheet. TestFlight purchases use Apple’s sandbox and should not create a real charge.
-4. Confirm Rebatify+ unlocks immediately after the test transaction.
-5. Close and reopen Rebatify and confirm Plus access is still recognized.
+    instructions:`1. Make sure you are using the latest RebataTrack build installed through TestFlight — not a production App Store build.
+2. Open the RebataTrack+ paywall/upgrade screen and review the plan wording, pricing display, trial wording (if shown), and purchase buttons.
+3. Start a RebataTrack+ subscription purchase and complete the Apple purchase sheet. TestFlight purchases use Apple’s sandbox and should not create a real charge.
+4. Confirm RebataTrack+ unlocks immediately after the test transaction.
+5. Close and reopen RebataTrack and confirm Plus access is still recognized.
 6. If Restore Purchases is available, test it and confirm entitlement remains correct.
 7. Report any incorrect price/plan text, purchase error, entitlement delay, locked Plus feature, restore problem, or confusing messaging. If everything worked, say “No issues.”`
   },
   'plus-android': {
-    label:'Rebatify+ test purchase — Android / Google Play', platform:'Android', responseType:'Long Answer', suggestedHours:48,
-    objective:'Validate the complete Rebatify+ Google Play purchase and entitlement experience using a Google Play license-testing account.',
+    label:'RebataTrack+ test purchase — Android / Google Play', platform:'Android', responseType:'Long Answer', suggestedHours:48,
+    objective:'Validate the complete RebataTrack+ Google Play purchase and entitlement experience using a Google Play license-testing account.',
     adminNote:'Android only. Before sending this task, make sure the tester’s Google account is configured under Play Console → Settings → License testing and is eligible for the test release. If Google presents a normal real-money purchase instead of a test purchase, the tester should stop.',
-    instructions:`1. Make sure the Google Play Store is signed into the Google account approved for the Rebatify beta and configured for Google Play license testing.
-2. Install/open Rebatify from the designated Google Play testing track.
-3. Open the Rebatify+ paywall and review the plan wording, pricing display, trial wording (if shown), and purchase buttons.
-4. Start a Rebatify+ purchase. Confirm Google Play identifies it as a test purchase. If it appears to be a normal real-money purchase, stop and report that instead of completing it.
-5. Complete the test purchase and verify Rebatify+ unlocks immediately.
-6. Close and reopen Rebatify and confirm Plus access remains correct. Test Restore Purchases if that option is available.
+    instructions:`1. Make sure the Google Play Store is signed into the Google account approved for the RebataTrack beta and configured for Google Play license testing.
+2. Install/open RebataTrack from the designated Google Play testing track.
+3. Open the RebataTrack+ paywall and review the plan wording, pricing display, trial wording (if shown), and purchase buttons.
+4. Start a RebataTrack+ purchase. Confirm Google Play identifies it as a test purchase. If it appears to be a normal real-money purchase, stop and report that instead of completing it.
+5. Complete the test purchase and verify RebataTrack+ unlocks immediately.
+6. Close and reopen RebataTrack and confirm Plus access remains correct. Test Restore Purchases if that option is available.
 7. Report any billing, entitlement, restore, wording, or paywall issue. If everything worked, say “No issues.”`
   },
   'web-app': {
-    label:'Rebatify Web App smoke test', platform:'All', responseType:'Long Answer', suggestedHours:72,
-    objective:'Validate that the Rebatify Web App is understandable, synchronized, and usable for the core workflows a Rebatify+ member expects.',
-    instructions:`1. Open the Rebatify Web App using the beta web link you were provided and sign in with your Rebatify test account.
+    label:'RebataTrack Web App smoke test', platform:'All', responseType:'Long Answer', suggestedHours:72,
+    objective:'Validate that the RebataTrack Web App is understandable, synchronized, and usable for the core workflows a RebataTrack+ member expects.',
+    instructions:`1. Open the RebataTrack Web App using the beta web link you were provided and sign in with your RebataTrack test account.
 2. Review Home, Orders, Order Details, Reports, and Settings/Account areas that are available to you.
 3. Create or edit a temporary test record on the web and verify it synchronizes to the mobile app.
 4. Make a change on mobile and verify the web version updates without creating a duplicate.
@@ -357,7 +357,7 @@ function isEnabledStatus(status){return ['Approved','Active'].includes(status);}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FEEDBACK_WORKFLOW = ['New','Reviewing','Confirmed','Fixed','Needs Retest','Closed'];
-const SUPPORT_WORKFLOW = ['Waiting for Rebatify','Waiting for Tester','Resolved'];
+const SUPPORT_WORKFLOW = ['Waiting for RebataTrack','Waiting for Tester','Resolved'];
 function isSupportConversation(f){return String(f&&f.workflowType||'Feedback')==='Support'||String(f&&f.type||'')==='Account / Access Problem';}
 function adminConversationIsClosed(f){const status=canonicalFeedbackStatus(f&&f.status);return isSupportConversation(f)?['Resolved','Closed'].includes(status):status==='Closed';}
 function canonicalFeedbackStatus(value){
@@ -369,10 +369,10 @@ function canonicalFeedbackStatus(value){
 }
 function testerFacingFeedbackStatus(f){
   if(isSupportConversation(f)){
-    const status=String(f&&f.status||'Waiting for Rebatify');
+    const status=String(f&&f.status||'Waiting for RebataTrack');
     if(status==='Resolved')return 'Resolved';
     if(status==='Waiting for Tester')return 'Waiting for you';
-    return 'Waiting for Rebatify';
+    return 'Waiting for RebataTrack';
   }
   const status=canonicalFeedbackStatus(f&&f.status);
   if(status==='Closed')return 'Resolved';
@@ -461,7 +461,7 @@ async function loadMetrics(){
     countQuery(query(apps,where('status','==','Inactive'))),
     countQuery(query(apps,where('platform','==','iOS'))),
     countQuery(query(apps,where('platform','==','Android'))),
-    Promise.all([countQuery(query(feedback,where('status','==','New'))),countQuery(query(feedback,where('status','==','Waiting for Rebatify')))]).then(([a,b])=>a+b),
+    Promise.all([countQuery(query(feedback,where('status','==','New'))),countQuery(query(feedback,where('status','==','Waiting for RebataTrack')))]).then(([a,b])=>a+b),
     getDocs(query(collection(db,'betaTaskAssignments'),where('status','==','Pending'),limit(500)))
   ]);
   const activeTasks=pendingAssignmentsSnap.docs.filter(d=>d.data().recordType!=='Announcement').length;
@@ -690,7 +690,7 @@ function renderTesters(){
     const inactiveText=activity.days===999?'No activity recorded':`${activity.days} day${activity.days===1?'':'s'} inactive`;
     const deviceLine=device||'Device not provided';
     const buildLine=build||'Build not provided';
-    return `<tr><td class="admin-select-col"><label class="admin-timeline-row-check"><input type="checkbox" data-timeline-tester="${esc(t.uid)}" data-platform="${esc(t.platform||'')}"${selectedTimelineTesters.has(t.uid)?' checked':''}${eligible?'':' disabled'}><span></span></label></td><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><div class="admin-activity-cell"><span class="admin-activity-pill ${activity.className}">${esc(activity.label)}</span><small>${esc(activity.reason)}</small></div></td><td><div class="admin-last-active"><strong>Portal: ${esc(portalActivity)}</strong><small>Login: ${esc(loginActivity)}</small><small>Feedback: ${esc(feedbackActivity)}</small><small>${esc(inactiveText)}</small></div></td><td><div class="admin-scorecard-cell"><span><b>${score.tasksCompleted}</b> tasks</span><span><b>${score.feedbackCount}</b> feedback</span><span><b>${score.retests}</b> retests</span>${score.tasksPending?`<small>${score.tasksPending} required task${score.tasksPending===1?'':'s'} pending</small>`:'<small>No required tasks pending</small>'}</div></td><td><div class="admin-device-cell"><strong>${esc(buildLine)}</strong><small>${esc(deviceLine)}</small>${t.screenSize?`<small>${esc(t.screenSize)}</small>`:''}</div></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${timelineChipHtml(t)}</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`;
+    return `<tr><td class="admin-select-col"><label class="admin-timeline-row-check"><input type="checkbox" data-timeline-tester="${esc(t.uid)}" data-platform="${esc(t.platform||'')}"${selectedTimelineTesters.has(t.uid)?' checked':''}${eligible?'':' disabled'}></label></td><td><div class="admin-table-person"><span>${esc((t.name||'?').slice(0,1).toUpperCase())}</span><div><strong>${esc(t.name)}</strong><small>${esc(t.email)}</small></div></div></td><td><span class="admin-platform-pill">${esc(t.platform)}</span></td><td><div class="admin-activity-cell"><span class="admin-activity-pill ${activity.className}">${esc(activity.label)}</span><small>${esc(activity.reason)}</small></div></td><td><div class="admin-last-active"><strong>Portal: ${esc(portalActivity)}</strong><small>Login: ${esc(loginActivity)}</small><small>Feedback: ${esc(feedbackActivity)}</small><small>${esc(inactiveText)}</small></div></td><td><div class="admin-scorecard-cell"><span><b>${score.tasksCompleted}</b> tasks</span><span><b>${score.feedbackCount}</b> feedback</span><span><b>${score.retests}</b> retests</span>${score.tasksPending?`<small>${score.tasksPending} required task${score.tasksPending===1?'':'s'} pending</small>`:'<small>No required tasks pending</small>'}</div></td><td><div class="admin-device-cell"><strong>${esc(buildLine)}</strong><small>${esc(deviceLine)}</small>${t.screenSize?`<small>${esc(t.screenSize)}</small>`:''}</div></td><td><span class="admin-status-pill ${t.accessStatus==='Enabled'?'status-active':'status-inactive'}">${esc(t.accessStatus||'Disabled')}</span></td><td>${timelineChipHtml(t)}</td><td><button class="admin-table-open" data-open-tester="${esc(t.uid)}" type="button">Manage</button></td></tr>`;
   }).join('');
   document.getElementById('testersEmpty').hidden=data.length>0;
   renderTesterActivityMetrics();
@@ -698,9 +698,9 @@ function renderTesters(){
 }
 function testingAccessSentEmailCopy(t){
   const platform=String(t.platform||'');
-  if(platform==='iOS')return {title:'Your Rebatify TestFlight invitation has been sent',message:'Your Rebatify iOS testing invitation has been sent. Check the Apple Account email you confirmed during Testing Setup and open the TestFlight invitation to install or update Rebatify.'};
-  if(platform==='Android')return {title:'Your Rebatify Google Play testing access has been sent',message:'Your Rebatify Android beta-testing link has been sent. Open your Beta Program Portal to use the saved Google Play link and follow the installation steps.'};
-  return {title:'Your Rebatify beta testing access has been sent',message:'Your Rebatify beta testing access has been sent. Check the account you confirmed during Testing Setup for the invitation or testing link.'};
+  if(platform==='iOS')return {title:'Your RebataTrack TestFlight invitation has been sent',message:'Your RebataTrack iOS testing invitation has been sent. Check the Apple Account email you confirmed during Testing Setup and open the TestFlight invitation to install or update RebataTrack.'};
+  if(platform==='Android')return {title:'Your RebataTrack Google Play testing access has been sent',message:'Your RebataTrack Android beta-testing link has been sent. Open your Beta Program Portal to use the saved Google Play link and follow the installation steps.'};
+  return {title:'Your RebataTrack beta testing access has been sent',message:'Your RebataTrack beta testing access has been sent. Check the account you confirmed during Testing Setup for the invitation or testing link.'};
 }
 async function sendTestingAccessSentNotification(t){
   const copy=testingAccessSentEmailCopy(t);
@@ -1163,9 +1163,9 @@ function feedbackWorkflowOptions(f){
 }
 function adminConversationMessageHtml(m){
   const eventType=String(m.eventType||'');
-  if(eventType==='retest-request')return `<div class="admin-chat-message admin-chat-event"><div><strong>Rebatify · Retest requested</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'Retest requested.')}</p></div>`;
+  if(eventType==='retest-request')return `<div class="admin-chat-message admin-chat-event"><div><strong>RebataTrack · Retest requested</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'Retest requested.')}</p></div>`;
   if(eventType==='retest-submitted')return `<div class="admin-chat-message admin-chat-event is-complete"><div><strong>Tester · Retest submitted</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.retestResult||m.body||'Retest submitted')}</p>${m.retestNotes?`<small>${esc(m.retestNotes)}</small>`:''}</div>`;
-  const admin=String(m.authorRole||'').toLowerCase()==='admin';return `<div class="admin-chat-message ${admin?'from-admin':'from-tester'}"><div><strong>${admin?'Rebatify':'Tester'}</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'')}</p></div>`;
+  const admin=String(m.authorRole||'').toLowerCase()==='admin';return `<div class="admin-chat-message ${admin?'from-admin':'from-tester'}"><div><strong>${admin?'RebataTrack':'Tester'}</strong><time>${esc(formatDate(m.createdAt))}</time></div><p>${esc(m.body||'')}</p></div>`;
 }
 function subscribeAdminConversationMessages(feedbackId){
   if(adminConversationUnsubscribe){adminConversationUnsubscribe();adminConversationUnsubscribe=null;}
@@ -1288,7 +1288,7 @@ async function sendWorkerEmail(type,a){
   try{
     const response=await fetch(emailWorkerEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({type,name:a.fullName||'',email:a.email||'',platform:a.platform||''}),signal:controller.signal});
     let payload={};try{payload=await response.json();}catch(_){}
-    if(!response.ok||payload.ok!==true){const err=new Error(payload.error||'The Rebatify email service could not send this message.');err.code='rebatify/email-send-failed';throw err;}
+    if(!response.ok||payload.ok!==true){const err=new Error(payload.error||'The RebataTrack email service could not send this message.');err.code='rebatify/email-send-failed';throw err;}
     return payload;
   }finally{clearTimeout(timer);}
 }
@@ -1309,7 +1309,7 @@ async function callWorkerAdminAction(type,payload={}){
       attempt=await perform(true);
     }
     const {response,result}=attempt;
-    if(!response.ok||result.ok!==true){const err=new Error(result.error||'The Rebatify admin service could not complete this action.');err.code='rebatify/admin-action-failed';throw err;}
+    if(!response.ok||result.ok!==true){const err=new Error(result.error||'The RebataTrack admin service could not complete this action.');err.code='rebatify/admin-action-failed';throw err;}
     return result;
   }finally{clearTimeout(timer);}
 }
@@ -1363,7 +1363,7 @@ async function changeBetaEmail(applicationId,newEmail){
 
 async function refreshActiveView(){
   if(!isAdminUser(auth.currentUser)){
-    showToast('Your administrator session changed. Sign in to the Rebatify Beta Program Admin again.','error');
+    showToast('Your administrator session changed. Sign in to the RebataTrack Beta Program Admin again.','error');
     setTimeout(()=>location.replace('admin-login.html?error=access'),700);return;
   }
   document.getElementById('adminRefresh').classList.add('is-spinning');
@@ -1399,16 +1399,16 @@ async function init(user){
     await withTimeout(loadOverview(), 12000, 'Dashboard data');
   }catch(error){
     const detail = error && error.code === 'rebatify/timeout'
-      ? 'Firebase Authentication succeeded, but Firestore did not respond within 12 seconds. Check that the Firestore database exists and the Rebatify security rules are published.'
+      ? 'Firebase Authentication succeeded, but Firestore did not respond within 12 seconds. Check that the Firestore database exists and the RebataTrack security rules are published.'
       : friendlyFirebaseError(error);
     showToast('Admin opened, but dashboard data could not load. ' + detail, 'error');
-    console.error('Rebatify admin overview load failed:', error);
+    console.error('RebataTrack admin overview load failed:', error);
   }
 }
 
 if(!firebaseConfigured){
   window.__REBATIFY_ADMIN_BOOT.authResolved = true;
-  showFatal('The Rebatify Beta Program data service has not been configured yet.','Missing: '+firebaseMissingFields.join(', '));
+  showFatal('The RebataTrack Beta Program data service has not been configured yet.','Missing: '+firebaseMissingFields.join(', '));
 }else{
   setLoadingStatus('Restoring your secure administrator session…');
   const authTimer=setTimeout(()=>{
@@ -1473,9 +1473,9 @@ document.addEventListener('click',async e=>{
   }
 
   const noteBtn=e.target.closest('[data-save-app-notes]');if(noteBtn){const a=await ensureApplicationLoaded(noteBtn.dataset.saveAppNotes);if(!a)return;const notes=document.getElementById('drawerApplicantNotes').value;try{await updateDoc(doc(db,'betaApplications',a.id),{notes,lastUpdated:serverTimestamp()});a.notes=notes;a.lastUpdated=new Date();showToast('Private notes saved.');}catch(err){showToast(friendlyFirebaseError(err),'error');}return;}
-  const reopenFeedbackBtn=e.target.closest('[data-reopen-feedback]');if(reopenFeedbackBtn){const f=await ensureFeedbackLoaded(reopenFeedbackBtn.dataset.reopenFeedback);if(!f)return;const support=isSupportConversation(f);const status=support?'Waiting for Rebatify':'Reviewing';reopenFeedbackBtn.disabled=true;const original=reopenFeedbackBtn.textContent;reopenFeedbackBtn.textContent='Reopening…';try{await updateDoc(doc(db,'betaFeedback',f.id),{status,updatedAt:serverTimestamp()});f.status=status;f.updatedAt=new Date();state.loaded.feedback=false;await loadFeedback(true);renderFeedback();const fresh=state.feedback.find(x=>x.id===f.id)||f;openFeedbackRecord(fresh);showToast('Conversation reopened. Messaging is available again.');}catch(err){showToast(friendlyFirebaseError(err),'error');reopenFeedbackBtn.disabled=false;reopenFeedbackBtn.textContent=original;}return;}
+  const reopenFeedbackBtn=e.target.closest('[data-reopen-feedback]');if(reopenFeedbackBtn){const f=await ensureFeedbackLoaded(reopenFeedbackBtn.dataset.reopenFeedback);if(!f)return;const support=isSupportConversation(f);const status=support?'Waiting for RebataTrack':'Reviewing';reopenFeedbackBtn.disabled=true;const original=reopenFeedbackBtn.textContent;reopenFeedbackBtn.textContent='Reopening…';try{await updateDoc(doc(db,'betaFeedback',f.id),{status,updatedAt:serverTimestamp()});f.status=status;f.updatedAt=new Date();state.loaded.feedback=false;await loadFeedback(true);renderFeedback();const fresh=state.feedback.find(x=>x.id===f.id)||f;openFeedbackRecord(fresh);showToast('Conversation reopened. Messaging is available again.');}catch(err){showToast(friendlyFirebaseError(err),'error');reopenFeedbackBtn.disabled=false;reopenFeedbackBtn.textContent=original;}return;}
   const deleteFeedbackBtn=e.target.closest('[data-delete-feedback]');if(deleteFeedbackBtn){const f=await ensureFeedbackLoaded(deleteFeedbackBtn.dataset.deleteFeedback);if(!f)return;const label=isSupportConversation(f)?'support conversation':'feedback conversation';if(!(await confirmAction(`Permanently delete this ${label}? All replies and private admin notes will also be deleted. The tester account and beta application will remain. This cannot be undone.`,'danger')))return;deleteFeedbackBtn.disabled=true;const original=deleteFeedbackBtn.textContent;deleteFeedbackBtn.textContent='Deleting…';try{await deleteFeedbackConversation(f);closeDrawer();showToast('Conversation deleted.');}catch(err){showToast(friendlyFirebaseError(err),'error');deleteFeedbackBtn.disabled=false;deleteFeedbackBtn.textContent=original;}return;}
-  const convoReply=e.target.closest('[data-send-conversation-reply]');if(convoReply){const f=await ensureFeedbackLoaded(convoReply.dataset.sendConversationReply);if(!f)return;if(adminConversationIsClosed(f)){showToast('Reopen this conversation before replying.','error');openFeedbackRecord(f);return;}const input=document.getElementById('drawerConversationReply');const body=String(input?.value||'').trim();if(!body){showToast('Write a reply before sending.','error');return;}convoReply.disabled=true;const original=convoReply.textContent;convoReply.textContent='Sending…';try{const ref=await addDoc(collection(db,'betaFeedback',f.id,'messages'),{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'Rebatify',body,createdAt:serverTimestamp()});const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Admin',updatedAt:serverTimestamp()};if(isSupportConversation(f))update.status='Waiting for Tester';await updateDoc(doc(db,'betaFeedback',f.id),update);f.lastMessageAt=new Date();f.lastMessageBy='Admin';f.updatedAt=new Date();if(isSupportConversation(f))f.status='Waiting for Tester';let emailFailed=false;try{await callWorkerAdminAction('conversation-reply-added',{feedbackId:f.id,messageId:ref.id});}catch(emailErr){emailFailed=true;console.warn('Conversation reply email failed:',emailErr);}if(input){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));}renderFeedback();syncOpenAdminFeedbackState(f);showToast(emailFailed?'Reply saved, but the tester email could not be sent.':'Reply sent to tester.',emailFailed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{convoReply.disabled=false;convoReply.textContent=original;}return;}
+  const convoReply=e.target.closest('[data-send-conversation-reply]');if(convoReply){const f=await ensureFeedbackLoaded(convoReply.dataset.sendConversationReply);if(!f)return;if(adminConversationIsClosed(f)){showToast('Reopen this conversation before replying.','error');openFeedbackRecord(f);return;}const input=document.getElementById('drawerConversationReply');const body=String(input?.value||'').trim();if(!body){showToast('Write a reply before sending.','error');return;}convoReply.disabled=true;const original=convoReply.textContent;convoReply.textContent='Sending…';try{const ref=await addDoc(collection(db,'betaFeedback',f.id,'messages'),{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'RebataTrack',body,createdAt:serverTimestamp()});const update={lastMessageAt:serverTimestamp(),lastMessageBy:'Admin',updatedAt:serverTimestamp()};if(isSupportConversation(f))update.status='Waiting for Tester';await updateDoc(doc(db,'betaFeedback',f.id),update);f.lastMessageAt=new Date();f.lastMessageBy='Admin';f.updatedAt=new Date();if(isSupportConversation(f))f.status='Waiting for Tester';let emailFailed=false;try{await callWorkerAdminAction('conversation-reply-added',{feedbackId:f.id,messageId:ref.id});}catch(emailErr){emailFailed=true;console.warn('Conversation reply email failed:',emailErr);}if(input){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));}renderFeedback();syncOpenAdminFeedbackState(f);showToast(emailFailed?'Reply saved, but the tester email could not be sent.':'Reply sent to tester.',emailFailed?'error':'success');}catch(err){showToast(friendlyFirebaseError(err),'error');}finally{convoReply.disabled=false;convoReply.textContent=original;}return;}
   const fbSave=e.target.closest('[data-save-feedback]');if(fbSave){
     const f=await ensureFeedbackLoaded(fbSave.dataset.saveFeedback);if(!f)return;const status=String(document.getElementById('drawerFeedbackStatus').value||'').trim();const notes=document.getElementById('drawerFeedbackNotes').value;const support=isSupportConversation(f);const oldStatus=canonicalFeedbackStatus(f.status);const oldPublic=testerFacingFeedbackStatus(f);
     try{
@@ -1484,7 +1484,7 @@ document.addEventListener('click',async e=>{
       const update={status,adminNotes:'',updatedAt:serverTimestamp()};
       if(enteringRetest){update.lastMessageAt=serverTimestamp();update.lastMessageBy='Admin';if(f.retestedAt){update.retestedAt=null;update.retestResult='';update.retestNotes='';}}
       const batch=writeBatch(db);batch.update(doc(db,'betaFeedback',f.id),update);batch.set(doc(db,'betaFeedbackAdmin',f.id),{feedbackId:f.id,adminNotes:notes,updatedAt:serverTimestamp(),updatedBy:adminEmail},{merge:true});
-      if(enteringRetest){const messageRef=doc(collection(db,'betaFeedback',f.id,'messages'));batch.set(messageRef,{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'Rebatify',eventType:'retest-request',body:'Rebatify has requested a retest for this issue. Please test the latest fix and submit your retest result.',createdAt:serverTimestamp()});}
+      if(enteringRetest){const messageRef=doc(collection(db,'betaFeedback',f.id,'messages'));batch.set(messageRef,{authorUid:auth.currentUser.uid,authorRole:'Admin',authorName:'RebataTrack',eventType:'retest-request',body:'RebataTrack has requested a retest for this issue. Please test the latest fix and submit your retest result.',createdAt:serverTimestamp()});}
       await batch.commit();
       f.status=status;f.adminNotes=notes;f.updatedAt=new Date();if(enteringRetest){f.lastMessageAt=new Date();f.lastMessageBy='Admin';if('retestedAt' in update){f.retestedAt=null;f.retestResult='';f.retestNotes='';}}
       const newPublic=testerFacingFeedbackStatus(f);let emailFailed=false;if(newPublic!==oldPublic){const meaningful=support?['Waiting for you','Resolved'].includes(newPublic):['Reviewing','Fix in progress','Needs retest','Resolved'].includes(newPublic);if(meaningful){try{await callWorkerAdminAction('feedback-status-update',{feedbackId:f.id});}catch(emailErr){emailFailed=true;console.warn('Conversation status email failed:',emailErr);}}}
@@ -1576,10 +1576,10 @@ document.addEventListener('click',async e=>{
       approve:'Approve this tester, enable passwordless Beta Program Portal access, and send the branded invitation?',
       waitlist:'Move this applicant to the waitlist'+notification+'?',
       decline:'Decline this application'+notification+'?',
-      resend:'Send the branded Rebatify Beta Program Portal invitation again?',
+      resend:'Send the branded RebataTrack Beta Program Portal invitation again?',
       inactive:'Disable this tester’s portal access'+notification+'?',
       active:'Enable access and mark this tester active?',
-      delete:'Permanently delete this Rebatify Beta Program application?'+deleteNote+' Any duplicate tester records using the same email will also be removed.'
+      delete:'Permanently delete this RebataTrack Beta Program application?'+deleteNote+' Any duplicate tester records using the same email will also be removed.'
     }[task];
     if(confirmation&&!(await confirmAction(confirmation,['decline','inactive','delete'].includes(task)?'danger':'')))return;
     actionBtn.disabled=true;
@@ -1592,7 +1592,7 @@ document.addEventListener('click',async e=>{
       if(task==='active')result=await statusAction(a,'Active','Enabled');
       if(task==='resend')result=await resendInvite(a);
       if(task==='delete')result=await deleteApplication(a);
-      const messages={approve:'Tester approved and portal access enabled.',resend:'Rebatify Beta Program Portal invitation processed.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester access restored and marked active.',delete:'Application, matching tester profiles, task assignments, and login deleted.'};
+      const messages={approve:'Tester approved and portal access enabled.',resend:'RebataTrack Beta Program Portal invitation processed.',waitlist:'Applicant moved to the waitlist.',decline:'Application declined.',inactive:'Tester access disabled.',active:'Tester access restored and marked active.',delete:'Application, matching tester profiles, task assignments, and login deleted.'};
       const emailNote=result&&result.emailError?' The record was updated, but the email notification could not be sent.':'';
       showToast((messages[task]||'Tester record updated.')+emailNote,result&&result.emailError?'error':'success');closeDrawer();
     }catch(err){
